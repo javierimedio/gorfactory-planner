@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="es" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gor Factory — Gantt Marketing Planner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: 'var(--border-color)',
+            'border-light': 'rgba(0,0,0,0.08)'
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    
+    /* Configuración de Temas e Inversión Segura */
+    .light {
+      --bg-main: #f8fafc;
+      --bg-panel: #ffffff;
+      --bg-sidebar: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --border-color: #e2e8f0;
+      --bg-header: #f8fafc;
+    }
+    .dark {
+      --bg-main: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-sidebar: #111827;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --bg-header: #111827;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      overflow-x: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Clases de utilidad dinámicas */
+    .theme-text { color: var(--text-main); }
+    .theme-text-muted { color: var(--text-muted); }
+    .theme-panel { background-color: var(--bg-panel); border-color: var(--border-color); }
+    .theme-sidebar { background-color: var(--bg-sidebar); border-color: var(--border-color); }
+    .theme-border { border-color: var(--border-color); }
+
+    /* Ocultar barra de scroll */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    .sticky-row {
+      position: sticky;
+      left: 0;
+      z-index: 20;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 font-sans antialiased">
+
+  <div id="gatekeeper-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900 dynamic-bg">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm text-center space-y-5 transform scale-100 transition-all">
+      <div class="bg-slate-50 p-3 rounded-xl inline-block shadow-sm mx-auto">
+        <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="Gor Factory" class="h-8 object-contain" style="mix-blend-mode: multiply;">
+      </div>
+      <div class="space-y-1">
+        <h2 class="text-base font-bold text-slate-800 dark:text-white uppercase tracking-wide">Acceso Restringido</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Introduce la clave del planificador estratégico.</p>
+      </div>
+      <div class="space-y-3">
+        <input id="gatekeeper-input" type="password" placeholder="Contraseña de acceso" onkeydown="if(event.key==='Enter') verifyPassword()" class="w-full text-center px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700 font-mono">
+        <p id="gatekeeper-error" class="text-[11px] text-red-500 font-medium hidden">Contraseña incorrecta. Inténtalo de nuevo.</p>
+        <button onclick="verifyPassword()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider">
+          Ingresar al Panel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-content" class="max-w-[1600px] mx-auto space-y-6 hidden">
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b theme-border pb-4">
+      <div class="flex items-center space-x-4">
+        <div class="bg-white p-2 rounded-lg inline-block shadow-sm">
+          <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="Gor Factory" class="h-7 object-contain inversion-toggle" style="mix-blend-mode: multiply;">
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight theme-text flex items-center gap-2">
+            PLANIFICADOR ESTRATÉGICO DE MARKETING
+            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">SUPABASE CLOUD v2.0</span>
+          </h1>
+          <p class="text-xs theme-text-muted">Panel corporativo de control y líneas de tiempo en tiempo real para campañas de Gor Factory.</p>
+        </div>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-3 self-end md:self-auto">
+        <button id="btn-toggle-mode" onclick="toggleEditMode()" class="px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400" title="Alternar entre modo lectura y edición">
+          <i data-lucide="lock" id="icon-mode" class="w-3.5 h-3.5"></i>
+          <span id="text-mode">Modo Visualización</span>
+        </button>
+
+        <button onclick="toggleTheme()" class="p-2 rounded-lg theme-panel border theme-text-muted hover:theme-text shadow-sm transition-all" title="Cambiar Tema Color">
+          <i data-lucide="sun-moon" class="w-4 h-4"></i>
+        </button>
+        <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
+          Hoy
+        </button>
+        <button id="btn-add-task" onclick="showAddModal()" class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>Nueva Tarea</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 theme-sidebar p-3 rounded-xl border">
+      <div>
+        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Categoría</label>
+        <select id="filter-cat" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+          <option value="">Todas las categorías</option>
+          <option value="Catálogos">Catálogos</option>
+          <option value="Ferias">Ferias</option>
+          <option value="Web/Digital">Web/Digital</option>
+          <option value="Shootings">Shootings</option>
+          <option value="Eventos">Eventos</option>
+          <option value="Branding">Branding</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Estado</label>
+        <select id="filter-status" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+          <option value="">Todos los estados</option>
+          <option value="Sin comenzar">Sin comenzar</option>
+          <option value="En planificación">En planificación</option>
+          <option value="En curso">En curso</option>
+          <option value="Pendiente revisión">Pendiente revisión</option>
+          <option value="Bloqueado">Bloqueado</option>
+          <option value="Completado">Completado</option>
+          <option value="Cancelado">Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <div class="lg:col-span-3 space-y-4 theme-panel p-4 rounded-xl border">
+        <div class="space-y-1">
+          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Visualización</label>
+          <button id="nav-gantt" onclick="switchView('gantt')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all">
+            <span class="flex items-center space-x-2"><i data-lucide="gantt-chart" class="w-4 h-4 text-white"></i> <span>Diagrama de Gantt</span></span>
+          </button>
+          <button id="nav-dashboard" onclick="switchView('dashboard')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all">
+            <span class="flex items-center space-x-2"><i data-lucide="layout-dashboard" class="w-4 h-4 text-purple-500"></i> <span>Métricas & Alertas</span></span>
+          </button>
+        </div>
+
+        <hr class="theme-border">
+
+        <div class="space-y-2">
+          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="theme-sidebar p-2 rounded-lg border text-center">
+              <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Tareas</span>
+            </div>
+            <div class="theme-sidebar p-2 rounded-lg border text-center">
+              <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Activos</span>
+            </div>
+            <div class="theme-sidebar p-2 rounded-lg border text-center">
+              <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Bloqueados</span>
+            </div>
+            <div class="theme-sidebar p-2 rounded-lg border text-center">
+              <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Vencidos</span>
+            </div>
+          </div>
+          <div class="bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20">
+            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
+            <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Operaciones Completadas</span>
+          </div>
+        </div>
+
+        <hr class="theme-border">
+
+        <div class="space-y-2">
+          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Categorías de Marketing</label>
+          <div id="sidebar-categories" class="space-y-1"></div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm">
+        
+        <div id="view-gantt-container" class="flex divide-x theme-border">
+          <div class="w-[300px] shrink-0 flex flex-col bg-opacity-60 z-30">
+            <div class="h-14 border-b theme-border flex items-center px-4 shrink-0" style="background-color: var(--bg-header)">
+              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase">Estructura del Proyecto / Tarea</span>
+            </div>
+            <div id="sb-rows" class="overflow-y-auto max-h-[500px] no-scrollbar divide-y theme-border select-none"></div>
+          </div>
+
+          <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto max-h-[556px] shrink-0 flex-1 relative">
+            <div id="tl-inner" class="relative"></div>
+          </div>
+        </div>
+
+        <div id="view-dashboard-container" class="hidden p-6 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <div class="theme-sidebar p-4 rounded-xl border space-y-4">
+              <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase flex items-center gap-1.5">
+                <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-500"></i> Distribución Operativa
+              </h3>
+              <div class="grid grid-cols-2 gap-3">
+                <div class="theme-panel p-3 rounded-lg border text-center">
+                  <span class="block text-lg font-bold text-blue-500" id="dash-c-wip">0</span>
+                  <span class="text-[10px] theme-text-muted">En Curso</span>
+                </div>
+                <div class="theme-panel p-3 rounded-lg border text-center">
+                  <span class="block text-lg font-bold text-orange-500" id="dash-c-review">0</span>
+                  <span class="text-[10px] theme-text-muted">Pendiente Revisión</span>
+                </div>
+                <div class="theme-panel p-3 rounded-lg border text-center">
+                  <span class="block text-lg font-bold text-amber-500" id="dash-c-plan">0</span>
+                  <span class="text-[10px] theme-text-muted">En Planificación</span>
+                </div>
+                <div class="theme-panel p-3 rounded-lg border text-center">
+                  <span class="block text-lg font-bold theme-text-muted" id="dash-c-backlog">0</span>
+                  <span class="text-[10px] theme-text-muted">Sin Comenzar</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="theme-sidebar p-4 rounded-xl border space-y-3">
+              <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase flex items-center gap-1.5">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-amber-500"></i> Próximos Vencimientos y Alertas
+              </h3>
+              <div id="dashboard-deadlines-list" class="space-y-2 max-h-[220px] overflow-y-auto pr-1"></div>
+            </div>
+          </div>
+
+          <div class="theme-sidebar p-4 rounded-xl border space-y-4">
+            <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase">Progreso Global por Bloque Organizativo</h3>
+            <div id="dashboard-progress-bars" class="space-y-3 max-h-[250px] overflow-y-auto pr-1"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-overlay" onclick="closeModal(event)" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden justify-center items-center opacity-0 transition-opacity duration-200">
+    <div id="modal" class="theme-panel border p-6 rounded-xl w-full max-w-md space-y-4 transform scale-95 transition-transform duration-200 shadow-2xl">
+      <div class="flex items-center justify-between border-b theme-border pb-2">
+        <h2 id="modal-title" class="text-xs font-bold tracking-wider uppercase theme-text-muted">Gestión de Tarea</h2>
+        <button onclick="closeModal()" class="theme-text-muted hover:theme-text transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block theme-text-muted font-medium mb-1">Nombre del Proyecto / Catálogo</label>
+          <input id="m-proj" type="text" placeholder="Ej: Catálogo ROLY 2026" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block theme-text-muted font-medium mb-1">Nombre de la Tarea u Operación</label>
+          <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block theme-text-muted font-medium mb-1">Responsable</label>
+            <input id="m-resp" type="text" placeholder="Ej: Lorenzo G." class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block theme-text-muted font-medium mb-1">Categoría</label>
+            <select id="m-cat" class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+              <option value="Catálogos">Catálogos</option>
+              <option value="Ferias">Ferias</option>
+              <option value="Web/Digital">Web/Digital</option>
+              <option value="Shootings">Shootings</option>
+              <option value="Eventos">Eventos</option>
+              <option value="Branding">Branding</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block theme-text-muted font-medium mb-1">Fecha Inicio</label>
+            <input id="m-start" type="date" class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
+          </div>
+          <div>
+            <label class="block theme-text-muted font-medium mb-1">Fecha Fin</label>
+            <input id="m-end" type="date" class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block theme-text-muted font-medium mb-1">Estado Actual</label>
+            <select id="m-status" class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+              <option value="Sin comenzar">Sin comenzar</option>
+              <option value="En planificación">En planificación</option>
+              <option value="En curso">En curso</option>
+              <option value="Pendiente revisión">Pendiente revisión</option>
+              <option value="Bloqueado">Bloqueado</option>
+              <option value="Completado">Completado</option>
+              <option value="Cancelado">Cancelado</option>
+            </select>
+          </div>
+          <div>
+            <label class="block theme-text-muted font-medium mb-1">Prioridad</label>
+            <select id="m-prio" class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+              <option value="Baja">Baja</option>
+              <option value="Media">Media</option>
+              <option value="Alta">Alta</option>
+              <option value="Crítica">Crítica</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between border-t theme-border pt-3">
+        <button id="btn-delete" onclick="deleteTask()" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 border border-red-500/20 font-medium text-xs hover:bg-red-600 hover:text-white transition-all hidden">
+          Eliminar
+        </button>
+        <div class="flex items-center space-x-2 ml-auto">
+          <button id="btn-modal-cancel" onclick="closeModal()" class="px-3 py-1.5 rounded-lg theme-sidebar theme-text border text-xs font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+            Cancelar
+          </button>
+          <button id="btn-modal-save" onclick="saveModal()" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/10 transition">
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // CAMBIA AQUÍ LA CONTRASEÑA DE TU PANEL SI LO DESEAS
+    const CORRECT_PASSWORD = "GorFactory2026";
+
+    // CONEXIÓN DIRECTA EN TIEMPO REAL A TU BASE DE DATOS EN LA NUBE SUPABASE
+    const SUPABASE_URL = "https://dogdbpeiufecjbsdualr.supabase.co"; 
+    const SUPABASE_ANON_KEY = "sb_publishable_LClIA7ftAtkNv8cUuXI0GQ_gjKPb4F8";
+
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let isEditModeActive = false;
+
+    function fmtDate(d){return d?d.toISOString().slice(0,10):''}
+    function parseIso(s){if(!s) return null; const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
+    const TODAY=new Date(); TODAY.setHours(0,0,0,0);
+
+    let currentActiveView = 'gantt'; 
+    const STATUS_COLOR={
+      'Sin comenzar':'#64748b', 'En planificación':'#3b82f6', 'En curso':'#10b981',
+      'Pendiente':'#f59e0b', 'Pendiente revisión':'#f97316', 'Bloqueado':'#ef4444',
+      'Aprobado':'#6366f1', 'En producción':'#8b5cf6', 'Completado':'#059669', 'Cancelado':'#4b5563'
+    };
+    const STATUS_BG={
+      'Sin comenzar':'rgba(100,116,139,0.1)', 'En planificación':'rgba(59,130,246,0.1)', 'En curso':'rgba(16,185,129,0.1)',
+      'Pendiente':'rgba(245,158,11,0.1)', 'Pendiente revisión':'rgba(249,115,22,0.1)', 'Bloqueado':'rgba(239,68,68,0.1)',
+      'Aprobado':'rgba(99,102,241,0.1)', 'En producción':'rgba(139,92,246,0.1)', 'Completado':'rgba(5,150,105,0.1)', 'Cancelado':'rgba(75,85,99,0.1)'
+    };
+    const CAT_COLOR={
+      'Catálogos':'#3b82f6','Ferias':'#f97316','Web/Digital':'#6366f1',
+      'Shootings':'#10b981','Eventos':'#eab308','Branding':'#ec4899','default':'#6b7280'
+    };
+
+    let TASKS=[];
+    let expanded={};
+    let editId=null;
+    let filteredTasks=[];
+
+    // GESTIÓN DEL SISTEMA DE SEGURIDAD (GATEKEEPER)
+    function verifyPassword() {
+      const input = document.getElementById('gatekeeper-input').value;
+      const errorMsg = document.getElementById('gatekeeper-error');
+      
+      if(input === CORRECT_PASSWORD) {
+        sessionStorage.setItem('gorfactory_auth', 'true');
+        unlockDashboard();
+      } else {
+        errorMsg.classList.remove('hidden');
+        document.getElementById('gatekeeper-input').value = '';
+      }
+    }
+
+    async function unlockDashboard() {
+      document.getElementById('gatekeeper-screen').classList.add('hidden');
+      document.getElementById('app-content').classList.remove('hidden');
+      
+      // Lanzar inicialización del planificador una vez desbloqueado de forma segura
+      lucide.createIcons();
+      await loadTasksFromCloud();
+      setupRealtime();
+      setTimeout(() => { goToday(); }, 350);
+    }
+
+    // ALTERNAR MODO DE EDICIÓN
+    function toggleEditMode() {
+      isEditModeActive = !isEditModeActive;
+      const btn = document.getElementById('btn-toggle-mode');
+      const icon = document.getElementById('icon-mode');
+      const text = document.getElementById('text-mode');
+      const btnAddTask = document.getElementById('btn-add-task');
+
+      if (isEditModeActive) {
+        btn.className = "px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-400";
+        icon.setAttribute('data-lucide', 'lock-open');
+        text.textContent = "Modo Edición";
+        btnAddTask.removeAttribute('disabled');
+        btnAddTask.className = "px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold tracking-wide shadow-lg shadow-blue-600/10 transition-all flex items-center space-x-1.5 cursor-pointer opacity-100";
+      } else {
+        btn.className = "px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400";
+        icon.setAttribute('data-lucide', 'lock');
+        text.textContent = "Modo Visualización";
+        btnAddTask.setAttribute('disabled', 'true');
+        btnAddTask.className = "px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5";
+      }
+      lucide.createIcons();
+    }
+
+    async function loadTasksFromCloud() {
+      try {
+        const { data, error } = await supabaseClient.from('tareas').select('*').order('proj', { ascending: true });
+        if (error) throw error;
+        
+        if (data) {
+          TASKS = data.map(t => ({
+            id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
+            start: t.start_date ? new Date(t.start_date) : null,
+            end: t.end_date ? new Date(t.end_date) : null,
+            status: t.status || 'Sin comenzar', prio: t.prio || 'Media', cat: t.cat || 'Catálogos'
+          }));
+        }
+      } catch (err) {
+        console.error("Aviso controlado: Conexión con Supabase.", err);
+      }
+
+      TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
+      applyFilters();
+    }
+
+    function setupRealtime() {
+      try {
+        supabaseClient.channel('realtime-tasks')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'tareas' }, () => {
+            loadTasksFromCloud();
+          })
+          .subscribe();
+      } catch (e) {
+        console.log("Realtime reintentando...");
+      }
+    }
+
+    function buildProjects(tasks){
+      const pm={};
+      tasks.forEach(t=>{
+        if(!pm[t.proj])pm[t.proj]={name:t.proj,cat:t.cat,tasks:[]};
+        pm[t.proj].tasks.push(t);
+      });
+      return Object.values(pm);
+    }
+
+    function switchView(viewName) {
+      currentActiveView = viewName;
+      const dView = document.getElementById('view-dashboard-container');
+      const gView = document.getElementById('view-gantt-container');
+      const nDash = document.getElementById('nav-dashboard');
+      const nGantt = document.getElementById('nav-gantt');
+
+      if(viewName === 'dashboard') {
+        dView.classList.remove('hidden');
+        gView.classList.add('hidden');
+        nDash.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
+        nGantt.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text transition-all font-medium text-xs";
+        renderDashboard();
+      } else {
+        gView.classList.remove('hidden');
+        dView.classList.add('hidden');
+        nGantt.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
+        nDash.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text transition-all font-medium text-xs";
+        render();
+      }
+    }
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      if(html.classList.contains('dark')) {
+        html.classList.remove('dark'); html.classList.add('light');
+      } else {
+        html.classList.remove('light'); html.classList.add('dark');
+      }
+      if(currentActiveView === 'gantt') render(); else renderDashboard();
+    }
+
+    function applyFilters() {
+      const cat = document.getElementById('filter-cat').value;
+      const st = document.getElementById('filter-status').value;
+      
+      filteredTasks = TASKS.filter(t=>{
+        if(cat && t.cat !== cat) return false;
+        if(st && t.status !== st) return false;
+        return true;
+      });
+
+      updateStats();
+      renderSidebarCategories();
+      if(currentActiveView === 'gantt') render(); else renderDashboard();
+    }
+
+    function updateStats(){
+      const projs=[...new Set(filteredTasks.map(t=>t.proj))];
+      const active=projs.filter(p=>filteredTasks.some(t=>t.proj===p&&(t.status==='En curso'||t.status==='En planificación'))).length;
+      const blocked=filteredTasks.filter(t=>t.status==='Bloqueado').length;
+      const done=filteredTasks.filter(t=>t.status==='Completado').length;
+      const overdue=filteredTasks.filter(t=>t.end && t.end<TODAY && t.status!=='Completado' && t.status!=='Cancelado').length;
+      
+      document.getElementById('s-active').textContent=active;
+      document.getElementById('s-tasks').textContent=filteredTasks.length;
+      document.getElementById('s-blocked').textContent=blocked;
+      document.getElementById('s-done').textContent=done;
+      document.getElementById('s-overdue').textContent=overdue;
+    }
+
+    function renderSidebarCategories() {
+      const counts = {};
+      TASKS.forEach(t => { counts[t.cat] = (counts[t.cat] || 0) + 1; });
+      const container = document.getElementById('sidebar-categories');
+      if(!container) return;
+      container.innerHTML = '';
+      
+      Object.keys(CAT_COLOR).forEach(c => {
+        if(c==='default') return;
+        const n = counts[c] || 0;
+        const col = CAT_COLOR[c];
+        container.innerHTML += `
+          <div class="flex items-center justify-between px-3 py-1.5 text-xs theme-text-muted">
+            <div class="flex items-center space-x-2">
+              <span class="w-2 h-2 rounded-full" style="background:${col}"></span>
+              <span>${c}</span>
+            </div>
+            <span class="text-[10px] font-mono theme-sidebar theme-text-muted px-1.5 py-0.2 rounded border border-gray-300 dark:border-slate-700">${n}</span>
+          </div>`;
+      });
+    }
+
+    const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    function buildCalendar(){
+      const start=new Date(2026,0,1); const end=new Date(2026,11,31); const days=[]; let cur=new Date(start);
+      while(cur<=end){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
+      return{start,end,days};
+    }
+    const CAL=buildCalendar(); const DAY_W=32;
+
+    function dayOffset(d){
+      if(!d)return null;
+      const diff=Math.round((d-CAL.start)/(1000*60*60*24));
+      return diff>=0?diff:null;
+    }
+
+    function getISOWeek(d){
+      const tmp=new Date(d); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+3-(tmp.getDay()+6)%7);
+      const w1=new Date(tmp.getFullYear(),0,4); return 1+Math.round(((tmp-w1)/86400000-3+(w1.getDay()+6)%7)/7);
+    }
+
+    function syncScroll(el){
+      const sbRows = document.getElementById('sb-rows');
+      if(sbRows) sbRows.scrollTop = el.scrollTop;
+    }
+
+    function render(){
+      const projs=buildProjects(filteredTasks);
+      const sbRows=document.getElementById('sb-rows'); const tlInner=document.getElementById('tl-inner');
+      if(!sbRows || !tlInner) return;
+      sbRows.innerHTML=''; tlInner.innerHTML='';
+      const totalW=CAL.days.length*DAY_W;
+
+      let monthHtml='<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
+      let m=-1,mCount=0;
+      CAL.days.forEach((d)=>{
+        if(d.getMonth()!==m){
+          if(m>=0)monthHtml+=`<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${mCount*DAY_W}px">${MONTHS_ES[m]} 2026</div>`;
+          m=d.getMonth();mCount=1;
+        }else{mCount++;}
+      });
+      monthHtml+=`<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${mCount*DAY_W}px">${MONTHS_ES[m]} 2026</div></div>`;
+
+      let wkHtml='<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
+      let wk=-1,wkCount=0;
+      CAL.days.forEach((d)=>{
+        const w=getISOWeek(d);
+        if(w!==wk){
+          if(wk>=0)wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div>`;
+          wk=w;wkCount=1;
+        }else{wkCount++;}
+      });
+      wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
+
+      const rowsDiv=document.createElement('div');
+      rowsDiv.style.cssText='position:relative;width:'+totalW+'px;';
+
+      const todayOff=dayOffset(TODAY);
+      if(todayOff!==null&&todayOff<CAL.days.length){
+        const line=document.createElement('div'); line.className='absolute top-0 w-[1.5px] z-20 pointer-events-none opacity-50';
+        line.style.cssText=`left:${todayOff*DAY_W+15}px;height:${(projs.reduce((a,p)=>a+1+(expanded[p.name]?p.tasks.length:0),0))*44}px;background:#3b82f6`;
+        rowsDiv.appendChild(line);
+      }
+
+      projs.forEach(proj=>{
+        const isOpen=expanded[proj.name]!==false; const catColor=CAT_COLOR[proj.cat]||CAT_COLOR.default;
+        
+        const sbProj=document.createElement('div'); sbProj.className='flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
+        sbProj.style.backgroundColor = 'var(--bg-sidebar)';
+        sbProj.innerHTML=`<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2">${proj.name}</span>`;
+        sbProj.onclick=()=>{expanded[proj.name]=!isOpen;render();}; sbRows.appendChild(sbProj);
+
+        const gProj=document.createElement('div'); gProj.className='flex h-11 border-b theme-border'; gProj.style.width=totalW+'px'; gProj.style.backgroundColor = 'var(--bg-main)';
+        CAL.days.forEach((d)=>{
+          const cell=document.createElement('div'); cell.className='shrink-0 h-full border-r theme-border opacity-30'+(d.getDay()===0||d.getDay()===6?' bg-gray-200 dark:bg-slate-900':''); cell.style.width=DAY_W+'px'; gProj.appendChild(cell);
+        });
+        rowsDiv.appendChild(gProj);
+
+        if(isOpen){
+          proj.tasks.forEach(task=>{
+            const sbTask=document.createElement('div'); sbTask.className='flex items-center justify-between pl-8 pr-4 h-11 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 border-b theme-border transition theme-text-muted text-xs';
+            const sc=STATUS_COLOR[task.status]||'#9ca3af'; const sb=STATUS_BG[task.status]||'rgba(0,0,0,0.1)';
+            const isOv=task.end&&task.end<TODAY&&task.status!=='Completado'&&task.status!=='Cancelado';
+            
+            sbTask.innerHTML=`
+              <span class="truncate pr-2 theme-text font-medium" title="${task.task}">${task.task}</span>
+              <div class="flex items-center space-x-1.5 shrink-0">
+                <span class="text-[9px] theme-text-muted opacity-80 truncate max-w-[55px] font-mono">${task.resp}</span>
+                <span class="text-[9px] px-1.5 py-0.2 rounded font-medium shadow-sm" style="color:${sc};background:${sb};border:0.5px solid ${sc}44">${task.status}</span>
+              </div>`;
+            sbTask.onclick=()=>openEdit(task.id);
+            sbRows.appendChild(sbTask);
+
+            const gTask=document.createElement('div'); gTask.className='flex h-11 border-b theme-border opacity-80 relative'; gTask.style.width=totalW+'px';
+            CAL.days.forEach((d)=>{
+              const cell=document.createElement('div'); cell.className='shrink-0 h-full border-r theme-border opacity-20'+(d.getDay()===0||d.getDay()===6?' bg-gray-100 dark:bg-slate-900/40':''); cell.style.width=DAY_W+'px'; gTask.appendChild(cell);
+            });
+
+            if(task.start&&task.end){
+              const s=dayOffset(task.start); const e=dayOffset(task.end);
+              if(s!==null&&e!==null&&s<CAL.days.length&&e>=0){
+                const cs=Math.max(0,s); const ce=Math.min(CAL.days.length-1,e);
+                const bar=document.createElement('div'); bar.className='absolute h-4 rounded cursor-pointer transition-all hover:brightness-110 z-10 flex items-center px-2 shadow-sm border border-black/10';
+                const barColor=isOv?'#ef4444':sc;
+                bar.style.cssText=`left:${cs*DAY_W+2}px;width:${(ce-cs+1)*DAY_W-4}px;background:${barColor};top:13px`;
+                bar.innerHTML=`<span class="text-[9px] font-bold text-white uppercase truncate">${task.task}</span>`;
+                bar.title=`${task.task} [${task.resp}]`;
+                bar.onclick=()=>openEdit(task.id);
+                gTask.appendChild(bar);
+              }
+            }
+            rowsDiv.appendChild(gTask);
+          });
+        }
+      });
+
+      tlInner.innerHTML=monthHtml+wkHtml; tlInner.appendChild(rowsDiv);
+      lucide.createIcons();
+    }
+
+    function renderDashboard() {
+      const pBars = document.getElementById('dashboard-progress-bars');
+      const dList = document.getElementById('dashboard-deadlines-list');
+      if(!pBars || !dList) return;
+      pBars.innerHTML = ''; dList.innerHTML = '';
+
+      const projs = buildProjects(filteredTasks);
+      
+      let wip=0, review=0, plan=0, backlog=0;
+      filteredTasks.forEach(t=>{
+        if(t.status==='En curso') wip++;
+        else if(t.status==='Pendiente revisión') review++;
+        else if(t.status==='En planificación') plan++;
+        else if(t.status==='Sin comenzar') backlog++;
+      });
+      document.getElementById('dash-c-wip').textContent=wip;
+      document.getElementById('dash-c-review').textContent=review;
+      document.getElementById('dash-c-plan').textContent=plan;
+      document.getElementById('dash-c-backlog').textContent=backlog;
+
+      projs.forEach(p=>{
+        const total = p.tasks.length;
+        const done = p.tasks.filter(t=>t.status==='Completado').length;
+        const pct = total>0 ? Math.round((done/total)*100) : 0;
+        const col = CAT_COLOR[p.cat] || CAT_COLOR.default;
+
+        pBars.innerHTML += `
+          <div class="space-y-1 text-xs">
+            <div class="flex items-center justify-between">
+              <span class="font-medium theme-text">${p.name}</span>
+              <span class="font-mono theme-text-muted">${done}/${total} (${pct}%)</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%;background:${col}"></div>
+            </div>
+          </div>`;
+      });
+
+      const alerts = filteredTasks.filter(t=>t.end && t.status!=='Completado' && t.status!=='Cancelado')
+                                  .sort((a,b)=>a.end-b.end);
+      
+      if(alerts.length===0){
+        dList.innerHTML = `<p class="theme-text-muted text-center py-6 text-xs italic">No hay alertas de vencimiento.</p>`;
+      }else{
+        alerts.forEach(t=>{
+          const diff = Math.round((t.end-TODAY)/(1000*60*60*24));
+          let cClass = "theme-text-muted border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40";
+          if(diff<0) cClass="bg-red-500/5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/40";
+          else if(diff<=7) cClass="bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40";
+
+          dList.innerHTML += `
+            <div class="p-2 rounded-lg border flex flex-col space-y-0.5 text-xs ${cClass}">
+              <div class="flex justify-between font-medium">
+                <span class="truncate pr-1 theme-text">${t.task}</span>
+                <span class="shrink-0 font-mono text-[10px]">${diff<0?'Vencido':(diff===0?'Hoy':`en ${diff}d`)}</span>
+              </div>
+              <span class="text-[10px] theme-text-muted opacity-80 truncate">${t.proj} · ${t.resp}</span>
+            </div>`;
+        });
+      }
+    }
+
+    function goToday(){
+      const off=dayOffset(TODAY); if(off===null)return;
+      const scrollEl = document.getElementById('tl-scroll');
+      if(scrollEl) scrollEl.scrollLeft=Math.max(0,off*DAY_W-120);
+    }
+
+    function showAddModal(){
+      if(!isEditModeActive) return;
+
+      editId=null;
+      document.getElementById('modal-title').textContent='Nueva Operación Estratégica';
+      document.getElementById('m-proj').value=''; document.getElementById('m-task').value='';
+      document.getElementById('m-resp').value=''; document.getElementById('m-start').value=fmtDate(TODAY);
+      document.getElementById('m-end').value=fmtDate(TODAY); document.getElementById('m-status').value='Sin comenzar';
+      document.getElementById('m-prio').value='Media'; document.getElementById('m-cat').value='Catálogos';
+      document.getElementById('btn-delete').classList.add('hidden');
+      
+      toggleModalInputs(false);
+      document.getElementById('btn-modal-save').classList.remove('hidden');
+
+      const ov = document.getElementById('modal-overlay');
+      ov.classList.remove('hidden'); ov.classList.add('flex');
+      setTimeout(()=>{ ov.classList.add('opacity-100'); document.getElementById('modal').classList.remove('scale-95'); },20);
+    }
+
+    function openEdit(id){
+      const t=TASKS.find(x=>x.id===id); if(!t)return;
+      editId=id;
+      
+      document.getElementById('m-proj').value=t.proj; document.getElementById('m-task').value=t.task;
+      document.getElementById('m-resp').value=t.resp; document.getElementById('m-start').value=fmtDate(t.start);
+      document.getElementById('m-end').value=fmtDate(t.end); document.getElementById('m-status').value=t.status;
+      document.getElementById('m-prio').value=t.prio; document.getElementById('m-cat').value=t.cat;
+      
+      if (isEditModeActive) {
+        document.getElementById('modal-title').textContent='Modificar Planificación';
+        document.getElementById('btn-delete').classList.remove('hidden');
+        document.getElementById('btn-modal-save').classList.remove('hidden');
+        document.getElementById('btn-modal-cancel').textContent = "Cancelar";
+        toggleModalInputs(false);
+      } else {
+        document.getElementById('modal-title').textContent='Detalles de la Planificación (Solo Lectura)';
+        document.getElementById('btn-delete').classList.add('hidden');
+        document.getElementById('btn-modal-save').classList.add('hidden');
+        document.getElementById('btn-modal-cancel').textContent = "Cerrar";
+        toggleModalInputs(true);
+      }
+      
+      const ov = document.getElementById('modal-overlay');
+      ov.classList.remove('hidden'); ov.classList.add('flex');
+      setTimeout(()=>{ ov.classList.add('opacity-100'); document.getElementById('modal').classList.remove('scale-95'); },20);
+    }
+
+    function toggleModalInputs(disable) {
+      const inputs = ['m-proj', 'm-task', 'm-resp', 'm-cat', 'm-start', 'm-end', 'm-status', 'm-prio'];
+      inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if(el) {
+          if(disable) el.setAttribute('disabled', 'true');
+          else el.removeAttribute('disabled');
+        }
+      });
+    }
+
+    function closeModal(e){
+      if(e && e.target!==document.getElementById('modal-overlay'))return;
+      const ov = document.getElementById('modal-overlay');
+      if(!ov) return;
+      ov.classList.remove('opacity-100'); document.getElementById('modal').classList.add('scale-95');
+      setTimeout(()=>{ ov.classList.remove('flex'); ov.classList.add('hidden'); },200);
+    }
+
+    async function saveModal(){
+      if(!isEditModeActive) return;
+
+      const proj=document.getElementById('m-proj').value.trim();
+      const task=document.getElementById('m-task').value.trim();
+      if(!proj||!task) return;
+
+      const payload = {
+        proj, task,
+        resp: document.getElementById('m-resp').value.trim() || '—',
+        start_date: document.getElementById('m-start').value || null,
+        end_date: document.getElementById('m-end').value || null,
+        status: document.getElementById('m-status').value,
+        prio: document.getElementById('m-prio').value,
+        cat: document.getElementById('m-cat').value
+      };
+
+      try {
+        if(editId){
+          await supabaseClient.from('tareas').update(payload).eq('id', editId);
+        }else{
+          await supabaseClient.from('tareas').insert([payload]);
+        }
+      } catch (e) {
+        console.error("Error guardando en Supabase:", e);
+      }
+      
+      closeModal();
+      await loadTasksFromCloud();
+    }
+
+    async function deleteTask(){
+      if(!isEditModeActive || !editId) return;
+      if(confirm('¿Seguro que deseas eliminar esta tarea de la base de datos de la nube?')){
+        try {
+          await supabaseClient.from('tareas').delete().eq('id', editId);
+        } catch (e) {
+          console.error(e);
+        }
+        closeModal();
+        await loadTasksFromCloud();
+      }
+    }
+
+    // CONTROL DE FLUJO DE ARRANQUE CON SEGURIDAD EXTRA
+    (function init() {
+      const isAuth = sessionStorage.getItem('gorfactory_auth');
+      if(isAuth === 'true') {
+        unlockDashboard();
+      } else {
+        // Dejar visible la pantalla de login únicamente
+        document.getElementById('gatekeeper-screen').classList.remove('hidden');
+        document.getElementById('gatekeeper-input').focus();
+      }
+    })();
+  </script>
+</body>
+</html>
