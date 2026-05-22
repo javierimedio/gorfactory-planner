@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Planificador de tareas de marketing | Gor Factory</title>
+  <title>Gor Factory — Gantt Marketing Planner</title>
   <link rel="icon" href="https://gorfactory.com/wp-content/uploads/2015/06/iconRoly.ico" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -101,7 +101,7 @@
         </div>
         <div>
           <h1 class="text-lg font-bold tracking-tight theme-text flex items-center gap-2">
-            PLANIFICADOR DE TAREAS DE MARKETING
+            PLANIFICADOR DE MARKETING GOR FACTORY
             <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">SUPABASE CLOUD v2.0</span>
           </h1>
           <p class="text-xs theme-text-muted">Panel corporativo de control y líneas de tiempo en tiempo real para campañas de Gor Factory.</p>
@@ -214,7 +214,7 @@
             <div id="sb-rows" class="overflow-y-auto max-h-[500px] no-scrollbar divide-y theme-border select-none"></div>
           </div>
 
-          <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto max-h-[556px] shrink-0 flex-1 relative">
+          <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto max-h-[532px] shrink-0 flex-1 relative">
             <div id="tl-inner" class="relative"></div>
           </div>
         </div>
@@ -565,7 +565,7 @@
       while(cur<=end){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
       return{start,end,days};
     }
-    const CAL=buildCalendar(); const DAY_W=32;
+    const CAL=buildCalendar(); const DAY_W=34;
 
     function dayOffset(d){
       if(!d)return null;
@@ -590,6 +590,7 @@
       sbRows.innerHTML=''; tlInner.innerHTML='';
       const totalW=CAL.days.length*DAY_W;
 
+      // ── FILA MES (sticky top-0, h-8 = 32px) ──────────────────────────────
       let monthHtml='<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
       let m=-1,mCount=0;
       CAL.days.forEach((d)=>{
@@ -600,6 +601,7 @@
       });
       monthHtml+=`<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${mCount*DAY_W}px">${MONTHS_ES[m]} 2026</div></div>`;
 
+      // ── FILA SEMANA (sticky top-8 = 32px, h-6 = 24px) ───────────────────
       let wkHtml='<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
       let wk=-1,wkCount=0;
       CAL.days.forEach((d)=>{
@@ -610,6 +612,23 @@
         }else{wkCount++;}
       });
       wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
+
+      // ── FILA DÍAS (sticky top-14 = 56px, h-6 = 24px) ───────────────────
+      // top-14 = 32px (mes) + 24px (semana) = 56px
+      const DAYS_ES=['D','L','M','X','J','V','S'];
+      let dayHtml='<div class="flex h-6 border-b theme-border sticky z-10" style="top:56px;width:'+totalW+'px; background-color: var(--bg-header);">';
+      CAL.days.forEach((d)=>{
+        const isWE = d.getDay()===0||d.getDay()===6;
+        const isToday = d.toDateString()===TODAY.toDateString();
+        const dayNum = d.getDate();
+        // Show day number; on Mondays (or 1st of month) show bold; weekends dimmer
+        const textColor = isToday
+          ? 'color:#3b82f6;font-weight:700;'
+          : isWE ? 'opacity:0.35;' : (dayNum===1?'font-weight:700;':'');
+        const bgColor = isToday ? 'background:rgba(59,130,246,0.08);' : isWE ? 'background:rgba(0,0,0,0.015);' : '';
+        dayHtml+=`<div class="shrink-0 h-full border-r theme-border flex items-center justify-center" style="width:${DAY_W}px;${bgColor}${textColor}"><span style="font-size:9px;line-height:1;font-family:monospace">${dayNum}</span></div>`;
+      });
+      dayHtml+='</div>';
 
       const rowsDiv=document.createElement('div');
       rowsDiv.style.cssText='position:relative;width:'+totalW+'px;';
@@ -673,7 +692,7 @@
         }
       });
 
-      tlInner.innerHTML=monthHtml+wkHtml; tlInner.appendChild(rowsDiv);
+      tlInner.innerHTML=monthHtml+wkHtml+dayHtml; tlInner.appendChild(rowsDiv);
       lucide.createIcons();
     }
 
