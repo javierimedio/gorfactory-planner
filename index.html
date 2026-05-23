@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es" class="light">
 <head>
@@ -80,13 +81,20 @@
       </div>
       <div class="space-y-1">
         <h2 class="text-base font-bold text-slate-800 dark:text-white uppercase tracking-wide">Acceso Restringido</h2>
-        <p class="text-xs text-slate-500 dark:text-slate-400">Introduce la clave del planificador estratégico.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400">Introduce tus credenciales corporativas para acceder.</p>
       </div>
-      <div class="space-y-3">
-        <input id="gatekeeper-input" type="password" placeholder="Contraseña de acceso" onkeydown="if(event.key==='Enter') verifyPassword()" class="w-full text-center px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700 font-mono">
-        <p id="gatekeeper-error" class="text-[11px] text-red-500 font-medium hidden">Contraseña incorrecta. Inténtalo de nuevo.</p>
-        <button onclick="verifyPassword()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider">
-          Ingresar al Panel
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1 ml-1">Email corporativo</label>
+          <input id="gatekeeper-email" type="email" placeholder="usuario@gorfactory.es" onkeydown="if(event.key==='Enter') document.getElementById('gatekeeper-input').focus()" class="w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700">
+        </div>
+        <div>
+          <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1 ml-1">Contraseña</label>
+          <input id="gatekeeper-input" type="password" placeholder="••••••••••" onkeydown="if(event.key==='Enter') verifyPassword()" class="w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700 font-mono">
+        </div>
+        <p id="gatekeeper-error" class="text-[11px] text-red-500 font-medium hidden text-center">Credenciales incorrectas. Inténtalo de nuevo.</p>
+        <button id="gatekeeper-btn" onclick="verifyPassword()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider flex items-center justify-center gap-2">
+          <span id="gatekeeper-btn-text">Ingresar al Panel</span>
         </button>
       </div>
     </div>
@@ -361,8 +369,7 @@
   </div>
 
   <script>
-    // CAMBIA AQUÍ LA CONTRASEÑA DE TU PANEL SI LO DESEAS
-    const CORRECT_PASSWORD = "GorFactory2026";
+    // Autenticación gestionada por Supabase Auth (sin contraseñas en el código fuente)
 
     // CONEXIÓN DIRECTA EN TIEMPO REAL A TU BASE DE DATOS EN LA NUBE SUPABASE
     const SUPABASE_URL = "https://dogdbpeiufecjbsdualr.supabase.co"; 
@@ -398,16 +405,40 @@
     let filteredTasks=[];
 
     // GESTIÓN DEL SISTEMA DE SEGURIDAD (GATEKEEPER)
-    function verifyPassword() {
-      const input = document.getElementById('gatekeeper-input').value;
+    async function verifyPassword() {
+      const email    = document.getElementById('gatekeeper-email').value.trim();
+      const password = document.getElementById('gatekeeper-input').value;
       const errorMsg = document.getElementById('gatekeeper-error');
-      
-      if(input === CORRECT_PASSWORD) {
-        sessionStorage.setItem('gorfactory_auth', 'true');
-        unlockDashboard();
-      } else {
+      const btn      = document.getElementById('gatekeeper-btn');
+      const btnText  = document.getElementById('gatekeeper-btn-text');
+
+      if (!email || !password) {
+        errorMsg.textContent = 'Introduce tu email y contraseña.';
         errorMsg.classList.remove('hidden');
-        document.getElementById('gatekeeper-input').value = '';
+        return;
+      }
+
+      btn.disabled = true;
+      btnText.textContent = 'Verificando...';
+      errorMsg.classList.add('hidden');
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+        if (error || !data.session) {
+          errorMsg.textContent = 'Credenciales incorrectas. Inténtalo de nuevo.';
+          errorMsg.classList.remove('hidden');
+          document.getElementById('gatekeeper-input').value = '';
+        } else {
+          sessionStorage.setItem('gorfactory_auth', 'true');
+          unlockDashboard();
+        }
+      } catch(err) {
+        errorMsg.textContent = 'Error de conexión. Inténtalo de nuevo.';
+        errorMsg.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btnText.textContent = 'Ingresar al Panel';
       }
     }
 
@@ -899,14 +930,14 @@
     }
 
     // CONTROL DE FLUJO DE ARRANQUE CON SEGURIDAD EXTRA
-    (function init() {
-      const isAuth = sessionStorage.getItem('gorfactory_auth');
-      if(isAuth === 'true') {
+    (async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        sessionStorage.setItem('gorfactory_auth', 'true');
         unlockDashboard();
       } else {
-        // Dejar visible la pantalla de login únicamente
         document.getElementById('gatekeeper-screen').classList.remove('hidden');
-        document.getElementById('gatekeeper-input').focus();
+        document.getElementById('gatekeeper-email').focus();
       }
     })();
   </script>
