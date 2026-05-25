@@ -69,6 +69,31 @@
       left: 0;
       z-index: 20;
     }
+
+    /* UPGRADE 3: En móvil, ocultar la columna del diagrama de Gantt */
+    @media (max-width: 767px) {
+      #tl-scroll {
+        display: none !important;
+      }
+      #view-gantt-container {
+        display: block !important;
+      }
+      #sb-rows {
+        max-height: calc(100vh - 300px) !important;
+      }
+      /* Ajustar el ancho del panel de nombres para ocupar todo en móvil */
+      #view-gantt-container > div:first-child {
+        width: 100% !important;
+      }
+    }
+
+    /* Botón contraer/expandir: animación del icono */
+    #btn-toggle-all-projs svg {
+      transition: transform 0.2s ease;
+    }
+    #btn-toggle-all-projs.all-collapsed svg {
+      transform: rotate(-90deg);
+    }
   </style>
 </head>
 <body class="p-4 md:p-8 font-sans antialiased">
@@ -223,12 +248,16 @@
         </div>
       </div>
 
-      <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm">
+      <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm" id="gantt-right-panel">
         
         <div id="view-gantt-container" class="flex divide-x theme-border">
           <div class="w-[300px] shrink-0 flex flex-col bg-opacity-60 z-30">
-            <div class="h-14 border-b theme-border flex items-center px-4 shrink-0" style="background-color: var(--bg-header)">
-              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase">Nombre del Proyecto / Tarea</span>
+            <div class="h-14 border-b theme-border flex items-center px-3 gap-2 shrink-0" style="background-color: var(--bg-header)">
+              <button id="btn-toggle-all-projs" onclick="toggleAllProjects()" title="Contraer / Expandir todos los proyectos"
+                class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors theme-text-muted shrink-0">
+                <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
+              </button>
+              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase leading-tight">Nombre del Proyecto / Tarea</span>
             </div>
             <div id="sb-rows" class="overflow-y-auto max-h-[500px] no-scrollbar divide-y theme-border select-none"></div>
           </div>
@@ -851,6 +880,24 @@
             </div>`;
         });
       }
+    }
+
+    function toggleAllProjects() {
+      const projs = buildProjects(filteredTasks);
+      const anyOpen = projs.some(p => expanded[p.name] !== false);
+      // Si alguno está abierto → contraer todos; si todos cerrados → expandir todos
+      projs.forEach(p => { expanded[p.name] = !anyOpen; });
+      const btn = document.getElementById('btn-toggle-all-projs');
+      if (btn) {
+        if (anyOpen) {
+          btn.classList.add('all-collapsed');
+          btn.title = 'Expandir todos los proyectos';
+        } else {
+          btn.classList.remove('all-collapsed');
+          btn.title = 'Contraer todos los proyectos';
+        }
+      }
+      render();
     }
 
     function goToday(){
