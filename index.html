@@ -69,31 +69,6 @@
       left: 0;
       z-index: 20;
     }
-
-    /* UPGRADE 3: En móvil, ocultar la columna del diagrama de Gantt */
-    @media (max-width: 767px) {
-      #tl-scroll {
-        display: none !important;
-      }
-      #view-gantt-container {
-        display: block !important;
-      }
-      #sb-rows {
-        max-height: calc(100vh - 300px) !important;
-      }
-      /* Ajustar el ancho del panel de nombres para ocupar todo en móvil */
-      #view-gantt-container > div:first-child {
-        width: 100% !important;
-      }
-    }
-
-    /* Botón contraer/expandir: animación del icono */
-    #btn-toggle-all-projs svg {
-      transition: transform 0.2s ease;
-    }
-    #btn-toggle-all-projs.all-collapsed svg {
-      transform: rotate(-90deg);
-    }
   </style>
 </head>
 <body class="p-4 md:p-8 font-sans antialiased">
@@ -248,16 +223,12 @@
         </div>
       </div>
 
-      <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm" id="gantt-right-panel">
+      <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm">
         
         <div id="view-gantt-container" class="flex divide-x theme-border">
           <div class="w-[300px] shrink-0 flex flex-col bg-opacity-60 z-30">
-            <div class="h-14 border-b theme-border flex items-center px-3 gap-2 shrink-0" style="background-color: var(--bg-header)">
-              <button id="btn-toggle-all-projs" onclick="toggleAllProjects()" title="Contraer / Expandir todos los proyectos"
-                class="p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors theme-text-muted shrink-0">
-                <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
-              </button>
-              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase leading-tight">Nombre del Proyecto / Tarea</span>
+            <div class="h-14 border-b theme-border flex items-center px-4 shrink-0" style="background-color: var(--bg-header)">
+              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase">Nombre del Proyecto / Tarea</span>
             </div>
             <div id="sb-rows" class="overflow-y-auto max-h-[500px] no-scrollbar divide-y theme-border select-none"></div>
           </div>
@@ -325,6 +296,10 @@
           <input id="m-proj" type="text" placeholder="Ej: Catálogo ROLY 2026" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
         </div>
         <div>
+          <label class="block theme-text-muted font-medium mb-1">Responsable del Proyecto</label>
+          <input id="m-proj-resp" type="text" placeholder="Ej: Javier I." class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+        </div>
+        <div>
           <label class="block theme-text-muted font-medium mb-1">Nombre de la Tarea u Operación</label>
           <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
         </div>
@@ -377,6 +352,10 @@
               <option value="Crítica">Crítica</option>
             </select>
           </div>
+        </div>
+        <div>
+          <label class="block theme-text-muted font-medium mb-1">Notas / Comentarios</label>
+          <textarea id="m-notes" rows="3" placeholder="Observaciones, enlaces, contexto adicional…" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs leading-relaxed"></textarea>
         </div>
       </div>
 
@@ -452,7 +431,6 @@
 
       try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-
         if (error || !data.session) {
           errorMsg.textContent = 'Credenciales incorrectas. Inténtalo de nuevo.';
           errorMsg.classList.remove('hidden');
@@ -513,9 +491,11 @@
         if (data) {
           TASKS = data.map(t => ({
             id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
+            proj_resp: t.proj_resp || '',
             start: t.start_date ? new Date(t.start_date) : null,
             end: t.end_date ? new Date(t.end_date) : null,
-            status: t.status || 'Sin comenzar', prio: t.prio || 'Media', cat: t.cat || 'Catálogos'
+            status: t.status || 'Sin comenzar', prio: t.prio || 'Media', cat: t.cat || 'Catálogos',
+            notes: t.notes || ''
           }));
         }
       } catch (err) {
@@ -542,7 +522,9 @@
     function buildProjects(tasks){
       const pm={};
       tasks.forEach(t=>{
-        if(!pm[t.proj])pm[t.proj]={name:t.proj,cat:t.cat,tasks:[]};
+        if(!pm[t.proj])pm[t.proj]={name:t.proj,cat:t.cat,proj_resp:t.proj_resp||'',tasks:[]};
+        // keep proj_resp if any task has it
+        if(t.proj_resp) pm[t.proj].proj_resp = t.proj_resp;
         pm[t.proj].tasks.push(t);
       });
       return Object.values(pm);
@@ -704,55 +686,14 @@
 
       let wkHtml='<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
       let wk=-1,wkCount=0;
-
       CAL.days.forEach((d)=>{
         const w=getISOWeek(d);
-
         if(w!==wk){
-          if(wk>=0){
-            wkHtml+=`
-              <div
-                class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0"
-                style="width:${wkCount*DAY_W}px"
-              >
-                S${wk}
-              </div>`;
-          }
-
-          wk=w;
-          wkCount=1;
-        }else{
-          wkCount++;
-        }
+          if(wk>=0)wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div>`;
+          wk=w;wkCount=1;
+        }else{wkCount++;}
       });
-
-      wkHtml+=`
-        <div
-          class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0"
-          style="width:${wkCount*DAY_W}px"
-        >
-          S${wk}
-        </div>
-      </div>`;
-
-      // FILA DE DÍAS
-      let dayHtml = '<div class="flex h-7 border-b theme-border sticky top-14 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
-
-      CAL.days.forEach((d)=>{
-        const isToday = d.toDateString() === TODAY.toDateString();
-
-        dayHtml += `
-          <div
-            class="border-r theme-border flex flex-col items-center justify-center shrink-0 text-[9px] font-medium transition-all
-            ${isToday ? 'bg-blue-500 text-white font-bold shadow-md' : 'theme-text-muted'}"
-            style="width:${DAY_W}px"
-          >
-            <span>${d.getDate()}</span>
-          </div>
-        `;
-      });
-
-      dayHtml += '</div>';
+      wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
 
       const rowsDiv=document.createElement('div');
       rowsDiv.style.cssText='position:relative;width:'+totalW+'px;';
@@ -769,7 +710,7 @@
         
         const sbProj=document.createElement('div'); sbProj.className='flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
         sbProj.style.backgroundColor = 'var(--bg-sidebar)';
-        sbProj.innerHTML=`<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2">${proj.name}</span>`;
+        sbProj.innerHTML=`<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${proj.name}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${proj.proj_resp}</span>`:''}`;
         sbProj.onclick=()=>{expanded[proj.name]=!isOpen;render();}; sbRows.appendChild(sbProj);
 
         const gProj=document.createElement('div'); gProj.className='flex h-11 border-b theme-border'; gProj.style.width=totalW+'px'; gProj.style.backgroundColor = 'var(--bg-main)';
@@ -816,7 +757,7 @@
         }
       });
 
-      tlInner.innerHTML = monthHtml + wkHtml + dayHtml; tlInner.appendChild(rowsDiv);
+      tlInner.innerHTML=monthHtml+wkHtml; tlInner.appendChild(rowsDiv);
       lucide.createIcons();
     }
 
@@ -882,24 +823,6 @@
       }
     }
 
-    function toggleAllProjects() {
-      const projs = buildProjects(filteredTasks);
-      const anyOpen = projs.some(p => expanded[p.name] !== false);
-      // Si alguno está abierto → contraer todos; si todos cerrados → expandir todos
-      projs.forEach(p => { expanded[p.name] = !anyOpen; });
-      const btn = document.getElementById('btn-toggle-all-projs');
-      if (btn) {
-        if (anyOpen) {
-          btn.classList.add('all-collapsed');
-          btn.title = 'Expandir todos los proyectos';
-        } else {
-          btn.classList.remove('all-collapsed');
-          btn.title = 'Contraer todos los proyectos';
-        }
-      }
-      render();
-    }
-
     function goToday(){
       const off=dayOffset(TODAY); if(off===null)return;
       const scrollEl = document.getElementById('tl-scroll');
@@ -915,6 +838,8 @@
       document.getElementById('m-resp').value=''; document.getElementById('m-start').value=fmtDate(TODAY);
       document.getElementById('m-end').value=fmtDate(TODAY); document.getElementById('m-status').value='Sin comenzar';
       document.getElementById('m-prio').value='Media'; document.getElementById('m-cat').value='Catálogos';
+      document.getElementById('m-proj-resp').value='';
+      document.getElementById('m-notes').value='';
       document.getElementById('btn-delete').classList.add('hidden');
       
       toggleModalInputs(false);
@@ -933,6 +858,8 @@
       document.getElementById('m-resp').value=t.resp; document.getElementById('m-start').value=fmtDate(t.start);
       document.getElementById('m-end').value=fmtDate(t.end); document.getElementById('m-status').value=t.status;
       document.getElementById('m-prio').value=t.prio; document.getElementById('m-cat').value=t.cat;
+      document.getElementById('m-proj-resp').value=t.proj_resp||'';
+      document.getElementById('m-notes').value=t.notes||'';
       
       if (isEditModeActive) {
         document.getElementById('modal-title').textContent='Modificar Planificación';
@@ -954,7 +881,7 @@
     }
 
     function toggleModalInputs(disable) {
-      const inputs = ['m-proj', 'm-task', 'm-resp', 'm-cat', 'm-start', 'm-end', 'm-status', 'm-prio'];
+      const inputs = ['m-proj', 'm-task', 'm-resp', 'm-proj-resp', 'm-cat', 'm-start', 'm-end', 'm-status', 'm-prio', 'm-notes'];
       inputs.forEach(id => {
         const el = document.getElementById(id);
         if(el) {
@@ -982,11 +909,13 @@
       const payload = {
         proj, task,
         resp: document.getElementById('m-resp').value.trim() || '—',
+        proj_resp: document.getElementById('m-proj-resp').value.trim() || null,
         start_date: document.getElementById('m-start').value || null,
         end_date: document.getElementById('m-end').value || null,
         status: document.getElementById('m-status').value,
         prio: document.getElementById('m-prio').value,
-        cat: document.getElementById('m-cat').value
+        cat: document.getElementById('m-cat').value,
+        notes: document.getElementById('m-notes').value.trim() || null
       };
 
       try {
