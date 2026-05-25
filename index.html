@@ -227,8 +227,11 @@
         
         <div id="view-gantt-container" class="flex divide-x theme-border">
           <div class="w-[300px] shrink-0 flex flex-col bg-opacity-60 z-30">
-            <div class="h-14 border-b theme-border flex items-center px-4 shrink-0" style="background-color: var(--bg-header)">
-              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase">Nombre del Proyecto / Tarea</span>
+            <div class="h-14 border-b theme-border flex items-center px-4 shrink-0 gap-2" style="background-color: var(--bg-header)">
+              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase flex-1">Nombre del Proyecto / Tarea</span>
+              <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos" class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all flex-shrink-0" id="btn-expand-all">
+                <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
+              </button>
             </div>
             <div id="sb-rows" class="overflow-y-auto max-h-[500px] no-scrollbar divide-y theme-border select-none"></div>
           </div>
@@ -665,6 +668,14 @@
     function syncScroll(el){
       const sbRows = document.getElementById('sb-rows');
       if(sbRows) sbRows.scrollTop = el.scrollTop;
+    }
+
+    let allExpanded = true;
+    function toggleAllExpanded() {
+      allExpanded = !allExpanded;
+      const projs = [...new Set(TASKS.map(t => t.proj))];
+      projs.forEach(p => { expanded[p] = allExpanded; });
+      render();
     }
 
     function render(){
