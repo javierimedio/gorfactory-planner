@@ -227,9 +227,9 @@
         
         <div id="view-gantt-container" class="flex divide-x theme-border">
           <div class="w-[300px] shrink-0 flex flex-col bg-opacity-60 z-30">
-            <div class="h-14 border-b theme-border flex items-center px-4 shrink-0 gap-2" style="background-color: var(--bg-header)">
+            <div class="h-14 border-b theme-border flex items-center px-4 gap-2 shrink-0" style="background-color: var(--bg-header)">
               <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase flex-1">Nombre del Proyecto / Tarea</span>
-              <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos" class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all flex-shrink-0" id="btn-expand-all">
+              <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos" class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shrink-0">
                 <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
               </button>
             </div>
@@ -652,7 +652,7 @@
       while(cur<=end){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
       return{start,end,days};
     }
-    const CAL=buildCalendar(); const DAY_W=32;
+    const CAL=buildCalendar(); const DAY_W=34;
 
     function dayOffset(d){
       if(!d)return null;
@@ -670,11 +670,11 @@
       if(sbRows) sbRows.scrollTop = el.scrollTop;
     }
 
-    let allExpanded = true;
-    function toggleAllExpanded() {
-      allExpanded = !allExpanded;
-      const projs = [...new Set(TASKS.map(t => t.proj))];
-      projs.forEach(p => { expanded[p] = allExpanded; });
+    let allExpanded=true;
+    function toggleAllExpanded(){
+      allExpanded=!allExpanded;
+      const projs=[...new Set(TASKS.map(t=>t.proj))];
+      projs.forEach(p=>{expanded[p]=allExpanded;});
       render();
     }
 
@@ -705,6 +705,18 @@
         }else{wkCount++;}
       });
       wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
+
+      // ── FILA DÍAS (sticky top: 32+24=56px, h-6=24px) ─────────────────────
+      let dayHtml='<div class="flex h-6 border-b theme-border sticky z-10" style="top:56px;width:'+totalW+'px; background-color: var(--bg-header);">';
+      CAL.days.forEach((d)=>{
+        const isWE=d.getDay()===0||d.getDay()===6;
+        const isTd=d.toDateString()===TODAY.toDateString();
+        const dayNum=d.getDate();
+        const txtStyle=isTd?'color:#3b82f6;font-weight:700;':isWE?'opacity:0.35;':(dayNum===1?'font-weight:700;':'');
+        const bgStyle=isTd?'background:rgba(59,130,246,0.08);':isWE?'background:rgba(0,0,0,0.015);':'';
+        dayHtml+=`<div class="shrink-0 h-full border-r theme-border flex items-center justify-center" style="width:${DAY_W}px;${bgStyle}${txtStyle}"><span style="font-size:9px;line-height:1;font-family:monospace">${dayNum}</span></div>`;
+      });
+      dayHtml+='</div>';
 
       const rowsDiv=document.createElement('div');
       rowsDiv.style.cssText='position:relative;width:'+totalW+'px;';
@@ -768,7 +780,7 @@
         }
       });
 
-      tlInner.innerHTML=monthHtml+wkHtml; tlInner.appendChild(rowsDiv);
+      tlInner.innerHTML=monthHtml+wkHtml+dayHtml; tlInner.appendChild(rowsDiv);
       lucide.createIcons();
     }
 
