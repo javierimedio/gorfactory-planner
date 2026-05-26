@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Planificador de tareas | Gor Factory</title>
+  <meta name="description" content="Panel corporativo de planificación y diagrama de Gantt para el departamento de marketing de Gor Factory — ROLY · ROLY WRK · STAMINA">
   <link rel="icon" href="https://gorfactory.com/wp-content/uploads/2015/06/iconRoly.ico" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -432,6 +433,17 @@
 
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Sanitizador XSS: escapa caracteres especiales antes de inyectar datos de BD en innerHTML
+    function esc(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     let isEditModeActive = false;
 
     function fmtDate(d){return d?d.toISOString().slice(0,10):''}
@@ -556,7 +568,12 @@ initResizeHandle();
           }));
         }
       } catch (err) {
-        console.error("Aviso controlado: Conexión con Supabase.", err);
+        console.warn("Error de conexión con Supabase:", err?.message || err);
+        // Mostrar indicación visual si la carga inicial falla
+        const sbRows = document.getElementById('sb-rows');
+        if (sbRows && TASKS.length === 0) {
+          sbRows.innerHTML = '<div class="p-4 text-xs text-red-500 text-center">No se pudieron cargar las tareas. Comprueba la conexión.</div>';
+        }
       }
 
       TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
@@ -564,15 +581,16 @@ initResizeHandle();
       applyFilters();
     }
 
+    let _realtimeChannel = null;
     function setupRealtime() {
       try {
-        supabaseClient.channel('realtime-tasks')
+        _realtimeChannel = supabaseClient.channel('realtime-tasks')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'tareas' }, () => {
             loadTasksFromCloud();
           })
           .subscribe();
       } catch (e) {
-        console.log("Realtime reintentando...");
+        // Realtime no disponible, la app sigue funcionando en modo lectura
       }
     }
 
@@ -863,7 +881,7 @@ function clearFilters() {
         
         const sbProj=document.createElement('div'); sbProj.className='flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
         sbProj.style.backgroundColor = 'var(--bg-sidebar)';
-        sbProj.innerHTML=`<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${proj.name}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${proj.proj_resp}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
+        sbProj.innerHTML=`<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
         sbProj.onclick=()=>{expanded[proj.name]=!isOpen;render();}; sbRows.appendChild(sbProj);
 
         const gProj=document.createElement('div'); gProj.className='flex h-11 border-b theme-border'; gProj.style.width=totalW+'px'; gProj.style.backgroundColor = 'var(--bg-main)';
@@ -882,15 +900,15 @@ function clearFilters() {
             const fmtShort = d => d ? (d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')) : '—';
 
             sbTask.innerHTML=`
-              <span class="truncate pr-2 theme-text font-medium flex-1" title="${task.task}">${task.task}</span>
+              <span class="truncate pr-2 theme-text font-medium flex-1" title="${esc(task.task)}">${esc(task.task)}</span>
 
               <span class="w-[90px] text-center shrink-0 text-[9px] theme-text-muted opacity-80 truncate font-mono px-1">
-                ${task.resp}
+                ${esc(task.resp)}
               </span>
 
               <div class="w-[110px] flex justify-center shrink-0 px-1">
                 <span class="text-[9px] px-1.5 py-0.5 rounded font-medium shadow-sm truncate max-w-full" style="color:${sc};background:${sb};border:0.5px solid ${sc}44">
-                  ${task.status}
+                  ${esc(task.status)}
                 </span>
               </div>
 
@@ -913,7 +931,7 @@ function clearFilters() {
                 const barColor=isOv?'#ef4444':sc;
                 bar.style.cssText=`left:${cs*DAY_W+2}px;width:${(ce-cs+1)*DAY_W-4}px;background:${barColor};top:13px`;
                 bar.innerHTML=`<span class="text-[9px] font-bold text-white uppercase truncate">${task.task}</span>`;
-                bar.title=`${task.task} [${task.resp}]`;
+                bar.title=`${esc(task.task)} [${esc(task.resp)}]`;
                 bar.onclick=()=>openEdit(task.id);
                 gTask.appendChild(bar);
               }
@@ -1138,7 +1156,7 @@ function initResizeHandle() {
           await supabaseClient.from('tareas').insert([payload]);
         }
       } catch (e) {
-        console.error("Error guardando en Supabase:", e);
+        alert('Error al guardar en la base de datos. Comprueba tu conexión e inténtalo de nuevo.');
       }
       
       closeModal();
@@ -1151,7 +1169,7 @@ function initResizeHandle() {
         try {
           await supabaseClient.from('tareas').delete().eq('id', editId);
         } catch (e) {
-          console.error(e);
+          alert('Error al eliminar la tarea. Comprueba tu conexión e inténtalo de nuevo.');
         }
         closeModal();
         await loadTasksFromCloud();
