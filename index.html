@@ -534,19 +534,26 @@ initResizeHandle();
 
     // VISUALIZAR TAREAS VENCIDAS
 
-function showOverdue() {
+function showOverdue(event) {
 
   showOnlyOverdue = !showOnlyOverdue;
 
   const btn = event.currentTarget;
 
   if (showOnlyOverdue) {
-    btn.classList.remove('bg-red-500');
-    btn.classList.add('bg-red-700');
-  } else {
-    btn.classList.remove('bg-red-700');
-    btn.classList.add('bg-red-500');
-  }
+
+  btn.classList.remove('bg-red-500');
+  btn.classList.add('bg-red-700');
+
+  btn.classList.add('ring-2', 'ring-red-300');
+
+} else {
+
+  btn.classList.remove('bg-red-700');
+  btn.classList.add('bg-red-500');
+
+  btn.classList.remove('ring-2', 'ring-red-300');
+}
 
   applyFilters();
 }
@@ -756,6 +763,16 @@ function clearFilters() {
   document.getElementById('filter-proj').value = '';
   document.getElementById('filter-resp').value = '';
   document.getElementById('filter-task').value = '';
+
+  showOnlyOverdue = false;
+
+  const overdueBtn = document.querySelector('button[onclick="showOverdue(event)"]');
+
+  if (overdueBtn) {
+    overdueBtn.classList.remove('bg-red-700');
+    overdueBtn.classList.add('bg-red-500');
+    overdueBtn.classList.remove('ring-2', 'ring-red-300');
+  }
 
   applyFilters();
 }
