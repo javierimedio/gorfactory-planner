@@ -233,20 +233,34 @@
         
         <div id="view-gantt-container" class="flex divide-x theme-border">
           <div class="w-[620px] shrink-0 flex flex-col bg-opacity-60 z-30">
-            <div class="h-14 border-b theme-border flex items-center px-4 gap-2 shrink-0" style="background-color: var(--bg-header)">
-              <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase flex-1">Nombre del Proyecto / Tarea</span>
-              <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[90px] text-center shrink-0">Responsable</span>
-              <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[110px] text-center shrink-0">Estado</span>
-              <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0">Inicio</span>
-              <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0">Fin</span>
-              <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos" class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shrink-0">
-                <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
-              </button>
+            <div class="border-b theme-border flex flex-col shrink-0" style="height:80px; background-color: var(--bg-header)">
+              <!-- Fila 1: alineada con fila Mes (32px) -->
+              <div class="flex items-center px-4 gap-2" style="height:32px; border-bottom:1px solid var(--border-color)">
+                <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase flex-1">Nombre del Proyecto</span>
+                <span class="w-[90px] shrink-0"></span>
+                <span class="w-[110px] shrink-0"></span>
+                <span class="w-[72px] shrink-0"></span>
+                <span class="w-[72px] shrink-0"></span>
+                <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos" class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shrink-0">
+                  <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <!-- Fila 2: alineada con fila Semana (24px) -->
+              <div class="flex items-center px-4 gap-2" style="height:24px; border-bottom:1px solid var(--border-color)">
+                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase flex-1">Tarea</span>
+                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[90px] text-center shrink-0">Responsable</span>
+                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[110px] text-center shrink-0">Estado</span>
+                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0">Inicio</span>
+                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0">Fin</span>
+                <span class="w-[28px] shrink-0"></span>
+              </div>
+              <!-- Fila 3: alineada con fila Días (24px) — vacía -->
+              <div style="height:24px"></div>
             </div>
-            <div id="sb-rows" class="overflow-y-auto max-h-[500px] no-scrollbar divide-y theme-border select-none"></div>
+            <div id="sb-rows" class="overflow-y-auto max-h-[452px] no-scrollbar divide-y theme-border select-none"></div>
           </div>
 
-          <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto max-h-[556px] shrink-0 flex-1 relative">
+          <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto max-h-[532px] shrink-0 flex-1 relative">
             <div id="tl-inner" class="relative"></div>
           </div>
         </div>
