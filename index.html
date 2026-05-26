@@ -128,6 +128,9 @@
         <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
           Hoy
         </button>
+		<button onclick="showOverdue(event)" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-all">
+		Vencidas
+		</button>		
         <button id="btn-add-task" onclick="showAddModal()" class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>Nueva Tarea</span>
@@ -470,6 +473,7 @@
     let expanded={};
     let editId=null;
     let filteredTasks=[];
+	let showOnlyOverdue = false;
 
 let currentSort = {
   field: null,
@@ -527,6 +531,25 @@ applyGanttHeight();
 initResizeHandle();
       setTimeout(() => { goToday(); }, 350);
     }
+
+    // VISUALIZAR TAREAS VENCIDAS
+
+function showOverdue() {
+
+  showOnlyOverdue = !showOnlyOverdue;
+
+  const btn = event.currentTarget;
+
+  if (showOnlyOverdue) {
+    btn.classList.remove('bg-red-500');
+    btn.classList.add('bg-red-700');
+  } else {
+    btn.classList.remove('bg-red-700');
+    btn.classList.add('bg-red-500');
+  }
+
+  applyFilters();
+}
 
     // ALTERNAR MODO DE EDICIÓN
     function toggleEditMode() {
@@ -745,13 +768,26 @@ function clearFilters() {
       const task = document.getElementById('filter-task').value;
 
       filteredTasks = TASKS.filter(t => {
-        if(cat  && t.cat    !== cat)  return false;
-        if(st   && t.status !== st)   return false;
-        if(proj && t.proj   !== proj) return false;
-        if(resp && t.resp   !== resp) return false;
-        if(task && t.task   !== task) return false;
-        return true;
-      });
+
+  if(cat  && t.cat    !== cat)  return false;
+  if(st   && t.status !== st)   return false;
+  if(proj && t.proj   !== proj) return false;
+  if(resp && t.resp   !== resp) return false;
+  if(task && t.task   !== task) return false;
+
+  if (showOnlyOverdue) {
+
+    const isOverdue =
+      t.end &&
+      t.end < TODAY &&
+      t.status !== 'Completado' &&
+      t.status !== 'Cancelado';
+
+    if (!isOverdue) return false;
+  }
+
+  return true;
+});
 
       updateStats();
       renderSidebarCategories();
