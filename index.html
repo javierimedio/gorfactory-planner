@@ -128,6 +128,9 @@
         <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
           Hoy
         </button>
+		<button onclick="toggleCompleted(event)"class="px-3 py-1.5 rounded-lg bg-green-400 hover:bg-green-500 text-white text-xs font-semibold transition-all">
+		Completadas
+		</button>
 		<button onclick="showOverdue(event)" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-all">
 		Vencidas
 		</button>		
@@ -215,31 +218,31 @@
           <div class="grid grid-cols-2 gap-2">
             <div class="theme-sidebar p-2 rounded-lg border text-center">
               <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Tareas</span>
+              <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
             </div>
             <div class="theme-sidebar p-2 rounded-lg border text-center">
               <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Activos</span>
+              <span class="text-[10px] theme-text-muted font-medium">Activas</span>
             </div>
             <div class="theme-sidebar p-2 rounded-lg border text-center">
               <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Bloqueados</span>
+              <span class="text-[10px] theme-text-muted font-medium">Bloqueadas</span>
             </div>
             <div class="theme-sidebar p-2 rounded-lg border text-center">
               <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Vencidos</span>
+              <span class="text-[10px] theme-text-muted font-medium">Vencidas</span>
             </div>
           </div>
           <div class="bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20">
             <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
-            <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Operaciones Completadas</span>
+            <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Tareas Completadas</span>
           </div>
         </div>
 
         <hr class="theme-border">
 
         <div class="space-y-2">
-          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Categorías de Marketing</label>
+          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Categorías de Proyectos</label>
           <div id="sidebar-categories" class="space-y-1"></div>
         </div>
       </div>
@@ -328,7 +331,7 @@
           </div>
 
           <div class="theme-sidebar p-4 rounded-xl border space-y-4">
-            <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase">Progreso Global por Bloque Organizativo</h3>
+            <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase">Progreso Global por Proyectos</h3>
             <div id="dashboard-progress-bars" class="space-y-3 max-h-[250px] overflow-y-auto pr-1"></div>
           </div>
         </div>
@@ -478,6 +481,7 @@
     let editId=null;
     let filteredTasks=[];
 	let showOnlyOverdue = false;
+	let showOnlyCompleted = false;
 
 let currentSort = {
   field: null,
@@ -535,6 +539,32 @@ applyGanttHeight();
 initResizeHandle();
       setTimeout(() => { goToday(); }, 350);
     }
+
+	// VISUALIZAR TAREAS COMPLETADAS
+	
+	function toggleCompleted(event) {
+
+  showOnlyCompleted = !showOnlyCompleted;
+
+  const btn = event.currentTarget;
+
+  if (showOnlyCompleted) {
+
+  btn.classList.remove('bg-green-400');
+  btn.classList.add('bg-green-700');
+
+  btn.classList.add('ring-2', 'ring-green-300');
+
+} else {
+
+  btn.classList.remove('bg-green-700');
+  btn.classList.add('bg-green-400');
+
+  btn.classList.remove('ring-2', 'ring-green-300');
+}
+
+  applyFilters();
+}
 
     // VISUALIZAR TAREAS VENCIDAS
 
@@ -769,13 +799,26 @@ function clearFilters() {
   document.getElementById('filter-task').value = '';
 
   showOnlyOverdue = false;
+  showOnlyCompleted = false;
 
-  const overdueBtn = document.querySelector('button[onclick="showOverdue(event)"]');
+  const overdueBtn = document.querySelector(
+    'button[onclick="showOverdue(event)"]'
+  );
 
   if (overdueBtn) {
     overdueBtn.classList.remove('bg-red-700');
     overdueBtn.classList.add('bg-red-500');
     overdueBtn.classList.remove('ring-2', 'ring-red-300');
+  }
+
+  const completedBtn = document.querySelector(
+    'button[onclick="toggleCompleted(event)"]'
+  );
+
+  if (completedBtn) {
+    completedBtn.classList.remove('bg-green-700');
+    completedBtn.classList.add('bg-green-400');
+    completedBtn.classList.remove('ring-2', 'ring-green-300');
   }
 
   applyFilters();
@@ -796,6 +839,25 @@ function clearFilters() {
   if(resp && t.resp   !== resp) return false;
   if(task && t.task   !== task) return false;
 
+  if (showOnlyCompleted) {
+
+  if (
+    t.status !== 'Completado' &&
+    t.status !== 'Cancelado'
+  ) {
+    return false;
+  }
+
+} else {
+
+  if (
+    t.status === 'Completado' ||
+    t.status === 'Cancelado'
+  ) {
+    return false;
+  }
+}
+
   if (showOnlyOverdue) {
 
     const isOverdue =
@@ -805,6 +867,7 @@ function clearFilters() {
       t.status !== 'Cancelado';
 
     if (!isOverdue) return false;
+	
   }
 
   return true;
@@ -815,19 +878,49 @@ function clearFilters() {
       if(currentActiveView === 'gantt') render(); else renderDashboard();
     }
 
-    function updateStats(){
-      const projs=[...new Set(filteredTasks.map(t=>t.proj))];
-      const active=projs.filter(p=>filteredTasks.some(t=>t.proj===p&&(t.status==='En curso'||t.status==='En planificación'))).length;
-      const blocked=filteredTasks.filter(t=>t.status==='Bloqueado').length;
-      const done=filteredTasks.filter(t=>t.status==='Completado').length;
-      const overdue=filteredTasks.filter(t=>t.end && t.end<TODAY && t.status!=='Completado' && t.status!=='Cancelado').length;
-      
-      document.getElementById('s-active').textContent=active;
-      document.getElementById('s-tasks').textContent=filteredTasks.length;
-      document.getElementById('s-blocked').textContent=blocked;
-      document.getElementById('s-done').textContent=done;
-      document.getElementById('s-overdue').textContent=overdue;
-    }
+function updateStats(){
+
+  // PROYECTOS ACTIVOS REALES
+  const allProjects = [...new Set(TASKS.map(t => t.proj))];
+
+  const active = allProjects.filter(p =>
+    TASKS.some(t =>
+      t.proj === p &&
+      (
+        t.status === 'En curso' ||
+        t.status === 'En planificación'
+      )
+    )
+  ).length;
+
+  // TOTAL TAREAS
+  const totalTasks = TASKS.length;
+
+  // BLOQUEADAS
+  const blocked = TASKS.filter(
+    t => t.status === 'Bloqueado'
+  ).length;
+
+  // COMPLETADAS
+  const done = TASKS.filter(
+    t => t.status === 'Completado'
+  ).length;
+
+  // VENCIDAS
+  const overdue = TASKS.filter(
+    t =>
+      t.end &&
+      t.end < TODAY &&
+      t.status !== 'Completado' &&
+      t.status !== 'Cancelado'
+  ).length;
+
+  document.getElementById('s-active').textContent = active;
+  document.getElementById('s-tasks').textContent = totalTasks;
+  document.getElementById('s-blocked').textContent = blocked;
+  document.getElementById('s-done').textContent = done;
+  document.getElementById('s-overdue').textContent = overdue;
+}
 
     function renderSidebarCategories() {
       const counts = {};
@@ -1010,10 +1103,10 @@ lucide.createIcons();
       if(!pBars || !dList) return;
       pBars.innerHTML = ''; dList.innerHTML = '';
 
-      const projs = buildProjects(filteredTasks);
+      const projs = buildProjects(TASKS);
       
       let wip=0, review=0, plan=0, backlog=0;
-      filteredTasks.forEach(t=>{
+      TASKS.forEach(t=>{
         if(t.status==='En curso') wip++;
         else if(t.status==='Pendiente revisión') review++;
         else if(t.status==='En planificación') plan++;
@@ -1042,7 +1135,7 @@ lucide.createIcons();
           </div>`;
       });
 
-      const alerts = filteredTasks.filter(t=>t.end && t.status!=='Completado' && t.status!=='Cancelado')
+      const alerts = TASKS.filter(t=>t.end && t.status!=='Completado' && t.status!=='Cancelado')
                                   .sort((a,b)=>a.end-b.end);
       
       if(alerts.length===0){
