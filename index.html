@@ -215,24 +215,39 @@
 
         <div class="space-y-2">
           <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
-          <div class="grid grid-cols-2 gap-2">
-            <div class="theme-sidebar p-2 rounded-lg border text-center">
-              <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
-            </div>
-            <div class="theme-sidebar p-2 rounded-lg border text-center">
-              <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Activas</span>
-            </div>
-            <div class="theme-sidebar p-2 rounded-lg border text-center">
-              <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Bloqueadas</span>
-            </div>
-            <div class="theme-sidebar p-2 rounded-lg border text-center">
-              <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Vencidas</span>
-            </div>
-          </div>
+         <div class="grid grid-cols-2 gap-2">
+
+  <div class="theme-sidebar p-2 rounded-lg border text-center">
+    <span class="block text-xl font-bold theme-text font-mono" id="s-projects">0</span>
+    <span class="text-[10px] theme-text-muted font-medium">Total Proyectos</span>
+  </div>
+
+  <div class="theme-sidebar p-2 rounded-lg border text-center">
+    <span class="block text-xl font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
+    <span class="text-[10px] theme-text-muted font-medium">Proyectos Completados</span>
+  </div>
+
+  <div class="theme-sidebar p-2 rounded-lg border text-center">
+    <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
+    <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
+  </div>
+
+  <div class="theme-sidebar p-2 rounded-lg border text-center">
+    <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
+    <span class="text-[10px] theme-text-muted font-medium">Activas</span>
+  </div>
+
+  <div class="theme-sidebar p-2 rounded-lg border text-center">
+    <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
+    <span class="text-[10px] theme-text-muted font-medium">Bloqueadas</span>
+  </div>
+
+  <div class="theme-sidebar p-2 rounded-lg border text-center">
+    <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
+    <span class="text-[10px] theme-text-muted font-medium">Vencidas</span>
+  </div>
+
+</div>
           <div class="bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20">
             <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
             <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Tareas Completadas</span>
@@ -306,19 +321,19 @@
               <div class="grid grid-cols-2 gap-3">
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold text-blue-500" id="dash-c-wip">0</span>
-                  <span class="text-[10px] theme-text-muted">En Curso</span>
+                  <span class="text-[10px] theme-text-muted">Tareas en curso</span>
                 </div>
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold text-orange-500" id="dash-c-review">0</span>
-                  <span class="text-[10px] theme-text-muted">Pendiente Revisión</span>
+                  <span class="text-[10px] theme-text-muted">Tareas pendiente revisión</span>
                 </div>
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold text-amber-500" id="dash-c-plan">0</span>
-                  <span class="text-[10px] theme-text-muted">En Planificación</span>
+                  <span class="text-[10px] theme-text-muted">Tareas en planificación</span>
                 </div>
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold theme-text-muted" id="dash-c-backlog">0</span>
-                  <span class="text-[10px] theme-text-muted">Sin Comenzar</span>
+                  <span class="text-[10px] theme-text-muted">Tareas sin empezar</span>
                 </div>
               </div>
             </div>
@@ -882,6 +897,22 @@ function updateStats(){
 
   // PROYECTOS ACTIVOS REALES
   const allProjects = [...new Set(TASKS.map(t => t.proj))];
+  
+  const totalProjects = allProjects.length;
+
+const completedProjects = allProjects.filter(project => {
+
+  const projectTasks = TASKS.filter(
+    t => t.proj === project
+  );
+
+  return projectTasks.every(
+    t =>
+      t.status === 'Completado' ||
+      t.status === 'Cancelado'
+  );
+
+}).length;
 
   const active = allProjects.filter(p =>
     TASKS.some(t =>
@@ -915,6 +946,8 @@ function updateStats(){
       t.status !== 'Cancelado'
   ).length;
 
+  document.getElementById('s-projects').textContent = totalProjects;
+  document.getElementById('s-projects-done').textContent = completedProjects;
   document.getElementById('s-active').textContent = active;
   document.getElementById('s-tasks').textContent = totalTasks;
   document.getElementById('s-blocked').textContent = blocked;
