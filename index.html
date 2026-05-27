@@ -864,6 +864,9 @@ function getSortIcon(field) {
 
   return currentSort.direction === 'asc' ? '↑' : '↓';
 }
+function queueFilters() {
+  applyFilters();
+}
 function clearFilters() {
   document.getElementById('filter-cat').value = '';
   document.getElementById('filter-status').value = '';
