@@ -128,12 +128,6 @@
         <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
           Hoy
         </button>
-		<button onclick="toggleCompleted(event)"class="px-3 py-1.5 rounded-lg bg-green-400 hover:bg-green-500 text-white text-xs font-semibold transition-all">
-		Completadas
-		</button>
-		<button onclick="showOverdue(event)" class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold transition-all">
-		Vencidas
-		</button>		
         <button id="btn-add-task" onclick="showAddModal()" class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>Nueva Tarea</span>
@@ -217,41 +211,53 @@
           <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
          <div class="grid grid-cols-2 gap-2">
 
+  <!-- Total Proyectos — no filtra, solo informativo -->
   <div class="theme-sidebar p-2 rounded-lg border text-center">
     <span class="block text-xl font-bold theme-text font-mono" id="s-projects">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Total Proyectos</span>
   </div>
 
-  <div class="theme-sidebar p-2 rounded-lg border text-center">
+  <!-- Proyectos Completados — activa toggleCompleted -->
+  <button id="kpi-projects-done" onclick="kpiToggleCompleted()"
+    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
     <span class="block text-xl font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Proyectos Completados</span>
-  </div>
+  </button>
 
-  <div class="theme-sidebar p-2 rounded-lg border text-center">
+  <!-- Total Tareas — muestra TODAS (completadas + pendientes) -->
+  <button id="kpi-tasks-all" onclick="kpiToggleAll()"
+    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer">
     <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
-  </div>
+  </button>
 
+  <!-- Tareas Activas — no filtra, solo informativo -->
   <div class="theme-sidebar p-2 rounded-lg border text-center">
     <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Tareas Activas</span>
   </div>
 
-  <div class="theme-sidebar p-2 rounded-lg border text-center">
+  <!-- Tareas Bloqueadas — filtra solo bloqueadas -->
+  <button id="kpi-blocked" onclick="kpiToggleBlocked()"
+    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer">
     <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Tareas Bloqueadas</span>
-  </div>
+  </button>
 
-  <div class="theme-sidebar p-2 rounded-lg border text-center">
+  <!-- Tareas Vencidas — activa showOverdue -->
+  <button id="kpi-overdue" onclick="kpiToggleOverdue()"
+    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer">
     <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Tareas Vencidas</span>
-  </div>
+  </button>
 
 </div>
-          <div class="bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20">
+          <!-- Tareas Completadas — activa toggleCompleted -->
+          <button id="kpi-done" onclick="kpiToggleCompleted()"
+            class="w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer">
             <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
             <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Tareas Completadas</span>
-          </div>
+          </button>
         </div>
 
         <hr class="theme-border">
@@ -497,6 +503,8 @@
     let filteredTasks=[];
 	let showOnlyOverdue = false;
 	let showOnlyCompleted = false;
+	let showAllTasks = false;
+	let showOnlyBlocked = false;
 
 let currentSort = {
   field: null,
@@ -555,55 +563,106 @@ initResizeHandle();
       setTimeout(() => { goToday(); }, 350);
     }
 
-	// VISUALIZAR TAREAS COMPLETADAS
-	
-	function toggleCompleted(event) {
+	// FUNCIONES KPI — activan los filtros correspondientes desde las tarjetas de métricas
 
-  showOnlyCompleted = !showOnlyCompleted;
+  // Clases base de cada KPI botón
+  const KPI_BASE = {
+    'kpi-projects-done': 'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer',
+    'kpi-tasks-all':     'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer',
+    'kpi-overdue':       'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer',
+    'kpi-done':          'w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer',
+  };
+  const KPI_ACTIVE = {
+    'kpi-projects-done': 'ring-2 ring-cyan-500 bg-cyan-50 dark:bg-cyan-950/30 p-2 rounded-lg border border-cyan-400 text-center w-full transition-all cursor-pointer',
+    'kpi-tasks-all':     'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30 p-2 rounded-lg border border-blue-400 text-center w-full transition-all cursor-pointer',
+    'kpi-overdue':       'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-400 text-center w-full transition-all cursor-pointer',
+    'kpi-done':          'ring-2 ring-emerald-500 w-full bg-emerald-500/20 text-center p-2 rounded-lg border border-emerald-500 transition-all cursor-pointer',
+  };
 
-  const btn = event.currentTarget;
+  function _setKpiActive(id, active) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = active ? KPI_ACTIVE[id] : KPI_BASE[id];
+  }
 
+  function _resetAllKpi() {
+    Object.keys(KPI_BASE).forEach(id => _setKpiActive(id, false));
+  }
+
+  // KPI: Proyectos Completados + Tareas Completadas — ambos activan toggleCompleted
+  function kpiToggleCompleted() {
+    // Si showAllTasks estaba activo, desactivarlo primero
+    if (showAllTasks) { showAllTasks = false; _setKpiActive('kpi-tasks-all', false); }
+    if (showOnlyOverdue) { showOnlyOverdue = false; _setKpiActive('kpi-overdue', false); }
+    showOnlyCompleted = !showOnlyCompleted;
+    _setKpiActive('kpi-projects-done', showOnlyCompleted);
+    _setKpiActive('kpi-done', showOnlyCompleted);
+    applyFilters();
+  }
+
+  // KPI: Total Tareas — muestra todo (completadas + pendientes)
+  function kpiToggleAll() {
+    if (showOnlyCompleted) { showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
+    if (showOnlyOverdue)   { showOnlyOverdue = false;   _setKpiActive('kpi-overdue', false); }
+    showAllTasks = !showAllTasks;
+    _setKpiActive('kpi-tasks-all', showAllTasks);
+    applyFilters();
+  }
+
+function kpiToggleBlocked() {
+
+  // Desactivar otros modos KPI
   if (showOnlyCompleted) {
+    showOnlyCompleted = false;
+    _setKpiActive('kpi-projects-done', false);
+    _setKpiActive('kpi-done', false);
+  }
 
-  btn.classList.remove('bg-green-400');
-  btn.classList.add('bg-green-700');
+  if (showOnlyOverdue) {
+    showOnlyOverdue = false;
+    _setKpiActive('kpi-overdue', false);
+  }
 
-  btn.classList.add('ring-2', 'ring-green-300');
+  if (showAllTasks) {
+    showAllTasks = false;
+    _setKpiActive('kpi-tasks-all', false);
+  }
 
-} else {
+  // Toggle bloqueadas
+  showOnlyBlocked = !showOnlyBlocked;
 
-  btn.classList.remove('bg-green-700');
-  btn.classList.add('bg-green-400');
+  const btn = document.getElementById('kpi-blocked');
 
-  btn.classList.remove('ring-2', 'ring-green-300');
-}
+  if (showOnlyBlocked) {
+    btn.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
+  } else {
+    btn.classList.remove('ring-2', 'ring-red-500', 'bg-red-50');
+  }
 
   applyFilters();
 }
 
-    // VISUALIZAR TAREAS VENCIDAS
+  // KPI: Tareas Vencidas
+  function kpiToggleOverdue() {
+    if (showOnlyCompleted) { showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
+    if (showAllTasks)      { showAllTasks = false;      _setKpiActive('kpi-tasks-all', false); }
+    showOnlyOverdue = !showOnlyOverdue;
+    _setKpiActive('kpi-overdue', showOnlyOverdue);
+    applyFilters();
+  }
 
-function showOverdue(event) {
-
-  showOnlyOverdue = !showOnlyOverdue;
-
-  const btn = event.currentTarget;
-
-  if (showOnlyOverdue) {
-
-  btn.classList.remove('bg-red-500');
-  btn.classList.add('bg-red-700');
-
-  btn.classList.add('ring-2', 'ring-red-300');
-
-} else {
-
-  btn.classList.remove('bg-red-700');
-  btn.classList.add('bg-red-500');
-
-  btn.classList.remove('ring-2', 'ring-red-300');
+	// VISUALIZAR TAREAS COMPLETADAS (función original — mantenida por compatibilidad interna)
+	function toggleCompleted(event) {
+  showOnlyCompleted = !showOnlyCompleted;
+  _setKpiActive('kpi-projects-done', showOnlyCompleted);
+  _setKpiActive('kpi-done', showOnlyCompleted);
+  applyFilters();
 }
 
+    // VISUALIZAR TAREAS VENCIDAS
+function showOverdue(event) {
+  showOnlyOverdue = !showOnlyOverdue;
+  _setKpiActive('kpi-overdue', showOnlyOverdue);
   applyFilters();
 }
 
@@ -806,7 +865,6 @@ function getSortIcon(field) {
   return currentSort.direction === 'asc' ? '↑' : '↓';
 }
 function clearFilters() {
-
   document.getElementById('filter-cat').value = '';
   document.getElementById('filter-status').value = '';
   document.getElementById('filter-proj').value = '';
@@ -815,27 +873,9 @@ function clearFilters() {
 
   showOnlyOverdue = false;
   showOnlyCompleted = false;
+  showAllTasks = false;
 
-  const overdueBtn = document.querySelector(
-    'button[onclick="showOverdue(event)"]'
-  );
-
-  if (overdueBtn) {
-    overdueBtn.classList.remove('bg-red-700');
-    overdueBtn.classList.add('bg-red-500');
-    overdueBtn.classList.remove('ring-2', 'ring-red-300');
-  }
-
-  const completedBtn = document.querySelector(
-    'button[onclick="toggleCompleted(event)"]'
-  );
-
-  if (completedBtn) {
-    completedBtn.classList.remove('bg-green-700');
-    completedBtn.classList.add('bg-green-400');
-    completedBtn.classList.remove('ring-2', 'ring-green-300');
-  }
-
+  _resetAllKpi();
   applyFilters();
 }
 
@@ -855,35 +895,33 @@ function clearFilters() {
   if(task && t.task   !== task) return false;
 
   if (showOnlyCompleted) {
+    // Mostrar solo completadas/canceladas
+    if (t.status !== 'Completado' && t.status !== 'Cancelado') return false;
 
-  if (
-    t.status !== 'Completado' &&
-    t.status !== 'Cancelado'
-  ) {
+  } else if (showAllTasks) {
+    // Mostrar todo — no excluir nada por estado
+
+  } else {
+    // Vista normal: ocultar completadas y canceladas
+    if (t.status === 'Completado' || t.status === 'Cancelado') return false;
+  }
+
+if (showOnlyBlocked) {
+
+  if (t.status !== 'Bloqueado') {
     return false;
   }
 
-} else {
-
-  if (
-    t.status === 'Completado' ||
-    t.status === 'Cancelado'
-  ) {
-    return false;
-  }
 }
 
-  if (showOnlyOverdue) {
+if (showOnlyOverdue) {
 
-    const isOverdue =
-      t.end &&
-      t.end < TODAY &&
-      t.status !== 'Completado' &&
-      t.status !== 'Cancelado';
+  const isOverdue = t.end && t.end < TODAY &&
+    t.status !== 'Completado' &&
+    t.status !== 'Cancelado';
 
-    if (!isOverdue) return false;
-	
-  }
+  if (!isOverdue) return false;
+}
 
   return true;
 });
