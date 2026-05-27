@@ -571,12 +571,14 @@ initResizeHandle();
     'kpi-tasks-all':     'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer',
     'kpi-overdue':       'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer',
     'kpi-done':          'w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer',
+	'kpi-blocked':      'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer',
   };
   const KPI_ACTIVE = {
     'kpi-projects-done': 'ring-2 ring-cyan-500 bg-cyan-50 dark:bg-cyan-950/30 p-2 rounded-lg border border-cyan-400 text-center w-full transition-all cursor-pointer',
     'kpi-tasks-all':     'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30 p-2 rounded-lg border border-blue-400 text-center w-full transition-all cursor-pointer',
     'kpi-overdue':       'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-400 text-center w-full transition-all cursor-pointer',
     'kpi-done':          'ring-2 ring-emerald-500 w-full bg-emerald-500/20 text-center p-2 rounded-lg border border-emerald-500 transition-all cursor-pointer',
+	'kpi-blocked':      'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded-lg border border-red-400 text-center w-full transition-all cursor-pointer',
   };
 
   function _setKpiActive(id, active) {
@@ -611,7 +613,6 @@ initResizeHandle();
 
 function kpiToggleBlocked() {
 
-  // Desactivar otros modos KPI
   if (showOnlyCompleted) {
     showOnlyCompleted = false;
     _setKpiActive('kpi-projects-done', false);
@@ -628,16 +629,9 @@ function kpiToggleBlocked() {
     _setKpiActive('kpi-tasks-all', false);
   }
 
-  // Toggle bloqueadas
   showOnlyBlocked = !showOnlyBlocked;
 
-  const btn = document.getElementById('kpi-blocked');
-
-  if (showOnlyBlocked) {
-    btn.classList.add('ring-2', 'ring-red-500', 'bg-red-50');
-  } else {
-    btn.classList.remove('ring-2', 'ring-red-500', 'bg-red-50');
-  }
+  _setKpiActive('kpi-blocked', showOnlyBlocked);
 
   applyFilters();
 }
@@ -874,6 +868,7 @@ function clearFilters() {
   showOnlyOverdue = false;
   showOnlyCompleted = false;
   showAllTasks = false;
+  showOnlyBlocked = false;
 
   _resetAllKpi();
   applyFilters();
