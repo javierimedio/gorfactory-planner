@@ -138,7 +138,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 theme-sidebar p-3 rounded-xl border">
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Categoría</label>
-        <select id="filter-cat" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+        <select id="filter-cat" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
           <option value="">Todas las categorías</option>
           <option value="Catálogos">Catálogos</option>
           <option value="Ferias">Ferias</option>
@@ -152,7 +152,7 @@
       </div>
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Estado</label>
-        <select id="filter-status" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+        <select id="filter-status" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
           <option value="">Todos los estados</option>
           <option value="Sin comenzar">Sin comenzar</option>
           <option value="En planificación">En planificación</option>
@@ -165,19 +165,19 @@
       </div>
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Proyecto</label>
-        <select id="filter-proj" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+        <select id="filter-proj" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
           <option value="">Todos los proyectos</option>
         </select>
       </div>
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Responsable</label>
-        <select id="filter-resp" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+        <select id="filter-resp" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
           <option value="">Todos los responsables</option>
         </select>
       </div>
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Tarea</label>
-        <select id="filter-task" onchange="applyFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
+        <select id="filter-task" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
           <option value="">Todas las tareas</option>
         </select>
       </div>
@@ -218,7 +218,7 @@
   </div>
 
   <!-- Proyectos Completados — activa toggleCompleted -->
-  <button id="kpi-projects-done" onclick="kpiToggleCompleted()"
+  <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()"
     class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
     <span class="block text-xl font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
     <span class="text-[10px] theme-text-muted font-medium">Proyectos Completados</span>
@@ -484,8 +484,8 @@
     let currentActiveView = 'gantt'; 
     const STATUS_COLOR={
       'Sin comenzar':'#64748b', 'En planificación':'#3b82f6', 'En curso':'#10b981',
-      'Pendiente':'#f59e0b', 'Pendiente revisión':'#f97316', 'Bloqueado':'#ef4444',
-      'Aprobado':'#6366f1', 'En producción':'#8b5cf6', 'Completado':'#059669', 'Cancelado':'#4b5563'
+      'Pendiente revisión':'#f97316', 'Bloqueado':'#ef4444',
+      'Completado':'#059669', 'Cancelado':'#4b5563'
     };
     const STATUS_BG={
       'Sin comenzar':'rgba(100,116,139,0.1)', 'En planificación':'rgba(59,130,246,0.1)', 'En curso':'rgba(16,185,129,0.1)',
@@ -503,6 +503,7 @@
     let filteredTasks=[];
 	let showOnlyOverdue = false;
 	let showOnlyCompleted = false;
+	let showOnlyCompletedProjects = false;
 	let showAllTasks = false;
 	let showOnlyBlocked = false;
 
@@ -597,10 +598,30 @@ initResizeHandle();
     if (showAllTasks) { showAllTasks = false; _setKpiActive('kpi-tasks-all', false); }
     if (showOnlyOverdue) { showOnlyOverdue = false; _setKpiActive('kpi-overdue', false); }
     showOnlyCompleted = !showOnlyCompleted;
-    _setKpiActive('kpi-projects-done', showOnlyCompleted);
     _setKpiActive('kpi-done', showOnlyCompleted);
     applyFilters();
   }
+
+  // KPI: Proyectos Completados 
+
+function kpiToggleCompletedProjects() {
+
+  // Reset otros filtros KPI
+
+  if (showOnlyBlocked) {
+    showOnlyBlocked = false;
+    _setKpiActive('kpi-blocked', false);
+  }
+
+  showOnlyCompletedProjects = !showOnlyCompletedProjects;
+
+  _setKpiActive(
+    'kpi-projects-done',
+    showOnlyCompletedProjects
+  );
+
+  applyFilters();
+}
 
   // KPI: Total Tareas — muestra todo (completadas + pendientes)
   function kpiToggleAll() {
@@ -644,21 +665,6 @@ function kpiToggleBlocked() {
     _setKpiActive('kpi-overdue', showOnlyOverdue);
     applyFilters();
   }
-
-	// VISUALIZAR TAREAS COMPLETADAS (función original — mantenida por compatibilidad interna)
-	function toggleCompleted(event) {
-  showOnlyCompleted = !showOnlyCompleted;
-  _setKpiActive('kpi-projects-done', showOnlyCompleted);
-  _setKpiActive('kpi-done', showOnlyCompleted);
-  applyFilters();
-}
-
-    // VISUALIZAR TAREAS VENCIDAS
-function showOverdue(event) {
-  showOnlyOverdue = !showOnlyOverdue;
-  _setKpiActive('kpi-overdue', showOnlyOverdue);
-  applyFilters();
-}
 
     // ALTERNAR MODO DE EDICIÓN
     function toggleEditMode() {
@@ -869,6 +875,7 @@ function clearFilters() {
   showOnlyCompleted = false;
   showAllTasks = false;
   showOnlyBlocked = false;
+  showOnlyCompletedProjects = false;
 
   _resetAllKpi();
   applyFilters();
@@ -900,6 +907,23 @@ function clearFilters() {
     // Vista normal: ocultar completadas y canceladas
     if (t.status === 'Completado' || t.status === 'Cancelado') return false;
   }
+
+if (showOnlyCompletedProjects) {
+
+  const projectTasks = TASKS.filter(
+    x => x.proj === t.proj
+  );
+
+  const isProjectCompleted = projectTasks.every(
+    x =>
+      x.status === 'Completado' ||
+      x.status === 'Cancelado'
+  );
+
+  if (!isProjectCompleted) {
+    return false;
+  }
+}
 
 if (showOnlyBlocked) {
 
