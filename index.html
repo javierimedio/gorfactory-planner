@@ -1037,12 +1037,67 @@ const completedProjects = allProjects.filter(project => {
     }
 
     const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    function buildCalendar(){
-      const start=new Date(2026,0,1); const end=new Date(2026,11,31); const days=[]; let cur=new Date(start);
-      while(cur<=end){days.push(new Date(cur));cur.setDate(cur.getDate()+1);}
-      return{start,end,days};
-    }
-    const CAL=buildCalendar(); const DAY_W=34;
+    function buildCalendar() {
+
+  if (!TASKS.length) {
+    return {
+      start: new Date(),
+      end: new Date(),
+      days: []
+    };
+  }
+
+  // SOLO tareas útiles para calcular rango
+  const validTasks = TASKS.filter(
+    t => t.start || t.end
+  );
+
+  // Fechas mínimas y máximas
+  const minDate = new Date(
+    Math.min(
+      ...validTasks.map(t =>
+        (t.start || t.end).getTime()
+      )
+    )
+  );
+
+  const maxDate = new Date(
+    Math.max(
+      ...validTasks.map(t =>
+        (t.end || t.start).getTime()
+      )
+    )
+  );
+
+  // Margen visual
+  minDate.setMonth(minDate.getMonth() - 2);
+  maxDate.setMonth(maxDate.getMonth() + 2);
+
+  // Normalizar inicio/fin
+  const start = new Date(
+    minDate.getFullYear(),
+    minDate.getMonth(),
+    1
+  );
+
+  const end = new Date(
+    maxDate.getFullYear(),
+    maxDate.getMonth() + 1,
+    0
+  );
+
+  // Generar días
+  const days = [];
+  const cur = new Date(start);
+
+  while (cur <= end) {
+    days.push(new Date(cur));
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  return { start, end, days };
+}
+    let CAL=buildCalendar(); const DAY_W=34;
 
     function dayOffset(d){
       if(!d)return null;
@@ -1069,21 +1124,58 @@ const completedProjects = allProjects.filter(project => {
     }
 
     function render(){
+	CAL = buildCalendar();
       const projs=buildProjects(filteredTasks);
       const sbRows=document.getElementById('sb-rows'); const tlInner=document.getElementById('tl-inner');
       if(!sbRows || !tlInner) return;
       sbRows.innerHTML=''; tlInner.innerHTML='';
       const totalW=CAL.days.length*DAY_W;
 
-      let monthHtml='<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
-      let m=-1,mCount=0;
-      CAL.days.forEach((d)=>{
-        if(d.getMonth()!==m){
-          if(m>=0)monthHtml+=`<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${mCount*DAY_W}px">${MONTHS_ES[m]} 2026</div>`;
-          m=d.getMonth();mCount=1;
-        }else{mCount++;}
-      });
-      monthHtml+=`<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${mCount*DAY_W}px">${MONTHS_ES[m]} 2026</div></div>`;
+let monthHtml =
+  '<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:' +
+  totalW +
+  'px; background-color: var(--bg-header);">';
+
+let currentMonth = -1;
+let currentYear = -1;
+let monthCount = 0;
+
+CAL.days.forEach((d) => {
+
+  const month = d.getMonth();
+  const year = d.getFullYear();
+
+  if (month !== currentMonth || year !== currentYear) {
+
+    if (currentMonth !== -1) {
+
+      monthHtml += `
+        <div
+          class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0"
+          style="width:${monthCount * DAY_W}px"
+        >
+          ${MONTHS_ES[currentMonth]} ${currentYear}
+        </div>`;
+    }
+
+    currentMonth = month;
+    currentYear = year;
+    monthCount = 1;
+
+  } else {
+
+    monthCount++;
+  }
+});
+
+monthHtml += `
+  <div
+    class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0"
+    style="width:${monthCount * DAY_W}px"
+  >
+    ${MONTHS_ES[currentMonth]} ${currentYear}
+  </div>
+</div>`;
 
       let wkHtml='<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
       let wk=-1,wkCount=0;
