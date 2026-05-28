@@ -373,11 +373,7 @@
           <label class="block theme-text-muted font-medium mb-1">Nombre del Proyecto / Catálogo</label>
           <input id="m-proj" type="text" placeholder="Ej: Catálogo ROLY 2026" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
         </div>
-        <div>
-          <label class="block theme-text-muted font-medium mb-1">Responsable del Proyecto</label>
-          <input id="m-proj-resp" type="text" placeholder="Ej: Javier I." class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
-        </div>
-        <div>
+       <div>
           <label class="block theme-text-muted font-medium mb-1">Nombre de la Tarea u Operación</label>
           <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
         </div>
@@ -434,7 +430,7 @@
           </div>
         </div>
         <div>
-          <div>
+          <div style="display:none;">
   <label class="block theme-text-muted font-medium mb-1">
     Notas / Comentarios
   </label>
@@ -553,6 +549,26 @@
       'Catálogos':'#3b82f6','Ferias':'#f97316','Web/Digital':'#6366f1',
       'Shootings':'#10b981','Eventos':'#eab308','Branding':'#ec4899','default':'#6b7280','Email Marketing':'#0ea5e9','Comunicación':'#8b5cf6'
     };
+
+const USER_NAMES = {
+
+  'javierimedio@gorfactory.es': 'Javier Imedio',
+
+  'marketing@gorfactory.es': 'Marketing',
+
+  'sergio@gorfactory.es': 'Sergio Izquierdo',
+  
+  'pcs21@gorfactory.es': 'Almudena Alacid',
+  
+  'marketing09@gorfactory.es': 'Pablo Hernandez',
+  
+  'marketing10@gorfactory.es': ' Davinia Garcia',
+  
+  'marketing13@gorfactory.es': 'Jose Javier Garcia',
+  
+  'stamina.design01@gorfactory.es': 'Oscar Moreno',
+
+};
 
     let TASKS=[];
     let expanded={};
@@ -1461,7 +1477,6 @@ function initResizeHandle() {
       document.getElementById('m-resp').value=''; document.getElementById('m-start').value=fmtDate(TODAY);
       document.getElementById('m-end').value=fmtDate(TODAY); document.getElementById('m-status').value='Sin comenzar';
       document.getElementById('m-prio').value='Media'; document.getElementById('m-cat').value='Catálogos';
-      document.getElementById('m-proj-resp').value='';
       document.getElementById('m-notes').value='';
       document.getElementById('btn-delete').classList.add('hidden');
       
@@ -1482,7 +1497,6 @@ function initResizeHandle() {
       document.getElementById('m-resp').value=t.resp; document.getElementById('m-start').value=fmtDate(t.start);
       document.getElementById('m-end').value=fmtDate(t.end); document.getElementById('m-status').value=t.status;
       document.getElementById('m-prio').value=t.prio; document.getElementById('m-cat').value=t.cat;
-      document.getElementById('m-proj-resp').value=t.proj_resp||'';
       document.getElementById('m-notes').value=t.notes||'';
       
       if (isEditModeActive) {
@@ -1505,7 +1519,7 @@ function initResizeHandle() {
     }
 
     function toggleModalInputs(disable) {
-      const inputs = ['m-proj', 'm-task', 'm-resp', 'm-proj-resp', 'm-cat', 'm-start', 'm-end', 'm-status', 'm-prio', 'm-notes'];
+      const inputs = ['m-proj', 'm-task', 'm-resp', 'm-cat', 'm-start', 'm-end', 'm-status', 'm-prio', 'm-notes'];
       inputs.forEach(id => {
         const el = document.getElementById(id);
         if(el) {
@@ -1611,7 +1625,9 @@ async function addComment() {
     .from('task_comments')
     .insert([{
       task_id: editId,
-      author: user.email,
+      author:
+  USER_NAMES[user.email] ||
+  user.email,
       comment: text
     }]);
 
@@ -1649,7 +1665,6 @@ async function addComment() {
       const payload = {
         proj, task,
         resp: document.getElementById('m-resp').value.trim() || '—',
-        proj_resp: document.getElementById('m-proj-resp').value.trim() || null,
         start_date: document.getElementById('m-start').value || null,
         end_date: document.getElementById('m-end').value || null,
         status: document.getElementById('m-status').value,
