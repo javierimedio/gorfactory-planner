@@ -1736,56 +1736,39 @@ async function addComment() {
 
 async function uploadFile() {
 
-  if (!editId) return;
+  try {
 
-  const file =
-    document.getElementById('file-upload').files[0];
+    console.log('Inicio subida');
 
-  if (!file) return;
+    if (!editId) {
+      console.log('No hay editId');
+      return;
+    }
 
-  const fileName =
-    Date.now() + '_' + file.name;
+    const file =
+      document.getElementById('file-upload').files[0];
 
-  const filePath =
-    `task_${editId}/${fileName}`;
+    if (!file) {
+      console.log('No hay archivo');
+      return;
+    }
 
-  const { error: uploadError } =
-    await supabaseClient.storage
-      .from('task-files')
-      .upload(filePath, file);
+    const filePath =
+      `task_${editId}/${Date.now()}_${file.name}`;
 
-  if (uploadError) {
+    const { data, error } =
+      await supabaseClient.storage
+        .from('task-files')
+        .upload(filePath, file);
 
-    alert('Error subiendo archivo');
+    console.log('DATA:', data);
+    console.log('ERROR:', error);
 
-    console.error(uploadError);
+  } catch(err) {
 
-    return;
+    console.error('EXCEPCIÓN:', err);
+
   }
-
-  const author =
-    await getCurrentDisplayName();
-
-  const { error } =
-    await supabaseClient
-      .from('task_files')
-      .insert([{
-        task_id: editId,
-        file_name: file.name,
-        file_path: filePath,
-        uploaded_by: author
-      }]);
-
-  if (error) {
-
-    alert('Error registrando archivo');
-
-    console.error(error);
-
-    return;
-  }
-
-  loadFiles(editId);
 }
 
 async function loadFiles(taskId) {
