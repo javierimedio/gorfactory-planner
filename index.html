@@ -472,6 +472,44 @@
     </label>
   </div>
 
+<div class="mt-4 pt-4 border-t theme-border space-y-3">
+
+  <label
+    class="text-xs font-bold uppercase tracking-wider theme-text-muted"
+  >
+    Adjuntos
+  </label>
+
+  <div
+    id="task-files"
+    class="space-y-2"
+  >
+    <div class="text-[11px] theme-text-muted italic">
+      Sin adjuntos
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2">
+
+    <input
+      type="file"
+      id="file-upload"
+      class="hidden"
+      onchange="uploadFile()"
+    >
+
+    <button
+      type="button"
+      onclick="document.getElementById('file-upload').click()"
+      class="px-3 py-1.5 rounded-lg bg-slate-600 hover:bg-slate-500 text-white text-xs font-semibold"
+    >
+      Subir archivo
+    </button>
+
+  </div>
+
+</div>
+
   <!-- LISTADO -->
   <div
     id="task-comments"
@@ -1546,6 +1584,7 @@ function initResizeHandle() {
       const t=TASKS.find(x=>x.id===id); if(!t)return;
       editId=id;
       loadComments(id);
+	  loadFiles(id);
 	  
       document.getElementById('m-proj').value=t.proj; document.getElementById('m-task').value=t.task;
       document.getElementById('m-resp').value=t.resp; document.getElementById('m-start').value=fmtDate(t.start);
@@ -1693,6 +1732,166 @@ async function addComment() {
   textarea.value = '';
 
   loadComments(editId);
+}
+
+async function uploadFile() {
+
+  if (!editId) {
+    alert('Primero debes guardar la tarea');
+    return;
+  }
+
+  const fileInput =
+    document.getElementById('file-upload');
+
+  const file =
+    fileInput.files[0];
+
+  if (!file) return;
+
+  try {
+
+    const filePath =
+      `${editId}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } =
+  await supabaseClient.storage
+    .from('task-files')
+    .upload(filePath, file);
+
+if (uploadError) {
+
+  console.error(uploadError);
+
+  alert(
+    JSON.stringify(
+      uploadError,
+      null,
+      2
+    )
+  );
+
+  return;
+}
+
+    const authorName =
+      await getCurrentDisplayName();
+
+    const { error: dbError } =
+  await supabaseClient
+    .from('task_files')
+    .insert([{
+  task_id: editId,
+  file_name: file.name,
+  file_path: filePath,
+  uploaded_by: authorName
+}]);
+
+if (dbError) {
+
+  console.error(dbError);
+
+  alert(
+    JSON.stringify(
+      dbError,
+      null,
+      2
+    )
+  );
+
+  return;
+}
+
+    loadFiles(editId);
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert(
+      'Error al subir: ' +
+      err.message
+    );
+  }
+}
+
+async function loadFiles(taskId) {
+
+  const container =
+    document.getElementById('task-files');
+
+  const { data, error } =
+    await supabaseClient
+      .from('task_files')
+      .select('*')
+      .eq('task_id', taskId)
+      .order('created_at');
+
+  if (error) {
+
+    console.error(error);
+
+    return;
+  }
+
+  if (!data.length) {
+
+    container.innerHTML =
+      '<div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>';
+
+    return;
+  }
+
+  container.innerHTML = '';
+
+  data.forEach(file => {
+
+    const { data: publicUrlData } =
+      supabaseClient.storage
+        .from('task-files')
+        .getPublicUrl(file.file_path);
+
+    container.innerHTML += `
+
+      <div class="flex items-center justify-between theme-sidebar border rounded-lg p-2">
+
+        <a
+          href="${publicUrlData.publicUrl}"
+          target="_blank"
+          class="text-xs text-blue-600 hover:underline truncate"
+        >
+          ${file.file_name}
+        </a>
+
+        <button
+          onclick="deleteFile(${file.id}, '${file.file_path}')"
+          class="text-red-500 text-xs"
+        >
+          Eliminar
+        </button>
+
+      </div>
+
+    `;
+  });
+}
+
+async function deleteFile(id, path) {
+
+  if (!confirm('¿Eliminar archivo?'))
+    return;
+
+  await supabaseClient
+    .storage
+    .from('task_files')
+    .remove([path]);
+
+  await supabaseClient
+    .from('task_files')
+    .delete()
+    .eq('id', id);
+
+  loadFiles(editId);
 }
 
     function closeModal(e){
