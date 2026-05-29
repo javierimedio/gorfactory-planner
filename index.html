@@ -550,28 +550,22 @@
       'Shootings':'#10b981','Eventos':'#eab308','Branding':'#ec4899','default':'#6b7280','Email Marketing':'#0ea5e9','Comunicación':'#8b5cf6'
     };
 
-const USER_NAMES = {
+    // Nombre del usuario autenticado — se lee del token de sesión de Supabase.
+    // Para configurar el nombre de cada usuario ejecuta en Supabase SQL Editor:
+    // UPDATE auth.users SET raw_user_meta_data = raw_user_meta_data || '{"display_name":"Nombre A."}'::jsonb WHERE email = 'email@gorfactory.es';
+    let _currentDisplayName = null;
 
-  'javierimedio@gorfactory.es': 'Javier I.',
-  'marketing@gorfactory.es': 'Marketing',
-  'sergio@gorfactory.es': 'Sergio I.',
-  'pcs21@gorfactory.es': 'Almudena A.',
-  'marketing09@gorfactory.es': 'Pablo H.',
-  'marketing10@gorfactory.es': ' Davinia G.',
-  'marketing13@gorfactory.es': 'Jose Javier G.',
-  'stamina.design01@gorfactory.es': 'Oscar M.',
-  'marketing18@gorfactory.es': 'Alba A.',
-  'mk5@gorfactory.es': 'Santi N.',
-  'mrk07@gorfactory.es': 'Lorenzo G.',
-  'marketing12@gorfactory.es': 'Mario B.',
-  'marketing02@gorfactory.es': 'Alba M.',
-  'marketing16@gorfactory.es': 'Elena V.',
-  'marketing01@gorfactory.es': 'Lorena S.',
-  'marketing17@gorfactory.es': 'Rosa B.',
-  'marketing19@gorfactory.es': 'Beatriz T.',
-  
-
-};
+    async function getCurrentDisplayName() {
+      if (_currentDisplayName) return _currentDisplayName;
+      const { data: { user } } = await supabaseClient.auth.getUser();
+      if (!user) return 'Anónimo';
+      // Prioridad: display_name en metadata → full_name → parte local del email
+      _currentDisplayName =
+        user.user_metadata?.display_name ||
+        user.user_metadata?.full_name ||
+        user.email.split('@')[0];
+      return _currentDisplayName;
+    }
 
     let TASKS=[];
     let expanded={};
@@ -1620,17 +1614,13 @@ async function addComment() {
 
   if (!text) return;
 
-  const {
-    data: { user }
-  } = await supabaseClient.auth.getUser();
+  const authorName = await getCurrentDisplayName();
 
   const { error } = await supabaseClient
     .from('task_comments')
     .insert([{
       task_id: editId,
-      author:
-  USER_NAMES[user.email] ||
-  user.email,
+      author: authorName,
       comment: text
     }]);
 
