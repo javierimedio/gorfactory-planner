@@ -384,8 +384,16 @@
       <div class="space-y-3 text-xs">
         <div>
           <label class="block theme-text-muted font-medium mb-1">Nombre del Proyecto</label>
-          <input id="m-proj" type="text" placeholder="Ej: Catálogo ROLY 2026" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
-        </div>
+          <input
+  id="m-proj"
+  type="text"
+  list="project-list"
+  placeholder="Selecciona o escribe un proyecto"
+  class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500"
+>
+
+<datalist id="project-list"></datalist>
+		</div>
        <div>
           <label class="block theme-text-muted font-medium mb-1">Nombre de la Tarea u Operación</label>
           <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
@@ -806,9 +814,14 @@ function kpiToggleBlocked() {
         }
       }
 
-      TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
-      populateDynamicFilters();
-      applyFilters();
+      TASKS.forEach(t => {
+  if(expanded[t.proj] === undefined)
+    expanded[t.proj] = true;
+});
+
+refreshProjectList();
+populateDynamicFilters();
+applyFilters();
     }
 
     let _realtimeChannel = null;
@@ -866,6 +879,28 @@ function kpiToggleBlocked() {
       }
       if(currentActiveView === 'gantt') render(); else renderDashboard();
     }
+
+      // Desplegable proyectos
+	function refreshProjectList() {
+
+  const projects = [
+    ...new Set(
+      TASKS
+        .map(t => t.proj)
+        .filter(Boolean)
+    )
+  ].sort((a, b) => a.localeCompare(b));
+
+  const datalist =
+    document.getElementById('project-list');
+
+  if (!datalist) return;
+
+  datalist.innerHTML =
+    projects
+      .map(p => `<option value="${p}">`)
+      .join('');
+}
 
     function populateDynamicFilters() {
       // Proyectos únicos ordenados alfabéticamente
@@ -1699,7 +1734,8 @@ async function addComment() {
       }
       
       closeModal();
-      await loadTasksFromCloud();
+		await loadTasksFromCloud();
+		refreshProjectList();
     }
 
     async function deleteTask(){
