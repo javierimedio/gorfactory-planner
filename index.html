@@ -481,7 +481,7 @@
   </label>
 
   <div
-    id="task_files"
+    id="task-files"
     class="space-y-2"
   >
     <div class="text-[11px] theme-text-muted italic">
@@ -1734,35 +1734,79 @@ async function addComment() {
   loadComments(editId);
 }
 
-async function uploadFile() {
-  const fileInput = document.getElementById('file-upload');
-  const file = fileInput.files[0];
-  
-  if (!file) {
-    console.log("No se seleccionó ningún archivo.");
+async function uploadFile() async function uploadFile() {
+
+  if (!editId) {
+    alert('Primero debes guardar la tarea');
     return;
   }
 
-  console.log("Intentando subir:", file.name);
+  const fileInput =
+    document.getElementById('file-upload');
+
+  const file =
+    fileInput.files[0];
+
+  if (!file) return;
 
   try {
-    // Asegúrate de que 'supabase' esté inicializado globalmente
-    const { data, error } = await supabase.storage
-      .from('task_files')
-      .upload(`public/${Date.now()}_${file.name}`, file);
 
-    if (error) throw error;
-    console.log("Subida exitosa:", data);
+    const filePath =
+      `${editId}/${Date.now()}_${file.name}`;
+
+    const { error: uploadError } =
+      await supabaseClient.storage
+        .from('task-files')
+        .upload(
+          filePath,
+          file,
+          {
+            upsert: false
+          }
+        );
+
+    if (uploadError) {
+      console.error(uploadError);
+      alert(uploadError.message);
+      return;
+    }
+
+    const authorName =
+      await getCurrentDisplayName();
+
+    const { error: dbError } =
+      await supabaseClient
+        .from('task_files')
+        .insert([{
+          task_id: editId,
+          file_name: file.name,
+          file_path: filePath,
+          uploaded_by: authorName
+        }]);
+
+    if (dbError) {
+      console.error(dbError);
+      alert(dbError.message);
+      return;
+    }
+
+    loadFiles(editId);
+
   } catch (err) {
-    console.error("Error al subir el archivo:", err.message);
-    alert("Error al subir: " + err.message);
+
+    console.error(err);
+
+    alert(
+      'Error al subir: ' +
+      err.message
+    );
   }
 }
 
 async function loadFiles(taskId) {
 
   const container =
-    document.getElementById('task_files');
+    document.getElementById('task-files');
 
   const { data, error } =
     await supabaseClient
