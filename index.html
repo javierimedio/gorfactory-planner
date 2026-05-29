@@ -1735,39 +1735,27 @@ async function addComment() {
 }
 
 async function uploadFile() {
+  const fileInput = document.getElementById('file-upload');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    console.log("No se seleccionó ningún archivo.");
+    return;
+  }
+
+  console.log("Intentando subir:", file.name);
 
   try {
+    // Asegúrate de que 'supabase' esté inicializado globalmente
+    const { data, error } = await supabase.storage
+      .from('task_files')
+      .upload(`public/${Date.now()}_${file.name}`, file);
 
-    console.log('Inicio subida');
-
-    if (!editId) {
-      console.log('No hay editId');
-      return;
-    }
-
-    const file =
-      document.getElementById('file-upload').files[0];
-
-    if (!file) {
-      console.log('No hay archivo');
-      return;
-    }
-
-    const filePath =
-      `task_${editId}/${Date.now()}_${file.name}`;
-
-    const { data, error } =
-      await supabaseClient.storage
-        .from('task-files')
-        .upload(filePath, file);
-
-    console.log('DATA:', data);
-    console.log('ERROR:', error);
-
-  } catch(err) {
-
-    console.error('EXCEPCIÓN:', err);
-
+    if (error) throw error;
+    console.log("Subida exitosa:", data);
+  } catch (err) {
+    console.error("Error al subir el archivo:", err.message);
+    alert("Error al subir: " + err.message);
   }
 }
 
