@@ -481,7 +481,7 @@
   </label>
 
   <div
-    id="task-files"
+    id="task_files"
     class="space-y-2"
   >
     <div class="text-[11px] theme-text-muted italic">
@@ -1762,7 +1762,7 @@ async function uploadFile() {
 async function loadFiles(taskId) {
 
   const container =
-    document.getElementById('task-files');
+    document.getElementById('task_files');
 
   const { data, error } =
     await supabaseClient
@@ -1792,7 +1792,7 @@ async function loadFiles(taskId) {
 
     const { data: publicUrlData } =
       supabaseClient.storage
-        .from('task-files')
+        .from('task_files')
         .getPublicUrl(file.file_path);
 
     container.innerHTML += `
@@ -1827,7 +1827,7 @@ async function deleteFile(id, path) {
 
   await supabaseClient
     .storage
-    .from('task-files')
+    .from('task_files')
     .remove([path]);
 
   await supabaseClient
