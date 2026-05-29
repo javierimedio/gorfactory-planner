@@ -128,10 +128,23 @@
         <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
           Hoy
         </button>
-        <button id="btn-add-task" onclick="showAddModal()" class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
+		        <button id="btn-add-task" onclick="showAddModal()" class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>Nueva Tarea</span>
         </button>
+		<span
+  id="current-user"
+  class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text"
+>
+</span>
+
+<button
+  onclick="logout()"
+  class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5"
+>
+  <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+  <span>Cerrar sesión</span>
+</button>
       </div>
     </div>
 
@@ -611,6 +624,10 @@ let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
         } else {
           sessionStorage.setItem('gorfactory_auth', 'true');
           unlockDashboard();
+		  const userName = await getCurrentDisplayName();
+
+document.getElementById('current-user').textContent =
+  userName;
         }
       } catch(err) {
         errorMsg.textContent = 'Error de conexión. Inténtalo de nuevo.';
@@ -624,6 +641,11 @@ let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
     async function unlockDashboard() {
       document.getElementById('gatekeeper-screen').classList.add('hidden');
       document.getElementById('app-content').classList.remove('hidden');
+	  const userName =
+  await getCurrentDisplayName();
+
+document.getElementById('current-user')
+  .textContent = userName;
       
       // Lanzar inicialización del planificador una vez desbloqueado de forma segura
       lucide.createIcons();
@@ -1693,17 +1715,53 @@ async function addComment() {
       }
     }
 
+	// CIERRE DE SESION
+	
+	async function logout() {
+
+  if (!confirm('¿Deseas cerrar la sesión?')) {
+    return;
+  }
+
+  await supabaseClient.auth.signOut();
+
+  sessionStorage.removeItem('gorfactory_auth');
+
+  location.reload();
+}
+
     // CONTROL DE FLUJO DE ARRANQUE CON SEGURIDAD EXTRA
     (async function init() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        sessionStorage.setItem('gorfactory_auth', 'true');
-        unlockDashboard();
-      } else {
-        document.getElementById('gatekeeper-screen').classList.remove('hidden');
-        document.getElementById('gatekeeper-email').focus();
-      }
-    })();
+
+  const { data: { session } } =
+    await supabaseClient.auth.getSession();
+
+  if (session) {
+
+    sessionStorage.setItem(
+      'gorfactory_auth',
+      'true'
+    );
+
+    await unlockDashboard();
+
+    const userName =
+      await getCurrentDisplayName();
+
+    document.getElementById('current-user')
+      .textContent = userName;
+
+  } else {
+
+    document.getElementById('gatekeeper-screen')
+      .classList.remove('hidden');
+
+    document.getElementById('gatekeeper-email')
+      .focus();
+
+  }
+
+})();
   </script>
 </body>
 </html>
