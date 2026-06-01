@@ -213,6 +213,15 @@
 
     <!-- FILTROS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 theme-sidebar p-3 rounded-xl border">
+      <div class="sm:col-span-2 md:col-span-1">
+        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Buscar</label>
+        <div class="relative">
+          <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 theme-text-muted pointer-events-none"></i>
+          <input id="filter-search" type="text" placeholder="Tarea, proyecto, responsable..."
+            oninput="queueFilters()"
+            class="w-full theme-panel border theme-text text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none focus:border-blue-500">
+        </div>
+      </div>
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Categoría</label>
         <select id="filter-cat" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
@@ -271,69 +280,118 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
       <!-- SIDEBAR -->
-      <div class="lg:col-span-3 space-y-4 theme-panel p-4 rounded-xl border">
-        <div class="space-y-1">
-          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Visualización</label>
-          <button id="nav-gantt" onclick="switchView('gantt')"
-            class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all">
-            <span class="flex items-center space-x-2"><i data-lucide="gantt-chart" class="w-4 h-4 text-white"></i> <span>Diagrama de Gantt</span></span>
-          </button>
-          <button id="nav-kanban" onclick="switchView('kanban')"
-            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all">
-            <span class="flex items-center space-x-2"><i data-lucide="columns" class="w-4 h-4 text-indigo-500"></i> <span>Kanban</span></span>
-          </button>
-          <button id="nav-dashboard" onclick="switchView('dashboard')"
-            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all">
-            <span class="flex items-center space-x-2"><i data-lucide="layout-dashboard" class="w-4 h-4 text-purple-500"></i> <span>Métricas &amp; Alertas</span></span>
-          </button>
-        </div>
+      <div class="lg:col-span-3 theme-panel p-4 rounded-xl border overflow-y-auto" style="max-height:calc(100vh - 160px)">
+        <div class="space-y-4">
 
-        <hr class="theme-border">
-
-        <div class="space-y-2">
-          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
-          <div class="grid grid-cols-2 gap-2">
-            <div class="theme-sidebar p-2 rounded-lg border text-center">
-              <span class="block text-xl font-bold theme-text font-mono" id="s-projects">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Total Proyectos</span>
-            </div>
-            <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()"
-              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
-              <span class="block text-xl font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Proyectos Completados</span>
+          <!-- VISTAS -->
+          <div class="space-y-1">
+            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Visualización</label>
+            <button id="nav-gantt" onclick="switchView('gantt')"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all">
+              <i data-lucide="gantt-chart" class="w-3.5 h-3.5 shrink-0"></i><span>Diagrama de Gantt</span>
             </button>
-            <button id="kpi-tasks-all" onclick="kpiToggleAll()"
-              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer">
-              <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
+            <button id="nav-kanban" onclick="switchView('kanban')"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
+              <i data-lucide="columns" class="w-3.5 h-3.5 shrink-0 text-indigo-500"></i><span>Kanban</span>
             </button>
-            <div class="theme-sidebar p-2 rounded-lg border text-center">
-              <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Tareas Activas</span>
-            </div>
-            <button id="kpi-blocked" onclick="kpiToggleBlocked()"
-              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer">
-              <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Tareas Bloqueadas</span>
+            <button id="nav-calendar" onclick="switchView('calendar')"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
+              <i data-lucide="calendar-days" class="w-3.5 h-3.5 shrink-0 text-rose-500"></i><span>Calendario</span>
             </button>
-            <button id="kpi-overdue" onclick="kpiToggleOverdue()"
-              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer">
-              <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
-              <span class="text-[10px] theme-text-muted font-medium">Tareas Vencidas</span>
+            <button id="nav-dashboard" onclick="switchView('dashboard')"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
+              <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 shrink-0 text-purple-500"></i><span>Métricas &amp; Alertas</span>
             </button>
           </div>
-          <button id="kpi-done" onclick="kpiToggleCompleted()"
-            class="w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer">
-            <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
-            <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Tareas Completadas</span>
-          </button>
-        </div>
 
-        <hr class="theme-border">
+          <hr class="theme-border">
 
-        <div class="space-y-2">
-          <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Categorías de Proyectos</label>
-          <div id="sidebar-categories" class="space-y-1"></div>
+          <!-- ACCESO RÁPIDO -->
+          <div class="space-y-1">
+            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Acceso Rápido</label>
+            <button id="btn-my-tasks" onclick="toggleMyTasks()"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
+              <i data-lucide="user-check" class="w-3.5 h-3.5 shrink-0 text-blue-500"></i>
+              <span class="flex-1 text-left">Mis tareas</span>
+              <span id="my-tasks-count" class="hidden text-[10px] font-mono bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">0</span>
+            </button>
+            <button onclick="exportCSV()"
+              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
+              <i data-lucide="download" class="w-3.5 h-3.5 shrink-0 text-emerald-500"></i><span class="text-left">Exportar CSV</span>
+            </button>
+          </div>
+
+          <hr class="theme-border">
+
+          <!-- PRÓXIMOS VENCIMIENTOS -->
+          <div class="space-y-2">
+            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Próximos vencimientos</label>
+            <div id="sidebar-upcoming" class="space-y-0.5">
+              <div class="text-[11px] theme-text-muted italic px-2">Sin datos</div>
+            </div>
+          </div>
+
+          <hr class="theme-border">
+
+          <!-- MÉTRICAS CLAVE -->
+          <div class="space-y-2">
+            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <div class="theme-sidebar p-2 rounded-lg border text-center">
+                <span class="block text-lg font-bold theme-text font-mono" id="s-projects">0</span>
+                <span class="text-[10px] theme-text-muted">Proyectos</span>
+              </div>
+              <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()"
+                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
+                <span class="block text-lg font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
+                <span class="text-[10px] theme-text-muted">Completados</span>
+              </button>
+              <button id="kpi-tasks-all" onclick="kpiToggleAll()"
+                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer">
+                <span class="block text-lg font-bold theme-text font-mono" id="s-tasks">0</span>
+                <span class="text-[10px] theme-text-muted">Total Tareas</span>
+              </button>
+              <div class="theme-sidebar p-2 rounded-lg border text-center">
+                <span class="block text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
+                <span class="text-[10px] theme-text-muted">Activas</span>
+              </div>
+              <button id="kpi-blocked" onclick="kpiToggleBlocked()"
+                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer">
+                <span class="block text-lg font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
+                <span class="text-[10px] theme-text-muted">Bloqueadas</span>
+              </button>
+              <button id="kpi-overdue" onclick="kpiToggleOverdue()"
+                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer">
+                <span class="block text-lg font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
+                <span class="text-[10px] theme-text-muted">Vencidas</span>
+              </button>
+            </div>
+            <button id="kpi-done" onclick="kpiToggleCompleted()"
+              class="w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer">
+              <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
+              <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Tareas Completadas</span>
+            </button>
+          </div>
+
+          <hr class="theme-border">
+
+          <!-- PROYECTOS (estilo Asana) -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between px-1">
+              <label class="text-[10px] uppercase font-bold theme-text-muted tracking-wider">Proyectos</label>
+              <span id="sidebar-proj-count" class="text-[10px] theme-text-muted font-mono">0</span>
+            </div>
+            <div id="sidebar-projects-list" class="space-y-0.5 max-h-[220px] overflow-y-auto no-scrollbar"></div>
+          </div>
+
+          <hr class="theme-border">
+
+          <!-- CATEGORÍAS -->
+          <div class="space-y-2">
+            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Categorías</label>
+            <div id="sidebar-categories" class="space-y-1"></div>
+          </div>
+
         </div>
       </div>
 
@@ -403,6 +461,9 @@
           </div>
           <div id="kanban-board" class="flex gap-3 overflow-x-auto pb-4 no-scrollbar min-h-[400px]"></div>
         </div>
+
+        <!-- ── VISTA CALENDARIO ── -->
+        <div id="view-calendar-container" class="hidden p-4 overflow-y-auto"></div>
 
         <!-- ── VISTA DASHBOARD ── -->
         <div id="view-dashboard-container" class="hidden p-6 space-y-6">
@@ -662,6 +723,9 @@
     </div>
   </div>
 
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"></div>
+
   <!-- ══════════════════════════════════════════════
        JAVASCRIPT
   ══════════════════════════════════════════════ -->
@@ -682,6 +746,33 @@
         .replace(/'/g, '&#39;');
     }
 
+    // ── UTILIDADES ────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+      const colors = { success:'bg-emerald-500', error:'bg-red-500', warning:'bg-amber-500', info:'bg-blue-500' };
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+      const el = document.createElement('div');
+      el.className = `${colors[type]||colors.info} text-white px-4 py-2.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-2 pointer-events-auto translate-x-full transition-transform duration-300`;
+      el.innerHTML = `<span class="flex-1">${msg}</span><button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100 ml-2">✕</button>`;
+      container.appendChild(el);
+      setTimeout(() => el.classList.remove('translate-x-full'), 10);
+      setTimeout(() => { el.classList.add('translate-x-full'); setTimeout(() => el.remove(), 300); }, 4500);
+    }
+
+    function exportCSV() {
+      const cols = ['Proyecto','Tarea','Responsable','Estado','Prioridad','Categoría','Inicio','Fin'];
+      const rows = filteredTasks.map(t => [
+        t.proj, t.task, t.resp, t.status, t.prio, t.cat,
+        t.start ? fmtDate(t.start) : '', t.end ? fmtDate(t.end) : ''
+      ]);
+      const csv = [cols, ...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const a = document.createElement('a');
+      a.href = 'data:text/csv;charset=utf-8,﻿' + encodeURIComponent(csv);
+      a.download = `gor-factory-tareas-${fmtDate(new Date())}.csv`;
+      a.click();
+      showToast('CSV exportado correctamente.', 'success');
+    }
+
     // ── CONSTANTES Y ESTADO ────────────────────────────────────
     let isEditModeActive = false;
     let currentActiveView = 'gantt';
@@ -696,6 +787,9 @@
     let showOnlyBlocked = false;
     let currentSort = { field: null, direction: 'asc' };
     let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
+    let showOnlyMyTasks = false;
+    let calendarYear = new Date().getFullYear();
+    let calendarMonth = new Date().getMonth();
 
     function fmtDate(d) { return d ? d.toISOString().slice(0,10) : ''; }
     function parseIso(s) { if(!s) return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
@@ -914,19 +1008,24 @@
       document.getElementById('filter-proj').value   = '';
       document.getElementById('filter-resp').value   = '';
       document.getElementById('filter-task').value   = '';
+      const fs = document.getElementById('filter-search'); if (fs) fs.value = '';
       showOnlyOverdue = false; showOnlyCompleted = false;
       showAllTasks = false; showOnlyBlocked = false;
       showOnlyCompletedProjects = false;
+      showOnlyMyTasks = false;
+      const btnMt = document.getElementById('btn-my-tasks');
+      if (btnMt) btnMt.className = 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all';
       _resetAllKpi();
       applyFilters();
     }
 
     function applyFilters() {
-      const cat  = document.getElementById('filter-cat').value;
-      const st   = document.getElementById('filter-status').value;
-      const proj = document.getElementById('filter-proj').value;
-      const resp = document.getElementById('filter-resp').value;
-      const task = document.getElementById('filter-task').value;
+      const cat    = document.getElementById('filter-cat').value;
+      const st     = document.getElementById('filter-status').value;
+      const proj   = document.getElementById('filter-proj').value;
+      const resp   = document.getElementById('filter-resp').value;
+      const task   = document.getElementById('filter-task').value;
+      const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
 
       filteredTasks = TASKS.filter(t => {
         if (cat  && t.cat    !== cat)  return false;
@@ -934,7 +1033,13 @@
         if (proj && t.proj   !== proj) return false;
         if (resp && t.resp   !== resp) return false;
         if (task && t.task   !== task) return false;
-
+        if (search) {
+          const hay = `${t.task} ${t.proj} ${t.resp}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+        if (showOnlyMyTasks && _currentDisplayName) {
+          if (!t.resp.toLowerCase().includes(_currentDisplayName.toLowerCase())) return false;
+        }
         if (showOnlyCompleted) {
           if (t.status !== 'Completado' && t.status !== 'Cancelado') return false;
         } else if (showAllTasks) {
@@ -942,26 +1047,25 @@
         } else {
           if (t.status === 'Completado' || t.status === 'Cancelado') return false;
         }
-
         if (showOnlyCompletedProjects) {
           const pt = TASKS.filter(x => x.proj === t.proj);
           if (!pt.every(x => x.status === 'Completado' || x.status === 'Cancelado')) return false;
         }
-
         if (showOnlyBlocked && t.status !== 'Bloqueado') return false;
-
         if (showOnlyOverdue) {
           const isOverdue = t.end && t.end < TODAY && t.status !== 'Completado' && t.status !== 'Cancelado';
           if (!isOverdue) return false;
         }
-
         return true;
       });
 
       updateStats();
       renderSidebarCategories();
+      renderSidebarProjects();
+      renderSidebarUpcoming();
       if      (currentActiveView === 'gantt')     render();
       else if (currentActiveView === 'kanban')    renderKanban();
+      else if (currentActiveView === 'calendar')  renderCalendar();
       else                                        renderDashboard();
     }
 
@@ -1024,6 +1128,208 @@
       applyFilters();
     }
 
+    // ── MIS TAREAS ─────────────────────────────────────────────
+    function toggleMyTasks() {
+      showOnlyMyTasks = !showOnlyMyTasks;
+      const btn = document.getElementById('btn-my-tasks');
+      if (btn) btn.className = showOnlyMyTasks
+        ? 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all'
+        : 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all';
+      applyFilters();
+    }
+
+    // ── SIDEBAR PROYECTOS (estilo Asana) ───────────────────────
+    function renderSidebarProjects() {
+      const container = document.getElementById('sidebar-projects-list');
+      if (!container) return;
+      const projs = buildProjects(TASKS);
+      if (!projs.length) {
+        container.innerHTML = '<div class="text-[11px] theme-text-muted italic px-2">Sin proyectos</div>';
+        return;
+      }
+      container.innerHTML = projs.map(p => {
+        const total = p.tasks.length;
+        const done  = p.tasks.filter(t => t.status === 'Completado').length;
+        const pct   = total > 0 ? Math.round(done / total * 100) : 0;
+        const col   = CAT_COLOR[p.cat] || CAT_COLOR.default;
+        const active = p.tasks.filter(t => t.status === 'En curso' || t.status === 'Bloqueado').length;
+        const activeDot = active > 0 ? `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>` : '';
+        return `
+          <div onclick="filterByProject('${esc(p.name)}')"
+            class="px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer transition-all group">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full shrink-0" style="background:${col}"></span>
+              ${activeDot}
+              <span class="text-[11px] font-medium theme-text truncate flex-1">${esc(p.name)}</span>
+              <span class="text-[9px] theme-text-muted font-mono shrink-0">${done}/${total}</span>
+            </div>
+            <div class="ml-3.5 h-1 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full rounded-full transition-all duration-500" style="width:${pct}%;background:${col}"></div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function filterByProject(projName) {
+      const sel = document.getElementById('filter-proj');
+      if (!sel) return;
+      sel.value = sel.value === projName ? '' : projName;
+      applyFilters();
+    }
+
+    // ── SIDEBAR PRÓXIMOS VENCIMIENTOS ──────────────────────────
+    function renderSidebarUpcoming() {
+      const container = document.getElementById('sidebar-upcoming');
+      if (!container) return;
+      const upcoming = TASKS
+        .filter(t => t.end && t.status !== 'Completado' && t.status !== 'Cancelado')
+        .sort((a, b) => a.end - b.end)
+        .slice(0, 5);
+
+      if (!upcoming.length) {
+        container.innerHTML = '<div class="text-[11px] theme-text-muted italic px-2">Sin vencimientos próximos</div>';
+        return;
+      }
+      container.innerHTML = upcoming.map(t => {
+        const diff  = Math.round((t.end - TODAY) / (1000*60*60*24));
+        const isOv  = diff < 0;
+        const isCrt = diff >= 0 && diff <= 3;
+        const col   = isOv ? 'text-red-500' : isCrt ? 'text-amber-500' : 'theme-text-muted';
+        const lbl   = isOv ? `${Math.abs(diff)}d venc.` : diff === 0 ? 'Hoy' : `${diff}d`;
+        const sc    = STATUS_COLOR[t.status] || '#9ca3af';
+        return `
+          <div onclick="openEdit(${t.id})"
+            class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer transition-all">
+            <div class="w-1.5 h-1.5 rounded-full shrink-0 mt-px" style="background:${sc}"></div>
+            <span class="text-[11px] theme-text truncate flex-1">${esc(t.task)}</span>
+            <span class="text-[9px] font-mono shrink-0 font-semibold ${col}">${lbl}</span>
+          </div>`;
+      }).join('');
+    }
+
+    // ── CALENDARIO ─────────────────────────────────────────────
+    const DAYS_ES   = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+    const MONTHS_LONG_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+    function renderCalendar() {
+      const container = document.getElementById('view-calendar-container');
+      if (!container) return;
+
+      const firstDay  = new Date(calendarYear, calendarMonth, 1);
+      const lastDay   = new Date(calendarYear, calendarMonth + 1, 0);
+      let startDow    = firstDay.getDay() - 1;
+      if (startDow < 0) startDow = 6;
+      const totalDays = lastDay.getDate();
+
+      // Mapa fecha → tareas
+      const taskMap = {};
+      filteredTasks.forEach(t => {
+        if (t.end) {
+          const k = `${t.end.getFullYear()}-${String(t.end.getMonth()+1).padStart(2,'0')}-${String(t.end.getDate()).padStart(2,'0')}`;
+          if (!taskMap[k]) taskMap[k] = [];
+          taskMap[k].push(t);
+        }
+        // También tareas activas (inicio ≤ hoy ≤ fin) sin fecha fin el mismo día
+        if (t.start && t.end && t.start <= TODAY && t.end >= TODAY) {
+          const k2 = `${t.start.getFullYear()}-${String(t.start.getMonth()+1).padStart(2,'0')}-${String(t.start.getDate()).padStart(2,'0')}`;
+          if (!taskMap[k2]) taskMap[k2] = [];
+          if (!taskMap[k2].includes(t)) taskMap[k2].push(t);
+        }
+      });
+
+      const todayStr = `${TODAY.getFullYear()}-${String(TODAY.getMonth()+1).padStart(2,'0')}-${String(TODAY.getDate()).padStart(2,'0')}`;
+
+      let html = `
+        <div class="space-y-3">
+          <!-- Cabecera mes -->
+          <div class="flex items-center justify-between px-1">
+            <button onclick="calPrev()" class="p-1.5 rounded-lg theme-panel border hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
+              <i data-lucide="chevron-left" class="w-4 h-4 theme-text-muted"></i>
+            </button>
+            <div class="text-center">
+              <h3 class="text-sm font-bold theme-text">${MONTHS_LONG_ES[calendarMonth]} ${calendarYear}</h3>
+              <button onclick="calendarYear=${TODAY.getFullYear()};calendarMonth=${TODAY.getMonth()};renderCalendar()"
+                class="text-[10px] text-blue-500 hover:underline">Hoy</button>
+            </div>
+            <button onclick="calNext()" class="p-1.5 rounded-lg theme-panel border hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
+              <i data-lucide="chevron-right" class="w-4 h-4 theme-text-muted"></i>
+            </button>
+          </div>
+
+          <!-- Días de la semana -->
+          <div class="grid grid-cols-7 gap-px">
+            ${DAYS_ES.map(d => `<div class="text-center text-[10px] font-bold theme-text-muted py-1 uppercase tracking-wide">${d}</div>`).join('')}
+          </div>
+
+          <!-- Cuadrícula del mes -->
+          <div class="grid grid-cols-7 gap-px rounded-xl overflow-hidden border theme-border" style="background:var(--border-color)">`;
+
+      // Celdas vacías iniciales
+      for (let i = 0; i < startDow; i++) {
+        html += `<div class="theme-sidebar min-h-[90px] p-1.5"></div>`;
+      }
+
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr  = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday  = dateStr === todayStr;
+        const isPast   = new Date(calendarYear, calendarMonth, d) < TODAY && !isToday;
+        const dayTasks = taskMap[dateStr] || [];
+        const isWE     = [0,6].includes(new Date(calendarYear, calendarMonth, d).getDay());
+
+        html += `<div class="${isWE ? 'theme-sidebar' : 'theme-panel'} min-h-[90px] p-1.5 ${isPast ? 'opacity-60' : ''}">
+          <div class="mb-1">
+            <span class="text-[11px] font-bold w-5 h-5 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : 'theme-text-muted'}">${d}</span>
+          </div>
+          <div class="space-y-0.5">
+            ${dayTasks.slice(0,3).map(t => {
+              const sc = STATUS_COLOR[t.status] || '#9ca3af';
+              return `<div onclick="openEdit(${t.id})" title="${esc(t.task)} — ${esc(t.proj)}"
+                class="text-[9px] px-1 py-0.5 rounded cursor-pointer truncate font-medium hover:opacity-80 transition-all"
+                style="background:${sc}20;color:${sc};border:1px solid ${sc}30">${esc(t.task)}</div>`;
+            }).join('')}
+            ${dayTasks.length > 3 ? `<div class="text-[9px] theme-text-muted px-1 font-medium">+${dayTasks.length-3} más</div>` : ''}
+          </div>
+        </div>`;
+      }
+
+      // Celdas vacías finales
+      const totalCells = Math.ceil((startDow + totalDays) / 7) * 7;
+      for (let i = startDow + totalDays; i < totalCells; i++) {
+        html += `<div class="theme-sidebar min-h-[90px] p-1.5"></div>`;
+      }
+
+      html += `</div>
+
+          <!-- Leyenda -->
+          <div class="flex flex-wrap gap-3 px-1 pt-1">
+            ${Object.entries(STATUS_COLOR).map(([s,c]) =>
+              `<div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full" style="background:${c}"></span><span class="text-[10px] theme-text-muted">${s}</span></div>`
+            ).join('')}
+          </div>
+        </div>`;
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function calPrev() {
+      calendarMonth--;
+      if (calendarMonth < 0) { calendarMonth = 11; calendarYear--; }
+      renderCalendar();
+    }
+    function calNext() {
+      calendarMonth++;
+      if (calendarMonth > 11) { calendarMonth = 0; calendarYear++; }
+      renderCalendar();
+    }
+
+    // ── KANBAN QUICK-ADD ────────────────────────────────────────
+    function quickAddKanban(status) {
+      if (!isEditModeActive) return;
+      showAddModal();
+      setTimeout(() => { document.getElementById('m-status').value = status; }, 60);
+    }
+
     // ── STATS ──────────────────────────────────────────────────
     function updateStats() {
       const allProjects = [...new Set(TASKS.map(t => t.proj))];
@@ -1047,6 +1353,20 @@
       document.getElementById('s-blocked').textContent       = blocked;
       document.getElementById('s-done').textContent          = done;
       document.getElementById('s-overdue').textContent       = overdue;
+
+      // Actualizar contador "Mis tareas"
+      if (_currentDisplayName) {
+        const myCount = TASKS.filter(t =>
+          t.resp.toLowerCase().includes(_currentDisplayName.toLowerCase()) &&
+          t.status !== 'Completado' && t.status !== 'Cancelado'
+        ).length;
+        const badge = document.getElementById('my-tasks-count');
+        if (badge) { badge.textContent = myCount; badge.classList.toggle('hidden', myCount === 0); }
+      }
+
+      // Actualizar contador proyectos en sidebar
+      const projCount = document.getElementById('sidebar-proj-count');
+      if (projCount) projCount.textContent = totalProjects;
     }
 
     function renderSidebarCategories() {
@@ -1073,10 +1393,10 @@
     // ── CAMBIO DE VISTA ────────────────────────────────────────
     function switchView(viewName) {
       currentActiveView = viewName;
-      const views = { gantt: 'view-gantt-container', kanban: 'view-kanban-container', dashboard: 'view-dashboard-container' };
-      const navs  = { gantt: 'nav-gantt', kanban: 'nav-kanban', dashboard: 'nav-dashboard' };
-      const BASE_NAV = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all";
-      const ACTIVE_NAV = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
+      const views = { gantt: 'view-gantt-container', kanban: 'view-kanban-container', calendar: 'view-calendar-container', dashboard: 'view-dashboard-container' };
+      const navs  = { gantt: 'nav-gantt', kanban: 'nav-kanban', calendar: 'nav-calendar', dashboard: 'nav-dashboard' };
+      const BASE_NAV = "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all";
+      const ACTIVE_NAV = "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
 
       Object.entries(views).forEach(([v, id]) => {
         const el = document.getElementById(id);
@@ -1089,7 +1409,9 @@
 
       if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
       else if (viewName === 'kanban')    renderKanban();
+      else if (viewName === 'calendar')  renderCalendar();
       else                               renderDashboard();
+      lucide.createIcons();
     }
 
     // ── GANTT ──────────────────────────────────────────────────
@@ -1351,7 +1673,10 @@
         header.style.cssText = `background:${sc}18;border:1px solid ${sc}33;color:${sc}`;
         header.innerHTML = `
           <span class="truncate">${esc(groupKey)}</span>
-          <span class="ml-2 shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded-full" style="background:${sc}22">${colTasks.length}</span>`;
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="font-mono text-[10px] px-1.5 py-0.5 rounded-full" style="background:${sc}22">${colTasks.length}</span>
+            ${isEditModeActive && groupBy === 'status' ? `<button onclick="event.stopPropagation();quickAddKanban('${esc(groupKey)}')" class="w-5 h-5 flex items-center justify-center rounded font-bold text-sm hover:opacity-70 transition-all" style="background:${sc}22;color:${sc}" title="Añadir tarea">+</button>` : ''}
+          </div>`;
         colEl.appendChild(header);
 
         // Zona drop
@@ -1857,6 +2182,16 @@
       loadFiles(editId);
     }
 
+    // ── ATAJO DE TECLADO ───────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey
+          && document.activeElement.tagName !== 'INPUT'
+          && document.activeElement.tagName !== 'TEXTAREA'
+          && isEditModeActive) {
+        showAddModal();
+      }
+    });
+
     // ── INICIO DE APP ──────────────────────────────────────────
     (async function init() {
       const { data: { session } } = await supabaseClient.auth.getSession();
@@ -1868,6 +2203,391 @@
       } else {
         document.getElementById('gatekeeper-screen').classList.remove('hidden');
         document.getElementById('gatekeeper-email').focus();
+      }
+    })();
+  </script>
+</body>
+</html>
+> t.end && t.status !== 'Completado' && t.status !== 'Cancelado')
+        .sort((a,b) => a.end - b.end);
+      if (alerts.length === 0) {
+        dList.innerHTML = `<p class="theme-text-muted text-center py-6 text-xs italic">No hay alertas de vencimiento.</p>`;
+      } else {
+        alerts.forEach(t => {
+          const diff   = Math.round((t.end - TODAY) / (1000*60*60*24));
+          let cClass   = "theme-text-muted border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40";
+          if      (diff < 0)  cClass = "bg-red-500/5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/40";
+          else if (diff <= 7) cClass = "bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40";
+          dList.innerHTML += `
+            <div onclick="openEdit(${t.id})" class="p-2 rounded-lg border flex flex-col space-y-0.5 text-xs ${cClass} cursor-pointer hover:brightness-95 transition-all">
+              <div class="flex justify-between font-medium">
+                <span class="truncate pr-1 theme-text">${esc(t.task)}</span>
+                <span class="shrink-0 font-mono text-[10px]">${diff<0?'Vencido':(diff===0?'Hoy':`en ${diff}d`)}</span>
+              </div>
+              <span class="text-[10px] theme-text-muted opacity-80 truncate">${esc(t.proj)} · ${esc(t.resp)}</span>
+            </div>`;
+        });
+      }
+    }
+
+    // ── GANTT RESIZE ───────────────────────────────────────────
+    function applyGanttHeight() {
+      const sbRows   = document.getElementById('sb-rows');
+      const tlScroll = document.getElementById('tl-scroll');
+      if (!sbRows || !tlScroll) return;
+      sbRows.style.maxHeight   = (ganttHeight - 80) + 'px';
+      tlScroll.style.maxHeight = ganttHeight + 'px';
+    }
+
+    function initResizeHandle() {
+      const resizer = document.getElementById('gantt-resizer');
+      if (!resizer) return;
+      let startY = 0, startHeight = 0;
+      resizer.addEventListener('mousedown', e => {
+        startY = e.clientY; startHeight = ganttHeight;
+        function onMove(ev) {
+          ganttHeight = Math.min(window.innerHeight * 0.85, Math.max(420, startHeight + ev.clientY - startY));
+          localStorage.setItem('ganttHeight', ganttHeight);
+          applyGanttHeight();
+        }
+        function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    }
+
+    function goToday() {
+      const off = dayOffset(TODAY); if (off === null) return;
+      const scrollEl = document.getElementById('tl-scroll');
+      if (scrollEl) scrollEl.scrollLeft = Math.max(0, off * DAY_W - 120);
+    }
+
+    // ── MODAL TAREA ────────────────────────────────────────────
+    function showAddModal() {
+      if (!isEditModeActive) return;
+      editId = null;
+      document.getElementById('modal-title').textContent = 'Nueva Operación Estratégica';
+      document.getElementById('m-proj').value   = '';
+      document.getElementById('m-task').value   = '';
+      document.getElementById('m-resp').value   = '';
+      document.getElementById('m-start').value  = fmtDate(TODAY);
+      document.getElementById('m-end').value    = fmtDate(TODAY);
+      document.getElementById('m-status').value = 'Sin comenzar';
+      document.getElementById('m-prio').value   = 'Media';
+      document.getElementById('m-cat').value    = 'Catálogos';
+      document.getElementById('m-notes').value  = '';
+      document.getElementById('btn-delete').classList.add('hidden');
+      document.getElementById('btn-modal-save').classList.remove('hidden');
+      document.getElementById('task-files').innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>';
+      document.getElementById('task-comments').innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>';
+      toggleModalInputs(false);
+      _openModalOverlay();
+    }
+
+    function openEdit(id) {
+      const t = TASKS.find(x => x.id === id);
+      if (!t) return;
+      editId = id;
+      loadComments(id);
+      loadFiles(id);
+      document.getElementById('m-proj').value   = t.proj;
+      document.getElementById('m-task').value   = t.task;
+      document.getElementById('m-resp').value   = t.resp;
+      document.getElementById('m-start').value  = fmtDate(t.start);
+      document.getElementById('m-end').value    = fmtDate(t.end);
+      document.getElementById('m-status').value = t.status;
+      document.getElementById('m-prio').value   = t.prio;
+      document.getElementById('m-cat').value    = t.cat;
+      document.getElementById('m-notes').value  = t.notes || '';
+
+      if (isEditModeActive) {
+        document.getElementById('modal-title').textContent = 'Modificar Planificación';
+        document.getElementById('btn-delete').classList.remove('hidden');
+        document.getElementById('btn-modal-save').classList.remove('hidden');
+        document.getElementById('btn-modal-cancel').textContent = 'Cancelar';
+        toggleModalInputs(false);
+      } else {
+        document.getElementById('modal-title').textContent = 'Detalles de la Tarea (Solo Lectura)';
+        document.getElementById('btn-delete').classList.add('hidden');
+        document.getElementById('btn-modal-save').classList.add('hidden');
+        document.getElementById('btn-modal-cancel').textContent = 'Cerrar';
+        toggleModalInputs(true);
+      }
+      _openModalOverlay();
+    }
+
+    function _openModalOverlay() {
+      const ov = document.getElementById('modal-overlay');
+      ov.classList.remove('hidden');
+      ov.classList.add('flex');
+      setTimeout(() => { ov.classList.add('opacity-100'); document.getElementById('modal').classList.remove('scale-95'); }, 20);
+    }
+
+    function closeModal(e) {
+      if (e && e.target !== document.getElementById('modal-overlay')) return;
+      const nc = document.getElementById('new-comment');
+      if (nc) nc.value = '';
+      const ov = document.getElementById('modal-overlay');
+      if (!ov) return;
+      ov.classList.remove('opacity-100');
+      document.getElementById('modal').classList.add('scale-95');
+      setTimeout(() => { ov.classList.remove('flex'); ov.classList.add('hidden'); }, 200);
+    }
+
+    function toggleModalInputs(disable) {
+      const inputs = ['m-proj','m-task','m-resp','m-cat','m-start','m-end','m-status','m-prio','m-notes'];
+      inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { if (disable) el.setAttribute('disabled','true'); else el.removeAttribute('disabled'); }
+      });
+    }
+
+    async function saveModal() {
+      if (!isEditModeActive) return;
+      const proj = document.getElementById('m-proj').value.trim();
+      const task = document.getElementById('m-task').value.trim();
+      if (!proj || !task) { showToast('El proyecto y la tarea son obligatorios.', 'error'); return; }
+
+      const payload = {
+        proj, task,
+        resp:       document.getElementById('m-resp').value.trim()   || '—',
+        start_date: document.getElementById('m-start').value         || null,
+        end_date:   document.getElementById('m-end').value           || null,
+        status:     document.getElementById('m-status').value,
+        prio:       document.getElementById('m-prio').value,
+        cat:        document.getElementById('m-cat').value,
+        notes:      document.getElementById('m-notes').value.trim()  || null
+      };
+
+      if (payload.start_date && payload.end_date && payload.start_date > payload.end_date) {
+        showToast('La fecha de inicio no puede ser posterior a la fecha de fin.', 'error');
+        return;
+      }
+
+      try {
+        if (editId) {
+          const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.from('tareas').insert([payload]);
+          if (error) throw error;
+        }
+        showToast('Tarea guardada correctamente.', 'success');
+      } catch(e) {
+        showToast('Error al guardar. Comprueba la conexión.', 'error');
+        return;
+      }
+      closeModal();
+      await loadTasksFromCloud();
+      refreshProjectList();
+    }
+
+    async function deleteTask() {
+      if (!isEditModeActive || !editId) return;
+      if (confirm('¿Seguro que deseas eliminar esta tarea?')) {
+        try {
+          const { error } = await supabaseClient.from('tareas').delete().eq('id', editId);
+          if (error) throw error;
+        } catch(e) {
+          showToast('Error al eliminar. Comprueba la conexión.', 'error');
+          return;
+        }
+        closeModal();
+        await loadTasksFromCloud();
+      }
+    }
+
+    // ── COMENTARIOS ────────────────────────────────────────────
+    async function loadComments(taskId) {
+      const container = document.getElementById('task-comments');
+      if (!container) return;
+      container.innerHTML = '<div class="text-[11px] theme-text-muted italic">Cargando comentarios...</div>';
+      const { data, error } = await supabaseClient
+        .from('task_comments').select('*')
+        .eq('task_id', taskId).order('created_at', { ascending: true });
+      if (error) {
+        container.innerHTML = '<div class="text-[11px] text-red-500">Error cargando comentarios</div>';
+        console.error(error); return;
+      }
+      if (!data.length) {
+        container.innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>';
+        return;
+      }
+      container.innerHTML = data.map(c => {
+        const date = new Date(c.created_at).toLocaleString('es-ES');
+        return `
+          <div class="theme-sidebar border rounded-lg p-3 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold theme-text">${esc(c.author)}</span>
+              <span class="text-[10px] theme-text-muted font-mono">${date}</span>
+            </div>
+            <div class="text-xs theme-text whitespace-pre-wrap leading-relaxed">${esc(c.comment)}</div>
+          </div>`;
+      }).join('');
+    }
+
+    async function addComment() {
+      if (!editId) return;
+      const textarea = document.getElementById('new-comment');
+      const text     = textarea.value.trim();
+      if (!text) return;
+      const authorName = await getCurrentDisplayName();
+      const { error }  = await supabaseClient.from('task_comments').insert([{ task_id: editId, author: authorName, comment: text }]);
+      if (error) { showToast('Error al publicar comentario', 'error'); console.error(error); return; }
+      textarea.value = '';
+      loadComments(editId);
+    }
+
+    // ── ARCHIVOS ──────────────────────────────────────────────
+    async function uploadFile() {
+      if (!editId) { showToast('Primero debes guardar la tarea', 'warning'); return; }
+      const fileInput = document.getElementById('file-upload');
+      const file      = fileInput.files[0];
+      if (!file) return;
+      try {
+        const filePath = `${editId}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabaseClient.storage.from('task-files').upload(filePath, file);
+        if (uploadError) { showToast('Error al subir: ' + uploadError.message, 'error'); return; }
+        const authorName = await getCurrentDisplayName();
+        const { error: dbError } = await supabaseClient.from('task_files').insert([{
+          task_id: editId, file_name: file.name, file_path: filePath,
+          uploaded_by: authorName, file_type: 'local'
+        }]);
+        if (dbError) { showToast('Error al registrar: ' + dbError.message, 'error'); return; }
+        fileInput.value = '';
+        loadFiles(editId);
+      } catch(err) {
+        showToast('Error al subir: ' + err.message, 'error');
+      }
+    }
+
+    async function loadFiles(taskId) {
+      const container = document.getElementById('task-files');
+      if (!container) return;
+      const { data, error } = await supabaseClient
+        .from('task_files').select('*')
+        .eq('task_id', taskId).order('created_at');
+      if (error) { console.error(error); return; }
+      if (!data.length) {
+        container.innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>';
+        return;
+      }
+      container.innerHTML = '';
+      data.forEach(file => {
+        let fileUrl, typeIcon, typeClass, onlineBadge;
+        if (file.file_type === 'online') {
+          fileUrl     = file.online_url || '#';
+          typeIcon    = getFileTypeIcon(file.online_type || 'link');
+          typeClass   = 'ftype-' + (file.online_type || 'link');
+          onlineBadge = `<span class="file-online-badge"><span class="file-online-dot"></span>En línea</span>`;
+        } else {
+          const { data: pub } = supabaseClient.storage.from('task-files').getPublicUrl(file.file_path);
+          fileUrl     = pub.publicUrl;
+          typeIcon    = 'file';
+          typeClass   = 'ftype-other';
+          onlineBadge = '';
+        }
+        container.innerHTML += `
+          <div class="flex items-center justify-between theme-sidebar border rounded-lg p-2 gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <i data-lucide="${typeIcon}" class="w-3.5 h-3.5 shrink-0 ${typeClass}"></i>
+              <div class="min-w-0">
+                <a href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer"
+                  class="text-xs text-blue-600 hover:underline truncate block max-w-[180px]">${esc(file.file_name)}</a>
+                ${onlineBadge}
+              </div>
+            </div>
+            <button onclick="deleteFile(${file.id}, '${esc(file.file_path || '')}', '${esc(file.file_type || 'local')}')"
+              class="shrink-0 text-red-500 hover:text-red-700 text-xs transition-colors">
+              <i data-lucide="trash-2" class="w-3 h-3"></i>
+            </button>
+          </div>`;
+      });
+      lucide.createIcons();
+    }
+
+    function getFileTypeIcon(type) {
+      const map = { excel:'table-2', word:'file-text', pdf:'file-type-2', image:'image', link:'link', other:'paperclip' };
+      return map[type] || 'paperclip';
+    }
+
+    async function deleteFile(id, path, fileType) {
+      if (!confirm('¿Eliminar archivo?')) return;
+      if (fileType === 'local' && path) {
+        await supabaseClient.storage.from('task-files').remove([path]);
+      }
+      await supabaseClient.from('task_files').delete().eq('id', id);
+      loadFiles(editId);
+    }
+
+    // ── ARCHIVOS EN LÍNEA ──────────────────────────────────────
+    function showOnlineFileModal() {
+      if (!editId) { showToast('Primero debes guardar la tarea', 'warning'); return; }
+      document.getElementById('online-file-name').value = '';
+      document.getElementById('online-file-url').value  = '';
+      document.getElementById('online-file-type').value = 'link';
+      const ov = document.getElementById('online-file-overlay');
+      ov.classList.remove('hidden'); ov.classList.add('flex');
+      setTimeout(() => { ov.classList.add('opacity-100'); document.getElementById('online-file-modal').classList.remove('scale-95'); }, 20);
+      document.getElementById('online-file-name').focus();
+    }
+
+    function closeOnlineFileModal(e) {
+      if (e && e.target !== document.getElementById('online-file-overlay')) return;
+      const ov = document.getElementById('online-file-overlay');
+      ov.classList.remove('opacity-100');
+      document.getElementById('online-file-modal').classList.add('scale-95');
+      setTimeout(() => { ov.classList.remove('flex'); ov.classList.add('hidden'); }, 200);
+    }
+
+    async function saveOnlineFile() {
+      const name  = document.getElementById('online-file-name').value.trim();
+      const url   = document.getElementById('online-file-url').value.trim();
+      const fType = document.getElementById('online-file-type').value;
+      if (!name || !url) { showToast('Rellena el nombre y la URL.', 'error'); return; }
+      try { new URL(url); } catch(e) { showToast('URL no válida.', 'error'); return; }
+      const authorName = await getCurrentDisplayName();
+      const { error }  = await supabaseClient.from('task_files').insert([{
+        task_id:     editId,
+        file_name:   name,
+        file_path:   null,
+        file_type:   'online',
+        online_url:  url,
+        online_type: fType,
+        uploaded_by: authorName
+      }]);
+      if (error) { showToast('Error al guardar el enlace: ' + error.message, 'error'); return; }
+      closeOnlineFileModal();
+      loadFiles(editId);
+    }
+
+    // ── ATAJO DE TECLADO ───────────────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey
+          && document.activeElement.tagName !== 'INPUT'
+          && document.activeElement.tagName !== 'TEXTAREA'
+          && isEditModeActive) {
+        showAddModal();
+      }
+    });
+
+    // ── INICIO DE APP ──────────────────────────────────────────
+    (async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        sessionStorage.setItem('gorfactory_auth', 'true');
+        await unlockDashboard();
+        const userName = await getCurrentDisplayName();
+        document.getElementById('current-user').textContent = userName;
+      } else {
+        document.getElementById('gatekeeper-screen').classList.remove('hidden');
+        document.getElementById('gatekeeper-email').focus();
+      }
+    })();
+  </script>
+</body>
+</html>
+ail').focus();
       }
     })();
   </script>
