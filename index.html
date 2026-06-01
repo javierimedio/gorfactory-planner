@@ -27,7 +27,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     
-    /* Configuración de Temas e Inversión Segura */
+    /* Configuración de Temas */
     .light {
       --bg-main: #f8fafc;
       --bg-panel: #ffffff;
@@ -54,28 +54,90 @@
       transition: background-color 0.2s ease, color 0.2s ease;
     }
 
-    /* Clases de utilidad dinámicas */
     .theme-text { color: var(--text-main); }
     .theme-text-muted { color: var(--text-muted); }
     .theme-panel { background-color: var(--bg-panel); border-color: var(--border-color); }
     .theme-sidebar { background-color: var(--bg-sidebar); border-color: var(--border-color); }
     .theme-border { border-color: var(--border-color); }
 
-    /* Ocultar barra de scroll */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-    .sticky-row {
-      position: sticky;
-      left: 0;
-      z-index: 20;
+    .sticky-row { position: sticky; left: 0; z-index: 20; }
+
+    /* ── KANBAN STYLES ── */
+    .kanban-col {
+      min-width: 220px;
+      flex: 1;
     }
+    .kanban-card {
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .kanban-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    .kanban-card.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
+    .kanban-col-dropzone {
+      min-height: 80px;
+      border-radius: 0.5rem;
+      transition: background 0.15s;
+    }
+    .kanban-col-dropzone.drag-over {
+      background: rgba(59,130,246,0.06);
+      outline: 2px dashed rgba(59,130,246,0.4);
+      outline-offset: 2px;
+    }
+
+    /* ── ONLINE FILES INDICATOR ── */
+    .file-online-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 9999px;
+      background: rgba(16,185,129,0.12);
+      color: #059669;
+      border: 1px solid rgba(16,185,129,0.3);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .dark .file-online-badge {
+      background: rgba(16,185,129,0.15);
+      color: #34d399;
+    }
+    .file-online-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      animation: pulse-dot 1.8s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    /* ── FILE TYPE ICONS COLORS ── */
+    .ftype-excel  { color: #16a34a; }
+    .ftype-word   { color: #2563eb; }
+    .ftype-pdf    { color: #dc2626; }
+    .ftype-image  { color: #7c3aed; }
+    .ftype-link   { color: #0891b2; }
+    .ftype-other  { color: #64748b; }
   </style>
 </head>
 <body class="p-4 md:p-8 font-sans antialiased">
 
-  <div id="gatekeeper-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900 dynamic-bg">
-    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm text-center space-y-5 transform scale-100 transition-all">
+  <!-- ══════════════════════════════════════════════
+       PANTALLA DE ACCESO
+  ══════════════════════════════════════════════ -->
+  <div id="gatekeeper-screen" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-sm text-center space-y-5">
       <div class="bg-slate-50 p-3 rounded-xl inline-block shadow-sm mx-auto">
         <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="Gor Factory" class="h-8 object-contain" style="mix-blend-mode: multiply;">
       </div>
@@ -86,68 +148,70 @@
       <div class="space-y-3 text-left">
         <div>
           <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1 ml-1">Email corporativo</label>
-          <input id="gatekeeper-email" type="email" placeholder="usuario@gorfactory.es" onkeydown="if(event.key==='Enter') document.getElementById('gatekeeper-input').focus()" class="w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700">
+          <input id="gatekeeper-email" type="email" placeholder="usuario@gorfactory.es"
+            onkeydown="if(event.key==='Enter') document.getElementById('gatekeeper-input').focus()"
+            class="w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700">
         </div>
         <div>
           <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 tracking-wider mb-1 ml-1">Contraseña</label>
-          <input id="gatekeeper-input" type="password" placeholder="••••••••••" onkeydown="if(event.key==='Enter') verifyPassword()" class="w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700 font-mono">
+          <input id="gatekeeper-input" type="password" placeholder="••••••••••"
+            onkeydown="if(event.key==='Enter') verifyPassword()"
+            class="w-full px-4 py-2 text-sm border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white border-slate-300 dark:border-slate-700 font-mono">
         </div>
         <p id="gatekeeper-error" class="text-[11px] text-red-500 font-medium hidden text-center">Credenciales incorrectas. Inténtalo de nuevo.</p>
-        <button id="gatekeeper-btn" onclick="verifyPassword()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider flex items-center justify-center gap-2">
+        <button id="gatekeeper-btn" onclick="verifyPassword()"
+          class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all uppercase tracking-wider flex items-center justify-center gap-2">
           <span id="gatekeeper-btn-text">Ingresar al Panel</span>
         </button>
       </div>
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════
+       APP PRINCIPAL
+  ══════════════════════════════════════════════ -->
   <div id="app-content" class="max-w-[1600px] mx-auto space-y-6 hidden">
-    
+
+    <!-- CABECERA -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b theme-border pb-4">
       <div class="flex items-center space-x-4">
         <div class="bg-white p-2 rounded-lg inline-block shadow-sm">
-          <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="Gor Factory" class="h-7 object-contain inversion-toggle" style="mix-blend-mode: multiply;">
+          <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="Gor Factory" class="h-7 object-contain" style="mix-blend-mode: multiply;">
         </div>
         <div>
           <h1 class="text-lg font-bold tracking-tight theme-text flex items-center gap-2">
             PLANIFICADOR DE TAREAS
-            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">SUPABASE CLOUD v2.0</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">SUPABASE CLOUD v3.0</span>
           </h1>
           <p class="text-xs theme-text-muted">Panel corporativo de control y líneas de tiempo para proyectos de marketing de Gor Factory.</p>
         </div>
       </div>
       
       <div class="flex flex-wrap items-center gap-3 self-end md:self-auto">
-        <button id="btn-toggle-mode" onclick="toggleEditMode()" class="px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400" title="Alternar entre modo lectura y edición">
+        <button id="btn-toggle-mode" onclick="toggleEditMode()"
+          class="px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400"
+          title="Alternar entre modo lectura y edición">
           <i data-lucide="lock" id="icon-mode" class="w-3.5 h-3.5"></i>
           <span id="text-mode">Modo Visualización</span>
-        </button>
-
-        <button onclick="toggleTheme()" class="hidden p-2 rounded-lg theme-panel border theme-text-muted hover:theme-text shadow-sm transition-all" title="Cambiar Tema Color">
-          <i data-lucide="sun-moon" class="w-4 h-4"></i>
         </button>
         <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
           Hoy
         </button>
-		        <button id="btn-add-task" onclick="showAddModal()" class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
+        <button id="btn-add-task" onclick="showAddModal()"
+          class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
           <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>Nueva Tarea</span>
         </button>
-		<span
-  id="current-user"
-  class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text"
->
-</span>
-
-<button
-  onclick="logout()"
-  class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5"
->
-  <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-  <span>Cerrar sesión</span>
-</button>
+        <span id="current-user" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text"></span>
+        <button onclick="logout()"
+          class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+          <span>Cerrar sesión</span>
+        </button>
       </div>
     </div>
 
+    <!-- FILTROS -->
     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 theme-sidebar p-3 rounded-xl border">
       <div>
         <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Categoría</label>
@@ -159,8 +223,8 @@
           <option value="Shootings">Shootings</option>
           <option value="Eventos">Eventos</option>
           <option value="Branding">Branding</option>
-		  <option value="Email marketing">Email Marketing</option>
-		<option value="Comunicación">Comunicación</option>
+          <option value="Marketing Digital">Marketing Digital</option>
+          <option value="Comunicación">Comunicación</option>
         </select>
       </div>
       <div>
@@ -194,27 +258,33 @@
           <option value="">Todas las tareas</option>
         </select>
       </div>
-<div class="flex items-end">
-  <button
-    onclick="clearFilters()"
-    class="w-full px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 transition-all theme-panel hover:bg-gray-100 dark:hover:bg-slate-700 theme-text"
-  >
-    <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
-    Limpiar filtros
-  </button>
-</div>
-
+      <div class="flex items-end">
+        <button onclick="clearFilters()"
+          class="w-full px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 transition-all theme-panel hover:bg-gray-100 dark:hover:bg-slate-700 theme-text">
+          <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+          Limpiar filtros
+        </button>
+      </div>
     </div>
+
+    <!-- LAYOUT PRINCIPAL -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-      
+
+      <!-- SIDEBAR -->
       <div class="lg:col-span-3 space-y-4 theme-panel p-4 rounded-xl border">
         <div class="space-y-1">
           <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Visualización</label>
-          <button id="nav-gantt" onclick="switchView('gantt')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all">
+          <button id="nav-gantt" onclick="switchView('gantt')"
+            class="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all">
             <span class="flex items-center space-x-2"><i data-lucide="gantt-chart" class="w-4 h-4 text-white"></i> <span>Diagrama de Gantt</span></span>
           </button>
-          <button id="nav-dashboard" onclick="switchView('dashboard')" class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all">
-            <span class="flex items-center space-x-2"><i data-lucide="layout-dashboard" class="w-4 h-4 text-purple-500"></i> <span>Métricas & Alertas</span></span>
+          <button id="nav-kanban" onclick="switchView('kanban')"
+            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all">
+            <span class="flex items-center space-x-2"><i data-lucide="columns" class="w-4 h-4 text-indigo-500"></i> <span>Kanban</span></span>
+          </button>
+          <button id="nav-dashboard" onclick="switchView('dashboard')"
+            class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all">
+            <span class="flex items-center space-x-2"><i data-lucide="layout-dashboard" class="w-4 h-4 text-purple-500"></i> <span>Métricas &amp; Alertas</span></span>
           </button>
         </div>
 
@@ -222,50 +292,36 @@
 
         <div class="space-y-2">
           <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
-         <div class="grid grid-cols-2 gap-2">
-
-  <!-- Total Proyectos — no filtra, solo informativo -->
-  <div class="theme-sidebar p-2 rounded-lg border text-center">
-    <span class="block text-xl font-bold theme-text font-mono" id="s-projects">0</span>
-    <span class="text-[10px] theme-text-muted font-medium">Total Proyectos</span>
-  </div>
-
-  <!-- Proyectos Completados — activa toggleCompleted -->
-  <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()"
-    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
-    <span class="block text-xl font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
-    <span class="text-[10px] theme-text-muted font-medium">Proyectos Completados</span>
-  </button>
-
-  <!-- Total Tareas — muestra TODAS (completadas + pendientes) -->
-  <button id="kpi-tasks-all" onclick="kpiToggleAll()"
-    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer">
-    <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
-    <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
-  </button>
-
-  <!-- Tareas Activas — no filtra, solo informativo -->
-  <div class="theme-sidebar p-2 rounded-lg border text-center">
-    <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
-    <span class="text-[10px] theme-text-muted font-medium">Tareas Activas</span>
-  </div>
-
-  <!-- Tareas Bloqueadas — filtra solo bloqueadas -->
-  <button id="kpi-blocked" onclick="kpiToggleBlocked()"
-    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer">
-    <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
-    <span class="text-[10px] theme-text-muted font-medium">Tareas Bloqueadas</span>
-  </button>
-
-  <!-- Tareas Vencidas — activa showOverdue -->
-  <button id="kpi-overdue" onclick="kpiToggleOverdue()"
-    class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer">
-    <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
-    <span class="text-[10px] theme-text-muted font-medium">Tareas Vencidas</span>
-  </button>
-
-</div>
-          <!-- Tareas Completadas — activa toggleCompleted -->
+          <div class="grid grid-cols-2 gap-2">
+            <div class="theme-sidebar p-2 rounded-lg border text-center">
+              <span class="block text-xl font-bold theme-text font-mono" id="s-projects">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Total Proyectos</span>
+            </div>
+            <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()"
+              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
+              <span class="block text-xl font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Proyectos Completados</span>
+            </button>
+            <button id="kpi-tasks-all" onclick="kpiToggleAll()"
+              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer">
+              <span class="block text-xl font-bold theme-text font-mono" id="s-tasks">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Total Tareas</span>
+            </button>
+            <div class="theme-sidebar p-2 rounded-lg border text-center">
+              <span class="block text-xl font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Tareas Activas</span>
+            </div>
+            <button id="kpi-blocked" onclick="kpiToggleBlocked()"
+              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer">
+              <span class="block text-xl font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Tareas Bloqueadas</span>
+            </button>
+            <button id="kpi-overdue" onclick="kpiToggleOverdue()"
+              class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer">
+              <span class="block text-xl font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
+              <span class="text-[10px] theme-text-muted font-medium">Tareas Vencidas</span>
+            </button>
+          </div>
           <button id="kpi-done" onclick="kpiToggleCompleted()"
             class="w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer">
             <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
@@ -281,58 +337,76 @@
         </div>
       </div>
 
+      <!-- PANEL DE VISTAS -->
       <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm relative">
-        
+
+        <!-- ── VISTA GANTT ── -->
         <div id="view-gantt-container" class="flex divide-x theme-border">
           <div class="w-[620px] shrink-0 flex flex-col bg-opacity-60 z-30">
             <div class="border-b theme-border flex flex-col shrink-0" style="height:80px; background-color: var(--bg-header)">
-              <!-- Fila 1: alineada con fila Mes (32px) -->
               <div class="flex items-center px-4 gap-2" style="height:32px; border-bottom:1px solid var(--border-color)">
                 <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase flex-1">Nombre del Proyecto</span>
                 <span class="w-[90px] shrink-0"></span>
                 <span class="w-[110px] shrink-0"></span>
                 <span class="w-[72px] shrink-0"></span>
                 <span class="w-[72px] shrink-0"></span>
-                <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos" class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shrink-0">
+                <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos"
+                  class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shrink-0">
                   <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
                 </button>
               </div>
-              <!-- Fila 2: alineada con fila Semana (24px) -->
               <div class="flex items-center px-4 gap-2" style="height:24px; border-bottom:1px solid var(--border-color)">
                 <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase flex-1">Tarea</span>
                 <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[90px] text-center shrink-0">Responsable</span>
                 <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[110px] text-center shrink-0">Estado</span>
                 <button onclick="toggleSort('start')" class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0 hover:text-blue-500 transition-all">
-  Inicio <span id="sort-start">↕</span>
-</button>
-
-<button onclick="toggleSort('end')" class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0 hover:text-blue-500 transition-all">
-  Fin <span id="sort-end">↕</span>
-</button>
+                  Inicio <span id="sort-start">↕</span>
+                </button>
+                <button onclick="toggleSort('end')" class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0 hover:text-blue-500 transition-all">
+                  Fin <span id="sort-end">↕</span>
+                </button>
                 <span class="w-[28px] shrink-0"></span>
               </div>
-              <!-- Fila 3: alineada con fila Días (24px) — vacía -->
               <div style="height:24px"></div>
             </div>
             <div id="sb-rows" class="overflow-y-auto no-scrollbar divide-y theme-border select-none"></div>
-<div id="gantt-resizer"
-     class="absolute bottom-3 right-3 w-4 h-4 cursor-nwse-resize opacity-40 hover:opacity-100 transition-all z-50 text-slate-400">
-  <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 16L16 6" stroke="currentColor" stroke-width="2"/>
-    <path d="M10 16L16 10" stroke="currentColor" stroke-width="2"/>
-    <path d="M14 16L16 14" stroke="currentColor" stroke-width="2"/>
-  </svg>
-</div>
+            <div id="gantt-resizer" class="absolute bottom-3 right-3 w-4 h-4 cursor-nwse-resize opacity-40 hover:opacity-100 transition-all z-50 text-slate-400">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 16L16 6" stroke="currentColor" stroke-width="2"/>
+                <path d="M10 16L16 10" stroke="currentColor" stroke-width="2"/>
+                <path d="M14 16L16 14" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
           </div>
-
           <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto shrink-0 flex-1 relative">
             <div id="tl-inner" class="relative"></div>
           </div>
         </div>
 
+        <!-- ── VISTA KANBAN ── -->
+        <div id="view-kanban-container" class="hidden p-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase flex items-center gap-2">
+              <i data-lucide="columns" class="w-4 h-4 text-indigo-500"></i>
+              Tablero Kanban
+            </h3>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] theme-text-muted">Agrupar por:</span>
+              <select id="kanban-group-by" onchange="renderKanban()"
+                class="theme-panel border theme-text text-[10px] rounded-lg px-2 py-1 outline-none focus:border-blue-500">
+                <option value="status">Estado</option>
+                <option value="proj">Proyecto</option>
+                <option value="resp">Responsable</option>
+                <option value="prio">Prioridad</option>
+              </select>
+            </div>
+          </div>
+          <div id="kanban-board" class="flex gap-3 overflow-x-auto pb-4 no-scrollbar min-h-[400px]"></div>
+        </div>
+
+        <!-- ── VISTA DASHBOARD ── -->
         <div id="view-dashboard-container" class="hidden p-6 space-y-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
             <div class="theme-sidebar p-4 rounded-xl border space-y-4">
               <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase flex items-center gap-1.5">
                 <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-500"></i> Distribución Operativa
@@ -344,15 +418,15 @@
                 </div>
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold text-orange-500" id="dash-c-review">0</span>
-                  <span class="text-[10px] theme-text-muted">Tareas pendiente revisión</span>
+                  <span class="text-[10px] theme-text-muted">Pendiente revisión</span>
                 </div>
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold text-amber-500" id="dash-c-plan">0</span>
-                  <span class="text-[10px] theme-text-muted">Tareas en planificación</span>
+                  <span class="text-[10px] theme-text-muted">En planificación</span>
                 </div>
                 <div class="theme-panel p-3 rounded-lg border text-center">
                   <span class="block text-lg font-bold theme-text-muted" id="dash-c-backlog">0</span>
-                  <span class="text-[10px] theme-text-muted">Tareas sin empezar</span>
+                  <span class="text-[10px] theme-text-muted">Sin empezar</span>
                 </div>
               </div>
             </div>
@@ -363,45 +437,48 @@
               <div id="dashboard-deadlines-list" class="space-y-2 max-h-[220px] overflow-y-auto pr-1"></div>
             </div>
           </div>
-
           <div class="theme-sidebar p-4 rounded-xl border space-y-4">
             <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase">Progreso Global por Proyectos</h3>
             <div id="dashboard-progress-bars" class="space-y-3 max-h-[250px] overflow-y-auto pr-1"></div>
           </div>
         </div>
 
-      </div>
-    </div>
-  </div>
+      </div><!-- /PANEL VISTAS -->
+    </div><!-- /LAYOUT PRINCIPAL -->
+  </div><!-- /APP CONTENT -->
 
-  <div id="modal-overlay" onclick="closeModal(event)" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden justify-center items-start overflow-y-auto p-4 opacity-0 transition-opacity duration-200">
+  <!-- ══════════════════════════════════════════════
+       MODAL TAREA
+  ══════════════════════════════════════════════ -->
+  <div id="modal-overlay" onclick="closeModal(event)"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden justify-center items-start overflow-y-auto p-4 opacity-0 transition-opacity duration-200">
     <div id="modal"
-     class="theme-panel border p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 transform scale-95 transition-transform duration-200 shadow-2xl"><div class="flex items-center justify-between border-b theme-border pb-2">
+      class="theme-panel border p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 transform scale-95 transition-transform duration-200 shadow-2xl">
+
+      <div class="flex items-center justify-between border-b theme-border pb-2">
         <h2 id="modal-title" class="text-xs font-bold tracking-wider uppercase theme-text-muted">Gestión de Tarea</h2>
-        <button onclick="closeModal()" class="theme-text-muted hover:theme-text transition"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button onclick="closeModal()" class="theme-text-muted hover:theme-text transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
       </div>
 
       <div class="space-y-3 text-xs">
         <div>
           <label class="block theme-text-muted font-medium mb-1">Nombre del Proyecto</label>
-          <input
-  id="m-proj"
-  type="text"
-  list="project-list"
-  placeholder="Selecciona o escribe un proyecto"
-  class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500"
->
-
-<datalist id="project-list"></datalist>
-		</div>
-       <div>
+          <input id="m-proj" type="text" list="project-list" placeholder="Selecciona o escribe un proyecto"
+            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+          <datalist id="project-list"></datalist>
+        </div>
+        <div>
           <label class="block theme-text-muted font-medium mb-1">Nombre de la Tarea u Operación</label>
-          <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar" class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+          <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar"
+            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block theme-text-muted font-medium mb-1">Responsable</label>
-            <input id="m-resp" type="text" placeholder="Ej: Lorenzo G." class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+            <input id="m-resp" type="text" placeholder="Ej: Lorenzo G."
+              class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
           </div>
           <div>
             <label class="block theme-text-muted font-medium mb-1">Categoría</label>
@@ -412,19 +489,21 @@
               <option value="Shootings">Shootings</option>
               <option value="Eventos">Eventos</option>
               <option value="Branding">Branding</option>
-			  <option value="Email Marketing">Email Marketing</option>
-			  <option value="Comunicación">Comunicación</option>
+              <option value="Marketing Digital">Marketing Digital</option>
+              <option value="Comunicación">Comunicación</option>
             </select>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block theme-text-muted font-medium mb-1">Fecha Inicio</label>
-            <input id="m-start" type="date" class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
+            <input id="m-start" type="date"
+              class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
           </div>
           <div>
             <label class="block theme-text-muted font-medium mb-1">Fecha Fin</label>
-            <input id="m-end" type="date" class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
+            <input id="m-end" type="date"
+              class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-3">
@@ -450,118 +529,78 @@
             </select>
           </div>
         </div>
-        <div>
-          <div style="display:none;">
-  <label class="block theme-text-muted font-medium mb-1">
-    Notas / Comentarios
-  </label>
 
-  <textarea
-    id="m-notes"
-    rows="3"
-    placeholder="Observaciones, enlaces, contexto adicional…"
-    class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs leading-relaxed"
-  ></textarea>
-</div>
+        <!-- Notas (ocultas internamente, se guardan igual) -->
+        <div style="display:none;">
+          <textarea id="m-notes" rows="3" placeholder="Observaciones..."
+            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs leading-relaxed"></textarea>
+        </div>
 
-<div class="mt-4 pt-4 border-t theme-border space-y-3">
+        <!-- ── SECCIÓN ARCHIVOS ── -->
+        <div class="mt-4 pt-4 border-t theme-border space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider theme-text-muted flex items-center gap-1.5">
+              <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Adjuntos
+            </label>
+          </div>
 
-   <label
-    class="text-xs font-bold uppercase tracking-wider theme-text-muted"
-  >
-    Adjuntos
-  </label>
+          <div id="task-files" class="space-y-2">
+            <div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>
+          </div>
 
-  <div
-    id="task-files"
-    class="space-y-2"
-  >
-    <div class="text-[11px] theme-text-muted italic">
-      Sin adjuntos
-    </div>
-  </div>
+          <!-- Botones de subida -->
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Subida local -->
+            <input type="file" id="file-upload" class="hidden" onchange="uploadFile()">
+            <button type="button" onclick="document.getElementById('file-upload').click()"
+              class="px-3 py-1.5 rounded-lg bg-slate-600 hover:bg-slate-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+              <i data-lucide="upload" class="w-3 h-3"></i>
+              Subir archivo
+            </button>
 
-  <div class="flex items-center gap-2">
+            <!-- Enlace en línea (OneDrive/Drive/URL) -->
+            <button type="button" onclick="showOnlineFileModal()"
+              class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
+              <i data-lucide="link" class="w-3 h-3"></i>
+              Añadir enlace en línea
+            </button>
+          </div>
+        </div>
 
-    <input
-      type="file"
-      id="file-upload"
-      class="hidden"
-      onchange="uploadFile()"
-    >
+        <!-- ── SECCIÓN COMENTARIOS ── -->
+        <div class="mt-4 pt-4 border-t theme-border space-y-3">
+          <label class="text-xs font-bold uppercase tracking-wider theme-text-muted flex items-center gap-1.5">
+            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Historial de actividad
+          </label>
+          <div id="task-comments" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+            <div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>
+          </div>
+          <div class="space-y-2">
+            <textarea id="new-comment" rows="3" placeholder="Escribe un comentario..."
+              class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs"></textarea>
+            <div class="flex justify-end">
+              <button type="button" onclick="addComment()"
+                class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition">
+                Publicar comentario
+              </button>
+            </div>
+          </div>
+        </div>
 
-    <button
-      type="button"
-      onclick="document.getElementById('file-upload').click()"
-      class="px-3 py-1.5 rounded-lg bg-slate-600 hover:bg-slate-500 text-white text-xs font-semibold"
-    >
-      Subir archivo
-    </button>
-
-  </div>
-
-</div>
-  
-  <div class="mt-4 pt-4 border-t theme-border space-y-3">
-  
-  <div class="flex items-center justify-between">
-    <label class="text-xs font-bold uppercase tracking-wider theme-text-muted">
-      Historial de actividad
-    </label>
-  </div>
-
-<div class="mt-4 pt-4 border-t theme-border space-y-3">
-
-   <!-- LISTADO -->
-  <div
-    id="task-comments"
-    class="space-y-3 max-h-60 overflow-y-auto pr-1"
-  >
-    <div class="text-[11px] theme-text-muted italic">
-      Sin comentarios todavía
-    </div>
-  </div>
-
-  <!-- NUEVO COMENTARIO -->
-  <div class="space-y-2">
-
-    <textarea
-      id="new-comment"
-      rows="3"
-      placeholder="Escribe un comentario..."
-      class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs"
-    ></textarea>
-
-    <div class="flex justify-end">
-
-      <button
-        type="button"
-        onclick="addComment()"
-        class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition"
-      >
-        Publicar comentario
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-    
-  </div>
-
-      </div>
+      </div><!-- /space-y-3 -->
 
       <div class="flex items-center justify-between border-t theme-border pt-3">
-        <button id="btn-delete" onclick="deleteTask()" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 border border-red-500/20 font-medium text-xs hover:bg-red-600 hover:text-white transition-all hidden">
+        <button id="btn-delete" onclick="deleteTask()"
+          class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 border border-red-500/20 font-medium text-xs hover:bg-red-600 hover:text-white transition-all hidden">
           Eliminar
         </button>
         <div class="flex items-center space-x-2 ml-auto">
-          <button id="btn-modal-cancel" onclick="closeModal()" class="px-3 py-1.5 rounded-lg theme-sidebar theme-text border text-xs font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+          <button id="btn-modal-cancel" onclick="closeModal()"
+            class="px-3 py-1.5 rounded-lg theme-sidebar theme-text border text-xs font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition">
             Cancelar
           </button>
-          <button id="btn-modal-save" onclick="saveModal()" class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/10 transition">
+          <button id="btn-modal-save" onclick="saveModal()"
+            class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/10 transition">
             Guardar
           </button>
         </div>
@@ -569,16 +608,70 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════════
+       MODAL ENLACE EN LÍNEA
+  ══════════════════════════════════════════════ -->
+  <div id="online-file-overlay" onclick="closeOnlineFileModal(event)"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden justify-center items-center p-4 opacity-0 transition-opacity duration-200">
+    <div id="online-file-modal"
+      class="theme-panel border p-5 rounded-xl w-full max-w-sm space-y-4 transform scale-95 transition-transform duration-200 shadow-2xl">
+      <div class="flex items-center justify-between border-b theme-border pb-2">
+        <h2 class="text-xs font-bold tracking-wider uppercase theme-text-muted flex items-center gap-1.5">
+          <i data-lucide="link" class="w-3.5 h-3.5 text-emerald-500"></i>
+          Añadir archivo en línea
+        </h2>
+        <button onclick="closeOnlineFileModal()" class="theme-text-muted hover:theme-text transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div class="space-y-3 text-xs">
+        <div>
+          <label class="block theme-text-muted font-medium mb-1">Nombre del archivo</label>
+          <input id="online-file-name" type="text" placeholder="Ej: Briefing Catálogo 2025"
+            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+        </div>
+        <div>
+          <label class="block theme-text-muted font-medium mb-1">URL del documento</label>
+          <input id="online-file-url" type="url" placeholder="https://1drv.ms/... o https://docs.google.com/..."
+            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+          <p class="mt-1 text-[10px] theme-text-muted">Compatible con OneDrive, Google Drive, Dropbox, SharePoint y cualquier URL.</p>
+        </div>
+        <div>
+          <label class="block theme-text-muted font-medium mb-1">Tipo de archivo</label>
+          <select id="online-file-type"
+            class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+            <option value="link">🔗 Enlace general</option>
+            <option value="excel">📊 Excel / Hoja de cálculo</option>
+            <option value="word">📄 Word / Documento</option>
+            <option value="pdf">📕 PDF</option>
+            <option value="image">🖼️ Imagen</option>
+            <option value="other">📎 Otro</option>
+          </select>
+        </div>
+        <div class="pt-1 flex justify-end gap-2">
+          <button type="button" onclick="closeOnlineFileModal()"
+            class="px-3 py-1.5 rounded-lg theme-sidebar theme-text border text-xs font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+            Cancelar
+          </button>
+          <button type="button" onclick="saveOnlineFile()"
+            class="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md transition">
+            Guardar enlace
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       JAVASCRIPT
+  ══════════════════════════════════════════════ -->
   <script>
-    // Autenticación gestionada por Supabase Auth (sin contraseñas en el código fuente)
+    // ── CONEXIÓN SUPABASE ──────────────────────────────────────
+    const SUPABASE_URL     = "https://dogdbpeiufecjbsdualr.supabase.co";
+    const SUPABASE_ANON_KEY= "sb_publishable_LClIA7ftAtkNv8cUuXI0GQ_gjKPb4F8";
+    const supabaseClient   = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // CONEXIÓN DIRECTA EN TIEMPO REAL A TU BASE DE DATOS EN LA NUBE SUPABASE
-    const SUPABASE_URL = "https://dogdbpeiufecjbsdualr.supabase.co"; 
-    const SUPABASE_ANON_KEY = "sb_publishable_LClIA7ftAtkNv8cUuXI0GQ_gjKPb4F8";
-
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Sanitizador XSS: escapa caracteres especiales antes de inyectar datos de BD en innerHTML
+    // ── SANITIZADOR XSS ───────────────────────────────────────
     function esc(str) {
       if (!str) return '';
       return String(str)
@@ -589,38 +682,50 @@
         .replace(/'/g, '&#39;');
     }
 
+    // ── CONSTANTES Y ESTADO ────────────────────────────────────
     let isEditModeActive = false;
+    let currentActiveView = 'gantt';
+    let TASKS = [];
+    let expanded = {};
+    let editId = null;
+    let filteredTasks = [];
+    let showOnlyOverdue = false;
+    let showOnlyCompleted = false;
+    let showOnlyCompletedProjects = false;
+    let showAllTasks = false;
+    let showOnlyBlocked = false;
+    let currentSort = { field: null, direction: 'asc' };
+    let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
 
-    function fmtDate(d){return d?d.toISOString().slice(0,10):''}
-    function parseIso(s){if(!s) return null; const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2])}
-    const TODAY=new Date(); TODAY.setHours(0,0,0,0);
+    function fmtDate(d) { return d ? d.toISOString().slice(0,10) : ''; }
+    function parseIso(s) { if(!s) return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+    const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
-    let currentActiveView = 'gantt'; 
-    const STATUS_COLOR={
-      'Sin comenzar':'#64748b', 'En planificación':'#3b82f6', 'En curso':'#10b981',
-      'Pendiente revisión':'#f97316', 'Bloqueado':'#ef4444',
-      'Completado':'#059669', 'Cancelado':'#4b5563'
+    const STATUS_COLOR = {
+      'Sin comenzar':'#64748b','En planificación':'#3b82f6','En curso':'#10b981',
+      'Pendiente revisión':'#f97316','Bloqueado':'#ef4444','Completado':'#059669','Cancelado':'#4b5563'
     };
-    const STATUS_BG={
-      'Sin comenzar':'rgba(100,116,139,0.1)', 'En planificación':'rgba(59,130,246,0.1)', 'En curso':'rgba(16,185,129,0.1)',
-      'Pendiente':'rgba(245,158,11,0.1)', 'Pendiente revisión':'rgba(249,115,22,0.1)', 'Bloqueado':'rgba(239,68,68,0.1)',
-      'Aprobado':'rgba(99,102,241,0.1)', 'En producción':'rgba(139,92,246,0.1)', 'Completado':'rgba(5,150,105,0.1)', 'Cancelado':'rgba(75,85,99,0.1)'
+    const STATUS_BG = {
+      'Sin comenzar':'rgba(100,116,139,0.1)','En planificación':'rgba(59,130,246,0.1)','En curso':'rgba(16,185,129,0.1)',
+      'Pendiente revisión':'rgba(249,115,22,0.1)','Bloqueado':'rgba(239,68,68,0.1)',
+      'Completado':'rgba(5,150,105,0.1)','Cancelado':'rgba(75,85,99,0.1)'
     };
-    const CAT_COLOR={
+    const CAT_COLOR = {
       'Catálogos':'#3b82f6','Ferias':'#f97316','Web/Digital':'#6366f1',
-      'Shootings':'#10b981','Eventos':'#eab308','Branding':'#ec4899','default':'#6b7280','Email Marketing':'#0ea5e9','Comunicación':'#8b5cf6'
+      'Shootings':'#10b981','Eventos':'#eab308','Branding':'#ec4899',
+      'Marketing Digital':'#0ea5e9','Comunicación':'#8b5cf6','default':'#6b7280'
+    };
+    const PRIO_COLOR = {
+      'Baja':'#64748b','Media':'#3b82f6','Alta':'#f97316','Crítica':'#ef4444'
     };
 
-    // Nombre del usuario autenticado — se lee del token de sesión de Supabase.
-    // Para configurar el nombre de cada usuario ejecuta en Supabase SQL Editor:
-    // UPDATE auth.users SET raw_user_meta_data = raw_user_meta_data || '{"display_name":"Nombre A."}'::jsonb WHERE email = 'email@gorfactory.es';
     let _currentDisplayName = null;
 
+    // ── AUTENTICACIÓN ──────────────────────────────────────────
     async function getCurrentDisplayName() {
       if (_currentDisplayName) return _currentDisplayName;
       const { data: { user } } = await supabaseClient.auth.getUser();
       if (!user) return 'Anónimo';
-      // Prioridad: display_name en metadata → full_name → parte local del email
       _currentDisplayName =
         user.user_metadata?.display_name ||
         user.user_metadata?.full_name ||
@@ -628,24 +733,6 @@
       return _currentDisplayName;
     }
 
-    let TASKS=[];
-    let expanded={};
-    let editId=null;
-    let filteredTasks=[];
-	let showOnlyOverdue = false;
-	let showOnlyCompleted = false;
-	let showOnlyCompletedProjects = false;
-	let showAllTasks = false;
-	let showOnlyBlocked = false;
-
-let currentSort = {
-  field: null,
-  direction: 'asc'
-};
-
-let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
-
-    // GESTIÓN DEL SISTEMA DE SEGURIDAD (GATEKEEPER)
     async function verifyPassword() {
       const email    = document.getElementById('gatekeeper-email').value.trim();
       const password = document.getElementById('gatekeeper-input').value;
@@ -658,7 +745,6 @@ let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
         errorMsg.classList.remove('hidden');
         return;
       }
-
       btn.disabled = true;
       btnText.textContent = 'Verificando...';
       errorMsg.classList.add('hidden');
@@ -671,11 +757,9 @@ let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
           document.getElementById('gatekeeper-input').value = '';
         } else {
           sessionStorage.setItem('gorfactory_auth', 'true');
-          unlockDashboard();
-		  const userName = await getCurrentDisplayName();
-
-document.getElementById('current-user').textContent =
-  userName;
+          await unlockDashboard();
+          const userName = await getCurrentDisplayName();
+          document.getElementById('current-user').textContent = userName;
         }
       } catch(err) {
         errorMsg.textContent = 'Error de conexión. Inténtalo de nuevo.';
@@ -689,131 +773,30 @@ document.getElementById('current-user').textContent =
     async function unlockDashboard() {
       document.getElementById('gatekeeper-screen').classList.add('hidden');
       document.getElementById('app-content').classList.remove('hidden');
-	  const userName =
-  await getCurrentDisplayName();
-
-document.getElementById('current-user')
-  .textContent = userName;
-      
-      // Lanzar inicialización del planificador una vez desbloqueado de forma segura
+      const userName = await getCurrentDisplayName();
+      document.getElementById('current-user').textContent = userName;
       lucide.createIcons();
       await loadTasksFromCloud();
-setupRealtime();
-applyGanttHeight();
-initResizeHandle();
+      setupRealtime();
+      applyGanttHeight();
+      initResizeHandle();
       setTimeout(() => { goToday(); }, 350);
     }
 
-	// FUNCIONES KPI — activan los filtros correspondientes desde las tarjetas de métricas
+    async function logout() {
+      if (!confirm('¿Deseas cerrar la sesión?')) return;
+      await supabaseClient.auth.signOut();
+      sessionStorage.removeItem('gorfactory_auth');
+      location.reload();
+    }
 
-  // Clases base de cada KPI botón
-  const KPI_BASE = {
-    'kpi-projects-done': 'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer',
-    'kpi-tasks-all':     'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer',
-    'kpi-overdue':       'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer',
-    'kpi-done':          'w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer',
-	'kpi-blocked':      'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer',
-  };
-  const KPI_ACTIVE = {
-    'kpi-projects-done': 'ring-2 ring-cyan-500 bg-cyan-50 dark:bg-cyan-950/30 p-2 rounded-lg border border-cyan-400 text-center w-full transition-all cursor-pointer',
-    'kpi-tasks-all':     'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30 p-2 rounded-lg border border-blue-400 text-center w-full transition-all cursor-pointer',
-    'kpi-overdue':       'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-400 text-center w-full transition-all cursor-pointer',
-    'kpi-done':          'ring-2 ring-emerald-500 w-full bg-emerald-500/20 text-center p-2 rounded-lg border border-emerald-500 transition-all cursor-pointer',
-	'kpi-blocked':      'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded-lg border border-red-400 text-center w-full transition-all cursor-pointer',
-  };
-
-  function _setKpiActive(id, active) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.className = active ? KPI_ACTIVE[id] : KPI_BASE[id];
-  }
-
-  function _resetAllKpi() {
-    Object.keys(KPI_BASE).forEach(id => _setKpiActive(id, false));
-  }
-
-  // KPI: Proyectos Completados + Tareas Completadas — ambos activan toggleCompleted
-  function kpiToggleCompleted() {
-    // Si showAllTasks estaba activo, desactivarlo primero
-    if (showAllTasks) { showAllTasks = false; _setKpiActive('kpi-tasks-all', false); }
-    if (showOnlyOverdue) { showOnlyOverdue = false; _setKpiActive('kpi-overdue', false); }
-    showOnlyCompleted = !showOnlyCompleted;
-    _setKpiActive('kpi-done', showOnlyCompleted);
-    applyFilters();
-  }
-
-  // KPI: Proyectos Completados 
-
-function kpiToggleCompletedProjects() {
-
-  // Reset otros filtros KPI
-
-  if (showOnlyBlocked) {
-    showOnlyBlocked = false;
-    _setKpiActive('kpi-blocked', false);
-  }
-
-  showOnlyCompletedProjects = !showOnlyCompletedProjects;
-
-  _setKpiActive(
-    'kpi-projects-done',
-    showOnlyCompletedProjects
-  );
-
-  applyFilters();
-}
-
-  // KPI: Total Tareas — muestra todo (completadas + pendientes)
-  function kpiToggleAll() {
-    if (showOnlyCompleted) { showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
-    if (showOnlyOverdue)   { showOnlyOverdue = false;   _setKpiActive('kpi-overdue', false); }
-    showAllTasks = !showAllTasks;
-    _setKpiActive('kpi-tasks-all', showAllTasks);
-    applyFilters();
-  }
-
-function kpiToggleBlocked() {
-
-  if (showOnlyCompleted) {
-    showOnlyCompleted = false;
-    _setKpiActive('kpi-projects-done', false);
-    _setKpiActive('kpi-done', false);
-  }
-
-  if (showOnlyOverdue) {
-    showOnlyOverdue = false;
-    _setKpiActive('kpi-overdue', false);
-  }
-
-  if (showAllTasks) {
-    showAllTasks = false;
-    _setKpiActive('kpi-tasks-all', false);
-  }
-
-  showOnlyBlocked = !showOnlyBlocked;
-
-  _setKpiActive('kpi-blocked', showOnlyBlocked);
-
-  applyFilters();
-}
-
-  // KPI: Tareas Vencidas
-  function kpiToggleOverdue() {
-    if (showOnlyCompleted) { showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
-    if (showAllTasks)      { showAllTasks = false;      _setKpiActive('kpi-tasks-all', false); }
-    showOnlyOverdue = !showOnlyOverdue;
-    _setKpiActive('kpi-overdue', showOnlyOverdue);
-    applyFilters();
-  }
-
-    // ALTERNAR MODO DE EDICIÓN
+    // ── MODO EDICIÓN ───────────────────────────────────────────
     function toggleEditMode() {
       isEditModeActive = !isEditModeActive;
       const btn = document.getElementById('btn-toggle-mode');
       const icon = document.getElementById('icon-mode');
       const text = document.getElementById('text-mode');
       const btnAddTask = document.getElementById('btn-add-task');
-
       if (isEditModeActive) {
         btn.className = "px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950/20 dark:border-emerald-900/40 dark:text-emerald-400";
         icon.setAttribute('data-lucide', 'lock-open');
@@ -830,38 +813,32 @@ function kpiToggleBlocked() {
       lucide.createIcons();
     }
 
+    // ── CARGA DE DATOS ─────────────────────────────────────────
     async function loadTasksFromCloud() {
       try {
         const { data, error } = await supabaseClient.from('tareas').select('*').order('proj', { ascending: true });
         if (error) throw error;
-        
         if (data) {
           TASKS = data.map(t => ({
             id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
             proj_resp: t.proj_resp || '',
             start: t.start_date ? new Date(t.start_date) : null,
-            end: t.end_date ? new Date(t.end_date) : null,
-            status: t.status || 'Sin comenzar', prio: t.prio || 'Media', cat: t.cat || 'Catálogos',
-            notes: t.notes || ''
+            end:   t.end_date   ? new Date(t.end_date)   : null,
+            status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
+            cat: t.cat || 'Catálogos', notes: t.notes || ''
           }));
         }
       } catch (err) {
         console.warn("Error de conexión con Supabase:", err?.message || err);
-        // Mostrar indicación visual si la carga inicial falla
         const sbRows = document.getElementById('sb-rows');
         if (sbRows && TASKS.length === 0) {
           sbRows.innerHTML = '<div class="p-4 text-xs text-red-500 text-center">No se pudieron cargar las tareas. Comprueba la conexión.</div>';
         }
       }
-
-      TASKS.forEach(t => {
-  if(expanded[t.proj] === undefined)
-    expanded[t.proj] = true;
-});
-
-refreshProjectList();
-populateDynamicFilters();
-applyFilters();
+      TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
+      refreshProjectList();
+      populateDynamicFilters();
+      applyFilters();
     }
 
     let _realtimeChannel = null;
@@ -872,78 +849,28 @@ applyFilters();
             loadTasksFromCloud();
           })
           .subscribe();
-      } catch (e) {
-        // Realtime no disponible, la app sigue funcionando en modo lectura
-      }
+      } catch (e) { /* Realtime no disponible */ }
     }
 
-    function buildProjects(tasks){
-      const pm={};
-      tasks.forEach(t=>{
-        if(!pm[t.proj])pm[t.proj]={name:t.proj,cat:t.cat,proj_resp:t.proj_resp||'',tasks:[]};
-        // keep proj_resp if any task has it
-        if(t.proj_resp) pm[t.proj].proj_resp = t.proj_resp;
+    // ── HELPERS ────────────────────────────────────────────────
+    function buildProjects(tasks) {
+      const pm = {};
+      tasks.forEach(t => {
+        if (!pm[t.proj]) pm[t.proj] = { name: t.proj, cat: t.cat, proj_resp: t.proj_resp || '', tasks: [] };
+        if (t.proj_resp) pm[t.proj].proj_resp = t.proj_resp;
         pm[t.proj].tasks.push(t);
       });
       return Object.values(pm);
     }
 
-    function switchView(viewName) {
-      currentActiveView = viewName;
-      const dView = document.getElementById('view-dashboard-container');
-      const gView = document.getElementById('view-gantt-container');
-      const nDash = document.getElementById('nav-dashboard');
-      const nGantt = document.getElementById('nav-gantt');
-
-      if(viewName === 'dashboard') {
-        dView.classList.remove('hidden');
-        gView.classList.add('hidden');
-        nDash.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
-        nGantt.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text transition-all font-medium text-xs";
-        renderDashboard();
-      } else {
-        gView.classList.remove('hidden');
-        dView.classList.add('hidden');
-        nGantt.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
-        nDash.className = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text transition-all font-medium text-xs";
-        render();
-      }
+    function refreshProjectList() {
+      const projects = [...new Set(TASKS.map(t => t.proj).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+      const datalist = document.getElementById('project-list');
+      if (!datalist) return;
+      datalist.innerHTML = projects.map(p => `<option value="${esc(p)}">`).join('');
     }
-
-    function toggleTheme() {
-      const html = document.documentElement;
-      if(html.classList.contains('dark')) {
-        html.classList.remove('dark'); html.classList.add('light');
-      } else {
-        html.classList.remove('light'); html.classList.add('dark');
-      }
-      if(currentActiveView === 'gantt') render(); else renderDashboard();
-    }
-
-      // Desplegable proyectos
-	function refreshProjectList() {
-
-  const projects = [
-    ...new Set(
-      TASKS
-        .map(t => t.proj)
-        .filter(Boolean)
-    )
-  ].sort((a, b) => a.localeCompare(b));
-
-  const datalist =
-    document.getElementById('project-list');
-
-  if (!datalist) return;
-
-  datalist.innerHTML =
-    projects
-      .map(p => `<option value="${p}">`)
-      .join('');
-}
 
     function populateDynamicFilters() {
-      // Proyectos únicos ordenados alfabéticamente
       const projs = [...new Set(TASKS.map(t => t.proj))].sort((a,b) => a.localeCompare(b));
       const selProj = document.getElementById('filter-proj');
       const currentProj = selProj.value;
@@ -951,11 +878,10 @@ applyFilters();
       projs.forEach(p => {
         const opt = document.createElement('option');
         opt.value = p; opt.textContent = p;
-        if(p === currentProj) opt.selected = true;
+        if (p === currentProj) opt.selected = true;
         selProj.appendChild(opt);
       });
 
-      // Responsables únicos ordenados, excluyendo vacíos y '—'
       const resps = [...new Set(TASKS.map(t => t.resp).filter(r => r && r !== '—'))].sort((a,b) => a.localeCompare(b));
       const selResp = document.getElementById('filter-resp');
       const currentResp = selResp.value;
@@ -963,11 +889,10 @@ applyFilters();
       resps.forEach(r => {
         const opt = document.createElement('option');
         opt.value = r; opt.textContent = r;
-        if(r === currentResp) opt.selected = true;
+        if (r === currentResp) opt.selected = true;
         selResp.appendChild(opt);
       });
 
-      // Tareas únicas ordenadas alfabéticamente
       const taskNames = [...new Set(TASKS.map(t => t.task).filter(Boolean))].sort((a,b) => a.localeCompare(b));
       const selTask = document.getElementById('filter-task');
       const currentTask = selTask.value;
@@ -975,81 +900,26 @@ applyFilters();
       taskNames.forEach(n => {
         const opt = document.createElement('option');
         opt.value = n; opt.textContent = n;
-        if(n === currentTask) opt.selected = true;
+        if (n === currentTask) opt.selected = true;
         selTask.appendChild(opt);
       });
     }
 
-function sortTasks(tasks) {
-  if (!currentSort.field) return tasks;
+    // ── FILTROS ────────────────────────────────────────────────
+    function queueFilters() { applyFilters(); }
 
-  return [...tasks].sort((a, b) => {
-    const field = currentSort.field;
-
-    let av = a[field];
-    let bv = b[field];
-
-    if (!av && !bv) return 0;
-    if (!av) return 1;
-    if (!bv) return -1;
-
-    av = av instanceof Date ? av.getTime() : av;
-    bv = bv instanceof Date ? bv.getTime() : bv;
-
-    if (currentSort.direction === 'asc') {
-      return av > bv ? 1 : -1;
+    function clearFilters() {
+      document.getElementById('filter-cat').value    = '';
+      document.getElementById('filter-status').value = '';
+      document.getElementById('filter-proj').value   = '';
+      document.getElementById('filter-resp').value   = '';
+      document.getElementById('filter-task').value   = '';
+      showOnlyOverdue = false; showOnlyCompleted = false;
+      showAllTasks = false; showOnlyBlocked = false;
+      showOnlyCompletedProjects = false;
+      _resetAllKpi();
+      applyFilters();
     }
-
-    return av < bv ? 1 : -1;
-  });
-}
-
-function toggleSort(field) {
-  if (currentSort.field !== field) {
-    currentSort.field = field;
-    currentSort.direction = 'asc';
-  } else if (currentSort.direction === 'asc') {
-    currentSort.direction = 'desc';
-  } else {
-    currentSort.field = null;
-    currentSort.direction = 'asc';
-  }
-
-  const startSort = document.getElementById('sort-start');
-const endSort = document.getElementById('sort-end');
-
-if(startSort) startSort.textContent = getSortIcon('start');
-if(endSort) endSort.textContent = getSortIcon('end');
-
-  render();
-}
-
-function getSortIcon(field) {
-  if (currentSort.field !== field) {
-    return '↕';
-  }
-
-  return currentSort.direction === 'asc' ? '↑' : '↓';
-}
-function queueFilters() {
-  applyFilters();
-}
-function clearFilters() {
-  document.getElementById('filter-cat').value = '';
-  document.getElementById('filter-status').value = '';
-  document.getElementById('filter-proj').value = '';
-  document.getElementById('filter-resp').value = '';
-  document.getElementById('filter-task').value = '';
-
-  showOnlyOverdue = false;
-  showOnlyCompleted = false;
-  showAllTasks = false;
-  showOnlyBlocked = false;
-  showOnlyCompletedProjects = false;
-
-  _resetAllKpi();
-  applyFilters();
-}
 
     function applyFilters() {
       const cat  = document.getElementById('filter-cat').value;
@@ -1059,382 +929,366 @@ function clearFilters() {
       const task = document.getElementById('filter-task').value;
 
       filteredTasks = TASKS.filter(t => {
+        if (cat  && t.cat    !== cat)  return false;
+        if (st   && t.status !== st)   return false;
+        if (proj && t.proj   !== proj) return false;
+        if (resp && t.resp   !== resp) return false;
+        if (task && t.task   !== task) return false;
 
-  if(cat  && t.cat    !== cat)  return false;
-  if(st   && t.status !== st)   return false;
-  if(proj && t.proj   !== proj) return false;
-  if(resp && t.resp   !== resp) return false;
-  if(task && t.task   !== task) return false;
+        if (showOnlyCompleted) {
+          if (t.status !== 'Completado' && t.status !== 'Cancelado') return false;
+        } else if (showAllTasks) {
+          // mostrar todo
+        } else {
+          if (t.status === 'Completado' || t.status === 'Cancelado') return false;
+        }
 
-  if (showOnlyCompleted) {
-    // Mostrar solo completadas/canceladas
-    if (t.status !== 'Completado' && t.status !== 'Cancelado') return false;
+        if (showOnlyCompletedProjects) {
+          const pt = TASKS.filter(x => x.proj === t.proj);
+          if (!pt.every(x => x.status === 'Completado' || x.status === 'Cancelado')) return false;
+        }
 
-  } else if (showAllTasks) {
-    // Mostrar todo — no excluir nada por estado
+        if (showOnlyBlocked && t.status !== 'Bloqueado') return false;
 
-  } else {
-    // Vista normal: ocultar completadas y canceladas
-    if (t.status === 'Completado' || t.status === 'Cancelado') return false;
-  }
+        if (showOnlyOverdue) {
+          const isOverdue = t.end && t.end < TODAY && t.status !== 'Completado' && t.status !== 'Cancelado';
+          if (!isOverdue) return false;
+        }
 
-if (showOnlyCompletedProjects) {
-
-  const projectTasks = TASKS.filter(
-    x => x.proj === t.proj
-  );
-
-  const isProjectCompleted = projectTasks.every(
-    x =>
-      x.status === 'Completado' ||
-      x.status === 'Cancelado'
-  );
-
-  if (!isProjectCompleted) {
-    return false;
-  }
-}
-
-if (showOnlyBlocked) {
-
-  if (t.status !== 'Bloqueado') {
-    return false;
-  }
-
-}
-
-if (showOnlyOverdue) {
-
-  const isOverdue = t.end && t.end < TODAY &&
-    t.status !== 'Completado' &&
-    t.status !== 'Cancelado';
-
-  if (!isOverdue) return false;
-}
-
-  return true;
-});
+        return true;
+      });
 
       updateStats();
       renderSidebarCategories();
-      if(currentActiveView === 'gantt') render(); else renderDashboard();
+      if      (currentActiveView === 'gantt')     render();
+      else if (currentActiveView === 'kanban')    renderKanban();
+      else                                        renderDashboard();
     }
 
-function updateStats(){
+    // ── KPIs ───────────────────────────────────────────────────
+    const KPI_BASE = {
+      'kpi-projects-done':'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer',
+      'kpi-tasks-all':    'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer',
+      'kpi-overdue':      'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer',
+      'kpi-done':         'w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer',
+      'kpi-blocked':      'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer',
+    };
+    const KPI_ACTIVE = {
+      'kpi-projects-done':'ring-2 ring-cyan-500 bg-cyan-50 dark:bg-cyan-950/30 p-2 rounded-lg border border-cyan-400 text-center w-full transition-all cursor-pointer',
+      'kpi-tasks-all':    'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30 p-2 rounded-lg border border-blue-400 text-center w-full transition-all cursor-pointer',
+      'kpi-overdue':      'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-400 text-center w-full transition-all cursor-pointer',
+      'kpi-done':         'ring-2 ring-emerald-500 w-full bg-emerald-500/20 text-center p-2 rounded-lg border border-emerald-500 transition-all cursor-pointer',
+      'kpi-blocked':      'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded-lg border border-red-400 text-center w-full transition-all cursor-pointer',
+    };
 
-  // PROYECTOS ACTIVOS REALES
-  const allProjects = [...new Set(TASKS.map(t => t.proj))];
-  
-  const totalProjects = allProjects.length;
+    function _setKpiActive(id, active) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.className = active ? KPI_ACTIVE[id] : KPI_BASE[id];
+    }
+    function _resetAllKpi() { Object.keys(KPI_BASE).forEach(id => _setKpiActive(id, false)); }
 
-const completedProjects = allProjects.filter(project => {
+    function kpiToggleCompleted() {
+      if (showAllTasks)   { showAllTasks = false;   _setKpiActive('kpi-tasks-all', false); }
+      if (showOnlyOverdue){ showOnlyOverdue = false; _setKpiActive('kpi-overdue', false); }
+      showOnlyCompleted = !showOnlyCompleted;
+      _setKpiActive('kpi-done', showOnlyCompleted);
+      applyFilters();
+    }
+    function kpiToggleCompletedProjects() {
+      if (showOnlyBlocked){ showOnlyBlocked = false; _setKpiActive('kpi-blocked', false); }
+      showOnlyCompletedProjects = !showOnlyCompletedProjects;
+      _setKpiActive('kpi-projects-done', showOnlyCompletedProjects);
+      applyFilters();
+    }
+    function kpiToggleAll() {
+      if (showOnlyCompleted){ showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
+      if (showOnlyOverdue)  { showOnlyOverdue = false;   _setKpiActive('kpi-overdue', false); }
+      showAllTasks = !showAllTasks;
+      _setKpiActive('kpi-tasks-all', showAllTasks);
+      applyFilters();
+    }
+    function kpiToggleBlocked() {
+      if (showOnlyCompleted){ showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
+      if (showOnlyOverdue)  { showOnlyOverdue = false;   _setKpiActive('kpi-overdue', false); }
+      if (showAllTasks)     { showAllTasks = false;      _setKpiActive('kpi-tasks-all', false); }
+      showOnlyBlocked = !showOnlyBlocked;
+      _setKpiActive('kpi-blocked', showOnlyBlocked);
+      applyFilters();
+    }
+    function kpiToggleOverdue() {
+      if (showOnlyCompleted){ showOnlyCompleted = false; _setKpiActive('kpi-projects-done', false); _setKpiActive('kpi-done', false); }
+      if (showAllTasks)     { showAllTasks = false;      _setKpiActive('kpi-tasks-all', false); }
+      showOnlyOverdue = !showOnlyOverdue;
+      _setKpiActive('kpi-overdue', showOnlyOverdue);
+      applyFilters();
+    }
 
-  const projectTasks = TASKS.filter(
-    t => t.proj === project
-  );
+    // ── STATS ──────────────────────────────────────────────────
+    function updateStats() {
+      const allProjects = [...new Set(TASKS.map(t => t.proj))];
+      const totalProjects = allProjects.length;
+      const completedProjects = allProjects.filter(p => {
+        const pt = TASKS.filter(t => t.proj === p);
+        return pt.every(t => t.status === 'Completado' || t.status === 'Cancelado');
+      }).length;
+      const active = allProjects.filter(p =>
+        TASKS.some(t => t.proj === p && (t.status === 'En curso' || t.status === 'En planificación'))
+      ).length;
+      const totalTasks = TASKS.length;
+      const blocked    = TASKS.filter(t => t.status === 'Bloqueado').length;
+      const done       = TASKS.filter(t => t.status === 'Completado').length;
+      const overdue    = TASKS.filter(t => t.end && t.end < TODAY && t.status !== 'Completado' && t.status !== 'Cancelado').length;
 
-  return projectTasks.every(
-    t =>
-      t.status === 'Completado' ||
-      t.status === 'Cancelado'
-  );
-
-}).length;
-
-  const active = allProjects.filter(p =>
-    TASKS.some(t =>
-      t.proj === p &&
-      (
-        t.status === 'En curso' ||
-        t.status === 'En planificación'
-      )
-    )
-  ).length;
-
-  // TOTAL TAREAS
-  const totalTasks = TASKS.length;
-
-  // BLOQUEADAS
-  const blocked = TASKS.filter(
-    t => t.status === 'Bloqueado'
-  ).length;
-
-  // COMPLETADAS
-  const done = TASKS.filter(
-    t => t.status === 'Completado'
-  ).length;
-
-  // VENCIDAS
-  const overdue = TASKS.filter(
-    t =>
-      t.end &&
-      t.end < TODAY &&
-      t.status !== 'Completado' &&
-      t.status !== 'Cancelado'
-  ).length;
-
-  document.getElementById('s-projects').textContent = totalProjects;
-  document.getElementById('s-projects-done').textContent = completedProjects;
-  document.getElementById('s-active').textContent = active;
-  document.getElementById('s-tasks').textContent = totalTasks;
-  document.getElementById('s-blocked').textContent = blocked;
-  document.getElementById('s-done').textContent = done;
-  document.getElementById('s-overdue').textContent = overdue;
-}
+      document.getElementById('s-projects').textContent      = totalProjects;
+      document.getElementById('s-projects-done').textContent = completedProjects;
+      document.getElementById('s-active').textContent        = active;
+      document.getElementById('s-tasks').textContent         = totalTasks;
+      document.getElementById('s-blocked').textContent       = blocked;
+      document.getElementById('s-done').textContent          = done;
+      document.getElementById('s-overdue').textContent       = overdue;
+    }
 
     function renderSidebarCategories() {
       const counts = {};
       TASKS.forEach(t => { counts[t.cat] = (counts[t.cat] || 0) + 1; });
       const container = document.getElementById('sidebar-categories');
-      if(!container) return;
+      if (!container) return;
       container.innerHTML = '';
-      
       Object.keys(CAT_COLOR).forEach(c => {
-        if(c==='default') return;
+        if (c === 'default') return;
         const n = counts[c] || 0;
         const col = CAT_COLOR[c];
         container.innerHTML += `
           <div class="flex items-center justify-between px-3 py-1.5 text-xs theme-text-muted">
             <div class="flex items-center space-x-2">
               <span class="w-2 h-2 rounded-full" style="background:${col}"></span>
-              <span>${c}</span>
+              <span>${esc(c)}</span>
             </div>
-            <span class="text-[10px] font-mono theme-sidebar theme-text-muted px-1.5 py-0.2 rounded border border-gray-300 dark:border-slate-700">${n}</span>
+            <span class="text-[10px] font-mono theme-sidebar theme-text-muted px-1.5 rounded border border-gray-300 dark:border-slate-700">${n}</span>
           </div>`;
       });
     }
 
-    const MONTHS_ES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    // ── CAMBIO DE VISTA ────────────────────────────────────────
+    function switchView(viewName) {
+      currentActiveView = viewName;
+      const views = { gantt: 'view-gantt-container', kanban: 'view-kanban-container', dashboard: 'view-dashboard-container' };
+      const navs  = { gantt: 'nav-gantt', kanban: 'nav-kanban', dashboard: 'nav-dashboard' };
+      const BASE_NAV = "w-full flex items-center justify-between px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:theme-text font-medium text-xs transition-all";
+      const ACTIVE_NAV = "w-full flex items-center justify-between px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
+
+      Object.entries(views).forEach(([v, id]) => {
+        const el = document.getElementById(id);
+        if (el) v === viewName ? el.classList.remove('hidden') : el.classList.add('hidden');
+      });
+      Object.entries(navs).forEach(([v, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.className = v === viewName ? ACTIVE_NAV : BASE_NAV;
+      });
+
+      if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
+      else if (viewName === 'kanban')    renderKanban();
+      else                               renderDashboard();
+    }
+
+    // ── GANTT ──────────────────────────────────────────────────
+    const MONTHS_ES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
     function buildCalendar() {
-
-  if (!TASKS.length) {
-    return {
-      start: new Date(),
-      end: new Date(),
-      days: []
-    };
-  }
-
-  // SOLO tareas útiles para calcular rango
-  const validTasks = TASKS.filter(
-    t => t.start || t.end
-  );
-
-  // Fechas mínimas y máximas
-  const minDate = new Date(
-    Math.min(
-      ...validTasks.map(t =>
-        (t.start || t.end).getTime()
-      )
-    )
-  );
-
-  const maxDate = new Date(
-    Math.max(
-      ...validTasks.map(t =>
-        (t.end || t.start).getTime()
-      )
-    )
-  );
-
-  // Margen visual
-  minDate.setMonth(minDate.getMonth() - 2);
-  maxDate.setMonth(maxDate.getMonth() + 2);
-
-  // Normalizar inicio/fin
-  const start = new Date(
-    minDate.getFullYear(),
-    minDate.getMonth(),
-    1
-  );
-
-  const end = new Date(
-    maxDate.getFullYear(),
-    maxDate.getMonth() + 1,
-    0
-  );
-
-  // Generar días
-  const days = [];
-  const cur = new Date(start);
-
-  while (cur <= end) {
-    days.push(new Date(cur));
-    cur.setDate(cur.getDate() + 1);
-  }
-
-  return { start, end, days };
-}
-    let CAL=buildCalendar(); const DAY_W=34;
-
-    function dayOffset(d){
-      if(!d)return null;
-      const diff=Math.round((d-CAL.start)/(1000*60*60*24));
-      return diff>=0?diff:null;
+      if (!TASKS.length) return { start: new Date(), end: new Date(), days: [] };
+      const validTasks = TASKS.filter(t => t.start || t.end);
+      if (!validTasks.length) return { start: new Date(), end: new Date(), days: [] };
+      const minDate = new Date(Math.min(...validTasks.map(t => (t.start || t.end).getTime())));
+      const maxDate = new Date(Math.max(...validTasks.map(t => (t.end   || t.start).getTime())));
+      minDate.setMonth(minDate.getMonth() - 2);
+      maxDate.setMonth(maxDate.getMonth() + 2);
+      const start = new Date(minDate.getFullYear(), minDate.getMonth(), 1);
+      const end   = new Date(maxDate.getFullYear(), maxDate.getMonth() + 1, 0);
+      const days  = [];
+      const cur   = new Date(start);
+      while (cur <= end) { days.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+      return { start, end, days };
     }
 
-    function getISOWeek(d){
-      const tmp=new Date(d); tmp.setHours(0,0,0,0); tmp.setDate(tmp.getDate()+3-(tmp.getDay()+6)%7);
-      const w1=new Date(tmp.getFullYear(),0,4); return 1+Math.round(((tmp-w1)/86400000-3+(w1.getDay()+6)%7)/7);
+    let CAL = buildCalendar();
+    const DAY_W = 34;
+
+    function dayOffset(d) {
+      if (!d) return null;
+      const diff = Math.round((d - CAL.start) / (1000*60*60*24));
+      return diff >= 0 ? diff : null;
     }
 
-    function syncScroll(el){
+    function getISOWeek(d) {
+      const tmp = new Date(d); tmp.setHours(0,0,0,0);
+      tmp.setDate(tmp.getDate() + 3 - (tmp.getDay() + 6) % 7);
+      const w1 = new Date(tmp.getFullYear(), 0, 4);
+      return 1 + Math.round(((tmp - w1) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
+    }
+
+    function syncScroll(el) {
       const sbRows = document.getElementById('sb-rows');
-      if(sbRows) sbRows.scrollTop = el.scrollTop;
+      if (sbRows) sbRows.scrollTop = el.scrollTop;
     }
 
-    let allExpanded=true;
-    function toggleAllExpanded(){
-      allExpanded=!allExpanded;
-      const projs=[...new Set(TASKS.map(t=>t.proj))];
-      projs.forEach(p=>{expanded[p]=allExpanded;});
+    let allExpanded = true;
+    function toggleAllExpanded() {
+      allExpanded = !allExpanded;
+      [...new Set(TASKS.map(t => t.proj))].forEach(p => { expanded[p] = allExpanded; });
       render();
     }
 
-    function render(){
-	CAL = buildCalendar();
-      const projs=buildProjects(filteredTasks);
-      const sbRows=document.getElementById('sb-rows'); const tlInner=document.getElementById('tl-inner');
-      if(!sbRows || !tlInner) return;
-      sbRows.innerHTML=''; tlInner.innerHTML='';
-      const totalW=CAL.days.length*DAY_W;
-
-let monthHtml =
-  '<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:' +
-  totalW +
-  'px; background-color: var(--bg-header);">';
-
-let currentMonth = -1;
-let currentYear = -1;
-let monthCount = 0;
-
-CAL.days.forEach((d) => {
-
-  const month = d.getMonth();
-  const year = d.getFullYear();
-
-  if (month !== currentMonth || year !== currentYear) {
-
-    if (currentMonth !== -1) {
-
-      monthHtml += `
-        <div
-          class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0"
-          style="width:${monthCount * DAY_W}px"
-        >
-          ${MONTHS_ES[currentMonth]} ${currentYear}
-        </div>`;
+    function sortTasks(tasks) {
+      if (!currentSort.field) return tasks;
+      return [...tasks].sort((a, b) => {
+        let av = a[currentSort.field], bv = b[currentSort.field];
+        if (!av && !bv) return 0;
+        if (!av) return 1;
+        if (!bv) return -1;
+        av = av instanceof Date ? av.getTime() : av;
+        bv = bv instanceof Date ? bv.getTime() : bv;
+        return currentSort.direction === 'asc' ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+      });
     }
 
-    currentMonth = month;
-    currentYear = year;
-    monthCount = 1;
+    function toggleSort(field) {
+      if (currentSort.field !== field) { currentSort.field = field; currentSort.direction = 'asc'; }
+      else if (currentSort.direction === 'asc') { currentSort.direction = 'desc'; }
+      else { currentSort.field = null; currentSort.direction = 'asc'; }
+      const ss = document.getElementById('sort-start');
+      const se = document.getElementById('sort-end');
+      if (ss) ss.textContent = getSortIcon('start');
+      if (se) se.textContent = getSortIcon('end');
+      render();
+    }
 
-  } else {
+    function getSortIcon(field) {
+      if (currentSort.field !== field) return '↕';
+      return currentSort.direction === 'asc' ? '↑' : '↓';
+    }
 
-    monthCount++;
-  }
-});
+    function render() {
+      CAL = buildCalendar();
+      const projs   = buildProjects(filteredTasks);
+      const sbRows  = document.getElementById('sb-rows');
+      const tlInner = document.getElementById('tl-inner');
+      if (!sbRows || !tlInner) return;
+      sbRows.innerHTML = ''; tlInner.innerHTML = '';
+      const totalW = CAL.days.length * DAY_W;
 
-monthHtml += `
-  <div
-    class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0"
-    style="width:${monthCount * DAY_W}px"
-  >
-    ${MONTHS_ES[currentMonth]} ${currentYear}
-  </div>
-</div>`;
-
-      let wkHtml='<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:'+totalW+'px; background-color: var(--bg-header);">';
-      let wk=-1,wkCount=0;
-      CAL.days.forEach((d)=>{
-        const w=getISOWeek(d);
-        if(w!==wk){
-          if(wk>=0)wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div>`;
-          wk=w;wkCount=1;
-        }else{wkCount++;}
+      // Cabecera meses
+      let monthHtml = `<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:${totalW}px; background-color: var(--bg-header);">`;
+      let currentMonth = -1, currentYear = -1, monthCount = 0;
+      CAL.days.forEach(d => {
+        const m = d.getMonth(), y = d.getFullYear();
+        if (m !== currentMonth || y !== currentYear) {
+          if (currentMonth !== -1) monthHtml += `<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${monthCount*DAY_W}px">${MONTHS_ES[currentMonth]} ${currentYear}</div>`;
+          currentMonth = m; currentYear = y; monthCount = 1;
+        } else { monthCount++; }
       });
-      wkHtml+=`<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
+      monthHtml += `<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${monthCount*DAY_W}px">${MONTHS_ES[currentMonth]} ${currentYear}</div></div>`;
 
-      // ── FILA DÍAS (sticky top: 32+24=56px, h-6=24px) ─────────────────────
-      let dayHtml='<div class="flex h-6 border-b theme-border sticky z-10" style="top:56px;width:'+totalW+'px; background-color: var(--bg-header);">';
-      CAL.days.forEach((d)=>{
-        const isWE=d.getDay()===0||d.getDay()===6;
-        const isTd=d.toDateString()===TODAY.toDateString();
-        const dayNum=d.getDate();
-        const txtStyle=isTd?'color:#3b82f6;font-weight:700;':isWE?'opacity:0.35;':(dayNum===1?'font-weight:700;':'');
-        const bgStyle=isTd?'background:rgba(59,130,246,0.08);':isWE?'background:rgba(0,0,0,0.015);':'';
-        dayHtml+=`<div class="shrink-0 h-full border-r theme-border flex items-center justify-center" style="width:${DAY_W}px;${bgStyle}${txtStyle}"><span style="font-size:9px;line-height:1;font-family:monospace">${dayNum}</span></div>`;
+      // Cabecera semanas
+      let wkHtml = `<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:${totalW}px; background-color: var(--bg-header);">`;
+      let wk = -1, wkCount = 0;
+      CAL.days.forEach(d => {
+        const w = getISOWeek(d);
+        if (w !== wk) {
+          if (wk >= 0) wkHtml += `<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div>`;
+          wk = w; wkCount = 1;
+        } else { wkCount++; }
       });
-      dayHtml+='</div>';
+      wkHtml += `<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
 
-      const rowsDiv=document.createElement('div');
-      rowsDiv.style.cssText='position:relative;width:'+totalW+'px;';
+      // Cabecera días
+      let dayHtml = `<div class="flex h-6 border-b theme-border sticky z-10" style="top:56px;width:${totalW}px; background-color: var(--bg-header);">`;
+      CAL.days.forEach(d => {
+        const isWE = d.getDay() === 0 || d.getDay() === 6;
+        const isTd = d.toDateString() === TODAY.toDateString();
+        const dayNum = d.getDate();
+        const txtStyle = isTd ? 'color:#3b82f6;font-weight:700;' : isWE ? 'opacity:0.35;' : (dayNum === 1 ? 'font-weight:700;' : '');
+        const bgStyle  = isTd ? 'background:rgba(59,130,246,0.08);' : isWE ? 'background:rgba(0,0,0,0.015);' : '';
+        dayHtml += `<div class="shrink-0 h-full border-r theme-border flex items-center justify-center" style="width:${DAY_W}px;${bgStyle}${txtStyle}"><span style="font-size:9px;line-height:1;font-family:monospace">${dayNum}</span></div>`;
+      });
+      dayHtml += '</div>';
 
-      const todayOff=dayOffset(TODAY);
-      if(todayOff!==null&&todayOff<CAL.days.length){
-        const line=document.createElement('div'); line.className='absolute top-0 w-[1.5px] z-20 pointer-events-none opacity-50';
-        line.style.cssText=`left:${todayOff*DAY_W+15}px;height:${(projs.reduce((a,p)=>a+1+(expanded[p.name]?p.tasks.length:0),0))*44}px;background:#3b82f6`;
+      const rowsDiv = document.createElement('div');
+      rowsDiv.style.cssText = `position:relative;width:${totalW}px;`;
+
+      const todayOff = dayOffset(TODAY);
+      if (todayOff !== null && todayOff < CAL.days.length) {
+        const line = document.createElement('div'); line.className = 'absolute top-0 w-[1.5px] z-20 pointer-events-none opacity-50';
+        const totalRows = projs.reduce((a, p) => a + 1 + (expanded[p.name] ? p.tasks.length : 0), 0);
+        line.style.cssText = `left:${todayOff*DAY_W+15}px;height:${totalRows*44}px;background:#3b82f6`;
         rowsDiv.appendChild(line);
       }
 
-      projs.forEach(proj=>{
-        const isOpen=expanded[proj.name]!==false; const catColor=CAT_COLOR[proj.cat]||CAT_COLOR.default;
-        
-        const sbProj=document.createElement('div'); sbProj.className='flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
-        sbProj.style.backgroundColor = 'var(--bg-sidebar)';
-        sbProj.innerHTML=`<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
-        sbProj.onclick=()=>{expanded[proj.name]=!isOpen;render();}; sbRows.appendChild(sbProj);
+      projs.forEach(proj => {
+        const isOpen    = expanded[proj.name] !== false;
+        const catColor  = CAT_COLOR[proj.cat] || CAT_COLOR.default;
 
-        const gProj=document.createElement('div'); gProj.className='flex h-11 border-b theme-border'; gProj.style.width=totalW+'px'; gProj.style.backgroundColor = 'var(--bg-main)';
-        CAL.days.forEach((d)=>{
-          const cell=document.createElement('div'); cell.className='shrink-0 h-full border-r theme-border opacity-30'+(d.getDay()===0||d.getDay()===6?' bg-gray-200 dark:bg-slate-900':''); cell.style.width=DAY_W+'px'; gProj.appendChild(cell);
+        const sbProj = document.createElement('div');
+        sbProj.className = 'flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
+        sbProj.style.backgroundColor = 'var(--bg-sidebar)';
+        sbProj.innerHTML = `<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
+        sbProj.onclick = () => { expanded[proj.name] = !isOpen; render(); };
+        sbRows.appendChild(sbProj);
+
+        const gProj = document.createElement('div');
+        gProj.className = 'flex h-11 border-b theme-border';
+        gProj.style.width = totalW + 'px';
+        gProj.style.backgroundColor = 'var(--bg-main)';
+        CAL.days.forEach(d => {
+          const cell = document.createElement('div');
+          cell.className = 'shrink-0 h-full border-r theme-border opacity-30' + (d.getDay()===0||d.getDay()===6?' bg-gray-200 dark:bg-slate-900':'');
+          cell.style.width = DAY_W + 'px';
+          gProj.appendChild(cell);
         });
         rowsDiv.appendChild(gProj);
 
-        if(isOpen){
-  const sortedTasks = sortTasks(proj.tasks);
+        if (isOpen) {
+          sortTasks(proj.tasks).forEach(task => {
+            const sbTask = document.createElement('div');
+            sbTask.className = 'flex items-center pl-8 pr-2 h-11 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 border-b theme-border transition theme-text-muted text-xs';
+            const sc   = STATUS_COLOR[task.status] || '#9ca3af';
+            const sb   = STATUS_BG[task.status]    || 'rgba(0,0,0,0.1)';
+            const isOv = task.end && task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
+            const fmtShort = d => d ? (d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0')) : '—';
 
-  sortedTasks.forEach(task=>{
-            const sbTask=document.createElement('div'); sbTask.className='flex items-center pl-8 pr-2 h-11 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 border-b theme-border transition theme-text-muted text-xs';
-            const sc=STATUS_COLOR[task.status]||'#9ca3af'; const sb=STATUS_BG[task.status]||'rgba(0,0,0,0.1)';
-            const isOv=task.end&&task.end<TODAY&&task.status!=='Completado'&&task.status!=='Cancelado';
-            const fmtShort = d => d ? (d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')) : '—';
-
-            sbTask.innerHTML=`
+            sbTask.innerHTML = `
               <span class="truncate pr-2 theme-text font-medium flex-1" title="${esc(task.task)}">${esc(task.task)}</span>
-
-              <span class="w-[90px] text-center shrink-0 text-[9px] theme-text-muted opacity-80 truncate font-mono px-1">
-                ${esc(task.resp)}
-              </span>
-
+              <span class="w-[90px] text-center shrink-0 text-[9px] theme-text-muted opacity-80 truncate font-mono px-1">${esc(task.resp)}</span>
               <div class="w-[110px] flex justify-center shrink-0 px-1">
-                <span class="text-[9px] px-1.5 py-0.5 rounded font-medium shadow-sm truncate max-w-full" style="color:${sc};background:${sb};border:0.5px solid ${sc}44">
-                  ${esc(task.status)}
-                </span>
+                <span class="text-[9px] px-1.5 py-0.5 rounded font-medium shadow-sm truncate max-w-full" style="color:${sc};background:${sb};border:0.5px solid ${sc}44">${esc(task.status)}</span>
               </div>
-
               <span class="w-[72px] text-center shrink-0 font-mono text-[9px] ${isOv?'text-red-500':'theme-text-muted'}">${fmtShort(task.start)}</span>
               <span class="w-[72px] text-center shrink-0 font-mono text-[9px] ${isOv?'text-red-500 font-bold':'theme-text-muted'}">${fmtShort(task.end)}</span>
               <span class="w-[28px] shrink-0"></span>`;
-            sbTask.onclick=()=>openEdit(task.id);
+            sbTask.onclick = () => openEdit(task.id);
             sbRows.appendChild(sbTask);
 
-            const gTask=document.createElement('div'); gTask.className='flex h-11 border-b theme-border opacity-80 relative'; gTask.style.width=totalW+'px';
-            CAL.days.forEach((d)=>{
-              const cell=document.createElement('div'); cell.className='shrink-0 h-full border-r theme-border opacity-20'+(d.getDay()===0||d.getDay()===6?' bg-gray-100 dark:bg-slate-900/40':''); cell.style.width=DAY_W+'px'; gTask.appendChild(cell);
+            const gTask = document.createElement('div');
+            gTask.className = 'flex h-11 border-b theme-border opacity-80 relative';
+            gTask.style.width = totalW + 'px';
+            CAL.days.forEach(d => {
+              const cell = document.createElement('div');
+              cell.className = 'shrink-0 h-full border-r theme-border opacity-20' + (d.getDay()===0||d.getDay()===6?' bg-gray-100 dark:bg-slate-900/40':'');
+              cell.style.width = DAY_W + 'px';
+              gTask.appendChild(cell);
             });
 
-            if(task.start&&task.end){
-              const s=dayOffset(task.start); const e=dayOffset(task.end);
-              if(s!==null&&e!==null&&s<CAL.days.length&&e>=0){
-                const cs=Math.max(0,s); const ce=Math.min(CAL.days.length-1,e);
-                const bar=document.createElement('div'); bar.className='absolute h-4 rounded cursor-pointer transition-all hover:brightness-110 z-10 flex items-center px-2 shadow-sm border border-black/10';
-                const barColor=isOv?'#ef4444':sc;
-                bar.style.cssText=`left:${cs*DAY_W+2}px;width:${(ce-cs+1)*DAY_W-4}px;background:${barColor};top:13px`;
-                bar.innerHTML=`<span class="text-[9px] font-bold text-white uppercase truncate">${task.task}</span>`;
-                bar.title=`${esc(task.task)} [${esc(task.resp)}]`;
-                bar.onclick=()=>openEdit(task.id);
+            if (task.start && task.end) {
+              const s = dayOffset(task.start), e = dayOffset(task.end);
+              if (s !== null && e !== null && s < CAL.days.length && e >= 0) {
+                const cs = Math.max(0, s), ce = Math.min(CAL.days.length-1, e);
+                const bar = document.createElement('div');
+                bar.className = 'absolute h-4 rounded cursor-pointer transition-all hover:brightness-110 z-10 flex items-center px-2 shadow-sm border border-black/10';
+                const barColor = isOv ? '#ef4444' : sc;
+                bar.style.cssText = `left:${cs*DAY_W+2}px;width:${(ce-cs+1)*DAY_W-4}px;background:${barColor};top:13px`;
+                bar.innerHTML = `<span class="text-[9px] font-bold text-white uppercase truncate">${esc(task.task)}</span>`;
+                bar.title = `${esc(task.task)} [${esc(task.resp)}]`;
+                bar.onclick = () => openEdit(task.id);
                 gTask.appendChild(bar);
               }
             }
@@ -1443,42 +1297,186 @@ monthHtml += `
         }
       });
 
-      tlInner.innerHTML=monthHtml+wkHtml+dayHtml; tlInner.appendChild(rowsDiv);
-      document.getElementById('sort-start').textContent = getSortIcon('start');
-document.getElementById('sort-end').textContent = getSortIcon('end');
-
-lucide.createIcons();
+      tlInner.innerHTML = monthHtml + wkHtml + dayHtml;
+      tlInner.appendChild(rowsDiv);
+      const ss = document.getElementById('sort-start');
+      const se = document.getElementById('sort-end');
+      if (ss) ss.textContent = getSortIcon('start');
+      if (se) se.textContent = getSortIcon('end');
+      lucide.createIcons();
     }
+
+    // ── KANBAN ─────────────────────────────────────────────────
+    const KANBAN_STATUS_ORDER = [
+      'Sin comenzar','En planificación','En curso','Pendiente revisión','Bloqueado','Completado','Cancelado'
+    ];
+    const KANBAN_PRIO_ORDER = ['Crítica','Alta','Media','Baja'];
+
+    let _kanbanDragId = null;
+    let _kanbanDragGroup = null;
+
+    function renderKanban() {
+      const board = document.getElementById('kanban-board');
+      if (!board) return;
+      board.innerHTML = '';
+
+      const groupBy = document.getElementById('kanban-group-by')?.value || 'status';
+      const tasks   = filteredTasks;
+
+      // Determinar grupos y orden
+      let groups = [];
+      if (groupBy === 'status') {
+        groups = KANBAN_STATUS_ORDER;
+      } else if (groupBy === 'prio') {
+        groups = KANBAN_PRIO_ORDER;
+      } else if (groupBy === 'proj') {
+        groups = [...new Set(tasks.map(t => t.proj))].sort((a,b)=>a.localeCompare(b));
+      } else if (groupBy === 'resp') {
+        groups = [...new Set(tasks.map(t => t.resp).filter(r=>r&&r!=='—'))].sort((a,b)=>a.localeCompare(b));
+      }
+
+      groups.forEach(groupKey => {
+        const colTasks = tasks.filter(t => t[groupBy] === groupKey);
+        // Mostrar columna siempre para status/prio, solo si tiene tareas para proj/resp
+        if ((groupBy === 'proj' || groupBy === 'resp') && colTasks.length === 0) return;
+
+        const sc = STATUS_COLOR[groupKey] || CAT_COLOR[groupKey] || PRIO_COLOR[groupKey] || '#64748b';
+        const colEl = document.createElement('div');
+        colEl.className = 'kanban-col flex flex-col gap-2';
+        colEl.dataset.group = groupKey;
+
+        // Header de columna
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between px-3 py-2 rounded-lg font-semibold text-xs';
+        header.style.cssText = `background:${sc}18;border:1px solid ${sc}33;color:${sc}`;
+        header.innerHTML = `
+          <span class="truncate">${esc(groupKey)}</span>
+          <span class="ml-2 shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded-full" style="background:${sc}22">${colTasks.length}</span>`;
+        colEl.appendChild(header);
+
+        // Zona drop
+        const dropZone = document.createElement('div');
+        dropZone.className = 'kanban-col-dropzone flex flex-col gap-2 flex-1 p-1';
+        dropZone.dataset.group = groupKey;
+
+        dropZone.addEventListener('dragover', e => {
+          e.preventDefault();
+          dropZone.classList.add('drag-over');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', e => {
+          e.preventDefault();
+          dropZone.classList.remove('drag-over');
+          if (_kanbanDragId && isEditModeActive) {
+            handleKanbanDrop(_kanbanDragId, groupKey, groupBy);
+          }
+        });
+
+        // Tarjetas
+        colTasks.forEach(task => {
+          const card = buildKanbanCard(task, groupBy);
+          dropZone.appendChild(card);
+        });
+
+        colEl.appendChild(dropZone);
+        board.appendChild(colEl);
+      });
+
+      lucide.createIcons();
+    }
+
+    function buildKanbanCard(task, groupBy) {
+      const sc    = STATUS_COLOR[task.status] || '#9ca3af';
+      const pc    = PRIO_COLOR[task.prio]     || '#64748b';
+      const catC  = CAT_COLOR[task.cat]       || CAT_COLOR.default;
+      const isOv  = task.end && task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
+      const fmtShort = d => d ? (d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0') + '/' + d.getFullYear().toString().slice(-2)) : null;
+
+      const card = document.createElement('div');
+      card.className = 'kanban-card theme-panel border rounded-lg p-3 text-xs cursor-pointer select-none';
+      card.style.borderLeft = `3px solid ${sc}`;
+      card.draggable = true;
+      card.dataset.taskId = task.id;
+
+      card.innerHTML = `
+        <div class="flex items-start justify-between gap-1 mb-2">
+          <span class="font-semibold theme-text leading-tight line-clamp-2 flex-1">${esc(task.task)}</span>
+          <span class="shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded-full" style="background:${pc}18;color:${pc};border:1px solid ${pc}33">${esc(task.prio)}</span>
+        </div>
+        <div class="text-[10px] theme-text-muted truncate mb-2 font-medium">${esc(task.proj)}</div>
+        <div class="flex flex-wrap items-center gap-1.5 mt-1">
+          <span class="text-[9px] px-1.5 py-0.5 rounded font-medium" style="color:${sc};background:${sc}18;border:1px solid ${sc}33">${esc(task.status)}</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded" style="background:${catC}18;color:${catC}">${esc(task.cat)}</span>
+        </div>
+        <div class="flex items-center justify-between mt-2 pt-2 border-t theme-border">
+          <span class="text-[10px] theme-text-muted font-mono">${esc(task.resp)}</span>
+          ${task.end ? `<span class="text-[9px] font-mono ${isOv?'text-red-500 font-bold':'theme-text-muted'}">${isOv?'⚠ ':''} ${fmtShort(task.end)}</span>` : ''}
+        </div>`;
+
+      card.addEventListener('click', () => openEdit(task.id));
+      card.addEventListener('dragstart', () => {
+        _kanbanDragId    = task.id;
+        _kanbanDragGroup = task[groupBy];
+        card.classList.add('dragging');
+      });
+      card.addEventListener('dragend', () => {
+        card.classList.remove('dragging');
+        _kanbanDragId    = null;
+        _kanbanDragGroup = null;
+      });
+
+      return card;
+    }
+
+    async function handleKanbanDrop(taskId, newGroupValue, groupBy) {
+      if (!isEditModeActive) return;
+      // Solo cambiamos si el campo es status (los demás requieren modal completo)
+      if (groupBy !== 'status') {
+        openEdit(taskId);
+        return;
+      }
+      const task = TASKS.find(t => t.id === taskId);
+      if (!task || task.status === newGroupValue) return;
+
+      const payload = { status: newGroupValue };
+      try {
+        const { error } = await supabaseClient.from('tareas').update(payload).eq('id', taskId);
+        if (error) throw error;
+        await loadTasksFromCloud();
+      } catch(e) {
+        alert('Error al actualizar estado: ' + e.message);
+      }
+    }
+
+    // ── DASHBOARD ──────────────────────────────────────────────
     function renderDashboard() {
       const pBars = document.getElementById('dashboard-progress-bars');
       const dList = document.getElementById('dashboard-deadlines-list');
-      if(!pBars || !dList) return;
+      if (!pBars || !dList) return;
       pBars.innerHTML = ''; dList.innerHTML = '';
 
       const projs = buildProjects(TASKS);
-      
       let wip=0, review=0, plan=0, backlog=0;
-      TASKS.forEach(t=>{
-        if(t.status==='En curso') wip++;
-        else if(t.status==='Pendiente revisión') review++;
-        else if(t.status==='En planificación') plan++;
-        else if(t.status==='Sin comenzar') backlog++;
+      TASKS.forEach(t => {
+        if      (t.status === 'En curso')            wip++;
+        else if (t.status === 'Pendiente revisión')  review++;
+        else if (t.status === 'En planificación')    plan++;
+        else if (t.status === 'Sin comenzar')        backlog++;
       });
-      document.getElementById('dash-c-wip').textContent=wip;
-      document.getElementById('dash-c-review').textContent=review;
-      document.getElementById('dash-c-plan').textContent=plan;
-      document.getElementById('dash-c-backlog').textContent=backlog;
+      document.getElementById('dash-c-wip').textContent     = wip;
+      document.getElementById('dash-c-review').textContent  = review;
+      document.getElementById('dash-c-plan').textContent    = plan;
+      document.getElementById('dash-c-backlog').textContent = backlog;
 
-      projs.forEach(p=>{
+      projs.forEach(p => {
         const total = p.tasks.length;
-        const done = p.tasks.filter(t=>t.status==='Completado').length;
-        const pct = total>0 ? Math.round((done/total)*100) : 0;
-        const col = CAT_COLOR[p.cat] || CAT_COLOR.default;
-
+        const done  = p.tasks.filter(t => t.status === 'Completado').length;
+        const pct   = total > 0 ? Math.round((done/total)*100) : 0;
+        const col   = CAT_COLOR[p.cat] || CAT_COLOR.default;
         pBars.innerHTML += `
           <div class="space-y-1 text-xs">
             <div class="flex items-center justify-between">
-              <span class="font-medium theme-text">${p.name}</span>
+              <span class="font-medium theme-text">${esc(p.name)}</span>
               <span class="font-mono theme-text-muted">${done}/${total} (${pct}%)</span>
             </div>
             <div class="w-full h-1.5 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
@@ -1487,518 +1485,391 @@ lucide.createIcons();
           </div>`;
       });
 
-      const alerts = TASKS.filter(t=>t.end && t.status!=='Completado' && t.status!=='Cancelado')
-                                  .sort((a,b)=>a.end-b.end);
-      
-      if(alerts.length===0){
+      const alerts = TASKS.filter(t => t.end && t.status !== 'Completado' && t.status !== 'Cancelado')
+        .sort((a,b) => a.end - b.end);
+      if (alerts.length === 0) {
         dList.innerHTML = `<p class="theme-text-muted text-center py-6 text-xs italic">No hay alertas de vencimiento.</p>`;
-      }else{
-        alerts.forEach(t=>{
-          const diff = Math.round((t.end-TODAY)/(1000*60*60*24));
-          let cClass = "theme-text-muted border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40";
-          if(diff<0) cClass="bg-red-500/5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/40";
-          else if(diff<=7) cClass="bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40";
-
+      } else {
+        alerts.forEach(t => {
+          const diff   = Math.round((t.end - TODAY) / (1000*60*60*24));
+          let cClass   = "theme-text-muted border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/40";
+          if      (diff < 0) cClass = "bg-red-500/5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/40";
+          else if (diff <= 7) cClass = "bg-amber-500/5 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-900/40";
           dList.innerHTML += `
-            <div class="p-2 rounded-lg border flex flex-col space-y-0.5 text-xs ${cClass}">
+            <div onclick="openEdit(${t.id})" class="p-2 rounded-lg border flex flex-col space-y-0.5 text-xs ${cClass} cursor-pointer hover:brightness-95 transition-all">
               <div class="flex justify-between font-medium">
-                <span class="truncate pr-1 theme-text">${t.task}</span>
+                <span class="truncate pr-1 theme-text">${esc(t.task)}</span>
                 <span class="shrink-0 font-mono text-[10px]">${diff<0?'Vencido':(diff===0?'Hoy':`en ${diff}d`)}</span>
               </div>
-              <span class="text-[10px] theme-text-muted opacity-80 truncate">${t.proj} · ${t.resp}</span>
+              <span class="text-[10px] theme-text-muted opacity-80 truncate">${esc(t.proj)} · ${esc(t.resp)}</span>
             </div>`;
         });
       }
     }
-function applyGanttHeight() {
-  const sbRows = document.getElementById('sb-rows');
-  const tlScroll = document.getElementById('tl-scroll');
 
-  if (!sbRows || !tlScroll) return;
-
-  const rowsHeight = ganttHeight - 80;
-
-  sbRows.style.maxHeight = rowsHeight + 'px';
-  tlScroll.style.maxHeight = ganttHeight + 'px';
-}
-
-function initResizeHandle() {
-  const resizer = document.getElementById('gantt-resizer');
-
-  if (!resizer) return;
-
-  let startY = 0;
-  let startHeight = 0;
-
-  resizer.addEventListener('mousedown', (e) => {
-    startY = e.clientY;
-    startHeight = ganttHeight;
-
-    function onMove(ev) {
-      const delta = ev.clientY - startY;
-
-      ganttHeight = Math.min(
-        window.innerHeight * 0.85,
-        Math.max(420, startHeight + delta)
-      );
-
-      localStorage.setItem('ganttHeight', ganttHeight);
-
-      applyGanttHeight();
+    // ── GANTT RESIZE ───────────────────────────────────────────
+    function applyGanttHeight() {
+      const sbRows  = document.getElementById('sb-rows');
+      const tlScroll = document.getElementById('tl-scroll');
+      if (!sbRows || !tlScroll) return;
+      sbRows.style.maxHeight  = (ganttHeight - 80) + 'px';
+      tlScroll.style.maxHeight = ganttHeight + 'px';
     }
 
-    function onUp() {
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-    }
-
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-  });
-}
-    function goToday(){
-      const off=dayOffset(TODAY); if(off===null)return;
-      const scrollEl = document.getElementById('tl-scroll');
-      if(scrollEl) scrollEl.scrollLeft=Math.max(0,off*DAY_W-120);
-    }
-
-    function showAddModal(){
-      if(!isEditModeActive) return;
-
-      editId=null;
-      document.getElementById('modal-title').textContent='Nueva Operación Estratégica';
-      document.getElementById('m-proj').value=''; document.getElementById('m-task').value='';
-      document.getElementById('m-resp').value=''; document.getElementById('m-start').value=fmtDate(TODAY);
-      document.getElementById('m-end').value=fmtDate(TODAY); document.getElementById('m-status').value='Sin comenzar';
-      document.getElementById('m-prio').value='Media'; document.getElementById('m-cat').value='Catálogos';
-      document.getElementById('m-notes').value='';
-      document.getElementById('btn-delete').classList.add('hidden');
-      
-      toggleModalInputs(false);
-      document.getElementById('btn-modal-save').classList.remove('hidden');
-
-      const ov = document.getElementById('modal-overlay');
-      ov.classList.remove('hidden'); ov.classList.add('flex');
-      setTimeout(()=>{ ov.classList.add('opacity-100'); document.getElementById('modal').classList.remove('scale-95'); },20);
-    }
-
-    function openEdit(id){
-      const t=TASKS.find(x=>x.id===id); if(!t)return;
-      editId=id;
-      loadComments(id);
-	  loadFiles(id);
-	  
-      document.getElementById('m-proj').value=t.proj; document.getElementById('m-task').value=t.task;
-      document.getElementById('m-resp').value=t.resp; document.getElementById('m-start').value=fmtDate(t.start);
-      document.getElementById('m-end').value=fmtDate(t.end); document.getElementById('m-status').value=t.status;
-      document.getElementById('m-prio').value=t.prio; document.getElementById('m-cat').value=t.cat;
-      document.getElementById('m-notes').value=t.notes||'';
-      
-      if (isEditModeActive) {
-        document.getElementById('modal-title').textContent='Modificar Planificación';
-        document.getElementById('btn-delete').classList.remove('hidden');
-        document.getElementById('btn-modal-save').classList.remove('hidden');
-        document.getElementById('btn-modal-cancel').textContent = "Cancelar";
-        toggleModalInputs(false);
-      } else {
-        document.getElementById('modal-title').textContent='Detalles de la Tarea (Solo Lectura)';
-        document.getElementById('btn-delete').classList.add('hidden');
-        document.getElementById('btn-modal-save').classList.add('hidden');
-        document.getElementById('btn-modal-cancel').textContent = "Cerrar";
-        toggleModalInputs(true);
-      }
-      
-      const ov = document.getElementById('modal-overlay');
-      ov.classList.remove('hidden'); ov.classList.add('flex');
-      setTimeout(()=>{ ov.classList.add('opacity-100'); document.getElementById('modal').classList.remove('scale-95'); },20);
-    }
-
-    function toggleModalInputs(disable) {
-      const inputs = ['m-proj', 'm-task', 'm-resp', 'm-cat', 'm-start', 'm-end', 'm-status', 'm-prio', 'm-notes'];
-      inputs.forEach(id => {
-        const el = document.getElementById(id);
-        if(el) {
-          if(disable) el.setAttribute('disabled', 'true');
-          else el.removeAttribute('disabled');
+    function initResizeHandle() {
+      const resizer = document.getElementById('gantt-resizer');
+      if (!resizer) return;
+      let startY = 0, startHeight = 0;
+      resizer.addEventListener('mousedown', e => {
+        startY = e.clientY; startHeight = ganttHeight;
+        function onMove(ev) {
+          ganttHeight = Math.min(window.innerHeight * 0.85, Math.max(420, startHeight + ev.clientY - startY));
+          localStorage.setItem('ganttHeight', ganttHeight);
+          applyGanttHeight();
         }
+        function onUp() { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
       });
     }
 
-	async function loadComments(taskId) {
-
-  const container =
-    document.getElementById('task-comments');
-
-  if (!container) return;
-
-  container.innerHTML = `
-    <div class="text-[11px] theme-text-muted italic">
-      Cargando comentarios...
-    </div>
-  `;
-
-  const { data, error } = await supabaseClient
-    .from('task_comments')
-    .select('*')
-    .eq('task_id', taskId)
-    .order('created_at', { ascending: true });
-
-  if (error) {
-
-    container.innerHTML = `
-      <div class="text-[11px] text-red-500">
-        Error cargando comentarios
-      </div>
-    `;
-
-    console.error(error);
-
-    return;
-  }
-
-  if (!data.length) {
-
-    container.innerHTML = `
-      <div class="text-[11px] theme-text-muted italic">
-        Sin comentarios todavía
-      </div>
-    `;
-
-    return;
-  }
-
-  container.innerHTML = data.map(c => {
-
-    const date =
-      new Date(c.created_at)
-        .toLocaleString('es-ES');
-
-    return `
-
-      <div class="theme-sidebar border rounded-lg p-3 space-y-1">
-
-        <div class="flex items-center justify-between">
-
-          <span class="text-[11px] font-bold theme-text">
-            ${esc(c.author)}
-          </span>
-
-          <span class="text-[10px] theme-text-muted font-mono">
-            ${date}
-          </span>
-
-        </div>
-
-        <div class="text-xs theme-text whitespace-pre-wrap leading-relaxed">${esc(c.comment)}</div>
-
-      </div>
-
-    `;
-
-  }).join('');
-}
-
-
-
-async function addComment() {
-
-  if (!editId) return;
-
-  const textarea =
-    document.getElementById('new-comment');
-
-  const text =
-    textarea.value.trim();
-
-  if (!text) return;
-
-  const authorName = await getCurrentDisplayName();
-
-  const { error } = await supabaseClient
-    .from('task_comments')
-    .insert([{
-      task_id: editId,
-      author: authorName,
-      comment: text
-    }]);
-
-  if (error) {
-
-    alert('Error al publicar comentario');
-
-    console.error(error);
-
-    return;
-  }
-
-  textarea.value = '';
-
-  loadComments(editId);
-}
-
-async function uploadFile() {
-
-  if (!editId) {
-    alert('Primero debes guardar la tarea');
-    return;
-  }
-
-  const fileInput =
-    document.getElementById('file-upload');
-
-  const file =
-    fileInput.files[0];
-
-  if (!file) return;
-
-  try {
-
-    const filePath =
-      `${editId}/${Date.now()}_${file.name}`;
-
-    const { error: uploadError } =
-  await supabaseClient.storage
-    .from('task-files')
-    .upload(filePath, file);
-
-if (uploadError) {
-
-  console.error(uploadError);
-
-  alert(
-    JSON.stringify(
-      uploadError,
-      null,
-      2
-    )
-  );
-
-  return;
-}
-
-    const authorName =
-      await getCurrentDisplayName();
-
-    const { error: dbError } =
-  await supabaseClient
-    .from('task_files')
-    .insert([{
-  task_id: editId,
-  file_name: file.name,
-  file_path: filePath,
-  uploaded_by: authorName
-}]);
-
-if (dbError) {
-
-  console.error(dbError);
-
-  alert(
-    JSON.stringify(
-      dbError,
-      null,
-      2
-    )
-  );
-
-  return;
-}
-
-    loadFiles(editId);
-
-  } catch (err) {
-
-    console.error(err);
-
-    alert(
-      'Error al subir: ' +
-      err.message
-    );
-  }
-}
-
-async function loadFiles(taskId) {
-
-  const container =
-    document.getElementById('task-files');
-
-  const { data, error } =
-    await supabaseClient
-      .from('task_files')
-      .select('*')
-      .eq('task_id', taskId)
-      .order('created_at');
-
-  if (error) {
-
-    console.error(error);
-
-    return;
-  }
-
-  if (!data.length) {
-
-    container.innerHTML =
-      '<div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>';
-
-    return;
-  }
-
-  container.innerHTML = '';
-
-  data.forEach(file => {
-
-    const { data: publicUrlData } =
-      supabaseClient.storage
-        .from('task-files')
-        .getPublicUrl(file.file_path);
-
-    container.innerHTML += `
-
-      <div class="flex items-center justify-between theme-sidebar border rounded-lg p-2">
-
-        <a
-          href="${publicUrlData.publicUrl}"
-          target="_blank"
-          class="text-xs text-blue-600 hover:underline truncate"
-        >
-          ${file.file_name}
-        </a>
-
-        <button
-          onclick="deleteFile(${file.id}, '${file.file_path}')"
-          class="text-red-500 text-xs"
-        >
-          Eliminar
-        </button>
-
-      </div>
-
-    `;
-  });
-}
-
-async function deleteFile(id, path) {
-
-  if (!confirm('¿Eliminar archivo?'))
-    return;
-
-  await supabaseClient
-    .storage
-    .from('task_files')
-    .remove([path]);
-
-  await supabaseClient
-    .from('task_files')
-    .delete()
-    .eq('id', id);
-
-  loadFiles(editId);
-}
-
-    function closeModal(e){
-      if(e && e.target!==document.getElementById('modal-overlay'))return;
-      const nc = document.getElementById('new-comment');
-	  if(nc) nc.value = '';
-	  const ov = document.getElementById('modal-overlay');
-      if(!ov) return;
-      ov.classList.remove('opacity-100'); document.getElementById('modal').classList.add('scale-95');
-      setTimeout(()=>{ ov.classList.remove('flex'); ov.classList.add('hidden'); },200);
+    function goToday() {
+      const off = dayOffset(TODAY); if (off === null) return;
+      const scrollEl = document.getElementById('tl-scroll');
+      if (scrollEl) scrollEl.scrollLeft = Math.max(0, off * DAY_W - 120);
     }
 
-    async function saveModal(){
-      if(!isEditModeActive) return;
+    // ── MODAL TAREA ────────────────────────────────────────────
+    function showAddModal() {
+      if (!isEditModeActive) return;
+      editId = null;
+      document.getElementById('modal-title').textContent = 'Nueva Operación Estratégica';
+      document.getElementById('m-proj').value   = '';
+      document.getElementById('m-task').value   = '';
+      document.getElementById('m-resp').value   = '';
+      document.getElementById('m-start').value  = fmtDate(TODAY);
+      document.getElementById('m-end').value    = fmtDate(TODAY);
+      document.getElementById('m-status').value = 'Sin comenzar';
+      document.getElementById('m-prio').value   = 'Media';
+      document.getElementById('m-cat').value    = 'Catálogos';
+      document.getElementById('m-notes').value  = '';
+      document.getElementById('btn-delete').classList.add('hidden');
+      document.getElementById('btn-modal-save').classList.remove('hidden');
+      document.getElementById('task-files').innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>';
+      document.getElementById('task-comments').innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>';
+      toggleModalInputs(false);
+      _openModalOverlay();
+    }
 
-      const proj=document.getElementById('m-proj').value.trim();
-      const task=document.getElementById('m-task').value.trim();
-      if(!proj||!task) return;
+    function openEdit(id) {
+      const t = TASKS.find(x => x.id === id);
+      if (!t) return;
+      editId = id;
+      loadComments(id);
+      loadFiles(id);
+      document.getElementById('m-proj').value   = t.proj;
+      document.getElementById('m-task').value   = t.task;
+      document.getElementById('m-resp').value   = t.resp;
+      document.getElementById('m-start').value  = fmtDate(t.start);
+      document.getElementById('m-end').value    = fmtDate(t.end);
+      document.getElementById('m-status').value = t.status;
+      document.getElementById('m-prio').value   = t.prio;
+      document.getElementById('m-cat').value    = t.cat;
+      document.getElementById('m-notes').value  = t.notes || '';
+
+      if (isEditModeActive) {
+        document.getElementById('modal-title').textContent = 'Modificar Planificación';
+        document.getElementById('btn-delete').classList.remove('hidden');
+        document.getElementById('btn-modal-save').classList.remove('hidden');
+        document.getElementById('btn-modal-cancel').textContent = 'Cancelar';
+        toggleModalInputs(false);
+      } else {
+        document.getElementById('modal-title').textContent = 'Detalles de la Tarea (Solo Lectura)';
+        document.getElementById('btn-delete').classList.add('hidden');
+        document.getElementById('btn-modal-save').classList.add('hidden');
+        document.getElementById('btn-modal-cancel').textContent = 'Cerrar';
+        toggleModalInputs(true);
+      }
+      _openModalOverlay();
+    }
+
+    function _openModalOverlay() {
+      const ov = document.getElementById('modal-overlay');
+      ov.classList.remove('hidden');
+      ov.classList.add('flex');
+      setTimeout(() => { ov.classList.add('opacity-100'); document.getElementById('modal').classList.remove('scale-95'); }, 20);
+    }
+
+    function closeModal(e) {
+      if (e && e.target !== document.getElementById('modal-overlay')) return;
+      const nc = document.getElementById('new-comment');
+      if (nc) nc.value = '';
+      const ov = document.getElementById('modal-overlay');
+      if (!ov) return;
+      ov.classList.remove('opacity-100');
+      document.getElementById('modal').classList.add('scale-95');
+      setTimeout(() => { ov.classList.remove('flex'); ov.classList.add('hidden'); }, 200);
+    }
+
+    function toggleModalInputs(disable) {
+      const inputs = ['m-proj','m-task','m-resp','m-cat','m-start','m-end','m-status','m-prio','m-notes'];
+      inputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { if (disable) el.setAttribute('disabled','true'); else el.removeAttribute('disabled'); }
+      });
+    }
+
+    async function saveModal() {
+      if (!isEditModeActive) return;
+      const proj = document.getElementById('m-proj').value.trim();
+      const task = document.getElementById('m-task').value.trim();
+      if (!proj || !task) { alert('El nombre del proyecto y la tarea son obligatorios.'); return; }
 
       const payload = {
         proj, task,
-        resp: document.getElementById('m-resp').value.trim() || '—',
-        start_date: document.getElementById('m-start').value || null,
-        end_date: document.getElementById('m-end').value || null,
-        status: document.getElementById('m-status').value,
-        prio: document.getElementById('m-prio').value,
-        cat: document.getElementById('m-cat').value,
-        notes: document.getElementById('m-notes').value.trim() || null
+        resp:       document.getElementById('m-resp').value.trim()   || '—',
+        start_date: document.getElementById('m-start').value         || null,
+        end_date:   document.getElementById('m-end').value           || null,
+        status:     document.getElementById('m-status').value,
+        prio:       document.getElementById('m-prio').value,
+        cat:        document.getElementById('m-cat').value,
+        notes:      document.getElementById('m-notes').value.trim()  || null
       };
 
-      try {
-        if(editId){
-          await supabaseClient.from('tareas').update(payload).eq('id', editId);
-        }else{
-          await supabaseClient.from('tareas').insert([payload]);
-        }
-      } catch (e) {
-        alert('Error al guardar en la base de datos. Comprueba tu conexión e inténtalo de nuevo.');
+      // Validación de fechas
+      if (payload.start_date && payload.end_date && payload.start_date > payload.end_date) {
+        alert('La fecha de inicio no puede ser posterior a la fecha de fin.');
+        return;
       }
-      
+
+      try {
+        if (editId) {
+          const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseClient.from('tareas').insert([payload]);
+          if (error) throw error;
+        }
+      } catch(e) {
+        alert('Error al guardar en la base de datos. Comprueba tu conexión e inténtalo de nuevo.');
+        return;
+      }
       closeModal();
-		await loadTasksFromCloud();
-		refreshProjectList();
+      await loadTasksFromCloud();
+      refreshProjectList();
     }
 
-    async function deleteTask(){
-      if(!isEditModeActive || !editId) return;
-      if(confirm('¿Seguro que deseas eliminar esta tarea de la base de datos de la nube?')){
+    async function deleteTask() {
+      if (!isEditModeActive || !editId) return;
+      if (confirm('¿Seguro que deseas eliminar esta tarea de la base de datos?')) {
         try {
-          await supabaseClient.from('tareas').delete().eq('id', editId);
-        } catch (e) {
+          const { error } = await supabaseClient.from('tareas').delete().eq('id', editId);
+          if (error) throw error;
+        } catch(e) {
           alert('Error al eliminar la tarea. Comprueba tu conexión e inténtalo de nuevo.');
+          return;
         }
         closeModal();
         await loadTasksFromCloud();
       }
     }
 
-	// CIERRE DE SESION
-	
-	async function logout() {
+    // ── COMENTARIOS ────────────────────────────────────────────
+    async function loadComments(taskId) {
+      const container = document.getElementById('task-comments');
+      if (!container) return;
+      container.innerHTML = '<div class="text-[11px] theme-text-muted italic">Cargando comentarios...</div>';
 
-  if (!confirm('¿Deseas cerrar la sesión?')) {
-    return;
-  }
+      const { data, error } = await supabaseClient
+        .from('task_comments').select('*')
+        .eq('task_id', taskId).order('created_at', { ascending: true });
 
-  await supabaseClient.auth.signOut();
+      if (error) {
+        container.innerHTML = '<div class="text-[11px] text-red-500">Error cargando comentarios</div>';
+        console.error(error); return;
+      }
+      if (!data.length) {
+        container.innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>';
+        return;
+      }
+      container.innerHTML = data.map(c => {
+        const date = new Date(c.created_at).toLocaleString('es-ES');
+        return `
+          <div class="theme-sidebar border rounded-lg p-3 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-bold theme-text">${esc(c.author)}</span>
+              <span class="text-[10px] theme-text-muted font-mono">${date}</span>
+            </div>
+            <div class="text-xs theme-text whitespace-pre-wrap leading-relaxed">${esc(c.comment)}</div>
+          </div>`;
+      }).join('');
+    }
 
-  sessionStorage.removeItem('gorfactory_auth');
+    async function addComment() {
+      if (!editId) return;
+      const textarea = document.getElementById('new-comment');
+      const text     = textarea.value.trim();
+      if (!text) return;
 
-  location.reload();
-}
+      const authorName = await getCurrentDisplayName();
+      const { error }  = await supabaseClient.from('task_comments').insert([{ task_id: editId, author: authorName, comment: text }]);
+      if (error) { alert('Error al publicar comentario'); console.error(error); return; }
+      textarea.value = '';
+      loadComments(editId);
+    }
 
-    // CONTROL DE FLUJO DE ARRANQUE CON SEGURIDAD EXTRA
+    // ── ARCHIVOS (subida local) ────────────────────────────────
+    async function uploadFile() {
+      if (!editId) { alert('Primero debes guardar la tarea'); return; }
+      const fileInput = document.getElementById('file-upload');
+      const file      = fileInput.files[0];
+      if (!file) return;
+
+      try {
+        const filePath = `${editId}/${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabaseClient.storage.from('task-files').upload(filePath, file);
+        if (uploadError) { alert('Error al subir: ' + uploadError.message); return; }
+
+        const authorName = await getCurrentDisplayName();
+        const { error: dbError } = await supabaseClient.from('task_files').insert([{
+          task_id: editId, file_name: file.name, file_path: filePath,
+          uploaded_by: authorName, file_type: 'local'
+        }]);
+        if (dbError) { alert('Error al registrar archivo: ' + dbError.message); return; }
+
+        fileInput.value = '';
+        loadFiles(editId);
+      } catch(err) {
+        alert('Error al subir: ' + err.message);
+      }
+    }
+
+    async function loadFiles(taskId) {
+      const container = document.getElementById('task-files');
+      if (!container) return;
+
+      const { data, error } = await supabaseClient
+        .from('task_files').select('*')
+        .eq('task_id', taskId).order('created_at');
+
+      if (error) { console.error(error); return; }
+      if (!data.length) {
+        container.innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin adjuntos</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      data.forEach(file => {
+        let fileUrl, isOnline, typeIcon, typeClass, onlineBadge;
+
+        if (file.file_type === 'online') {
+          fileUrl    = file.online_url || '#';
+          isOnline   = true;
+          typeIcon   = getFileTypeIcon(file.online_type || 'link');
+          typeClass  = 'ftype-' + (file.online_type || 'link');
+          onlineBadge = `<span class="file-online-badge"><span class="file-online-dot"></span>En línea</span>`;
+        } else {
+          const { data: pub } = supabaseClient.storage.from('task-files').getPublicUrl(file.file_path);
+          fileUrl    = pub.publicUrl;
+          isOnline   = false;
+          typeIcon   = 'file';
+          typeClass  = 'ftype-other';
+          onlineBadge = '';
+        }
+
+        container.innerHTML += `
+          <div class="flex items-center justify-between theme-sidebar border rounded-lg p-2 gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <i data-lucide="${typeIcon}" class="w-3.5 h-3.5 shrink-0 ${typeClass}"></i>
+              <div class="min-w-0">
+                <a href="${esc(fileUrl)}" target="_blank" rel="noopener noreferrer"
+                  class="text-xs text-blue-600 hover:underline truncate block max-w-[180px]">${esc(file.file_name)}</a>
+                ${onlineBadge}
+              </div>
+            </div>
+            <button onclick="deleteFile(${file.id}, '${esc(file.file_path || '')}', '${esc(file.file_type || 'local')}')"
+              class="shrink-0 text-red-500 hover:text-red-700 text-xs transition-colors">
+              <i data-lucide="trash-2" class="w-3 h-3"></i>
+            </button>
+          </div>`;
+      });
+      lucide.createIcons();
+    }
+
+    function getFileTypeIcon(type) {
+      const map = { excel:'table-2', word:'file-text', pdf:'file-type-2', image:'image', link:'link', other:'paperclip' };
+      return map[type] || 'paperclip';
+    }
+
+    async function deleteFile(id, path, fileType) {
+      if (!confirm('¿Eliminar archivo?')) return;
+      if (fileType === 'local' && path) {
+        await supabaseClient.storage.from('task-files').remove([path]);
+      }
+      await supabaseClient.from('task_files').delete().eq('id', id);
+      loadFiles(editId);
+    }
+
+    // ── ARCHIVOS EN LÍNEA ──────────────────────────────────────
+    function showOnlineFileModal() {
+      if (!editId) { alert('Primero debes guardar la tarea'); return; }
+      document.getElementById('online-file-name').value = '';
+      document.getElementById('online-file-url').value  = '';
+      document.getElementById('online-file-type').value = 'link';
+      const ov = document.getElementById('online-file-overlay');
+      ov.classList.remove('hidden'); ov.classList.add('flex');
+      setTimeout(() => { ov.classList.add('opacity-100'); document.getElementById('online-file-modal').classList.remove('scale-95'); }, 20);
+      document.getElementById('online-file-name').focus();
+    }
+
+    function closeOnlineFileModal(e) {
+      if (e && e.target !== document.getElementById('online-file-overlay')) return;
+      const ov = document.getElementById('online-file-overlay');
+      ov.classList.remove('opacity-100');
+      document.getElementById('online-file-modal').classList.add('scale-95');
+      setTimeout(() => { ov.classList.remove('flex'); ov.classList.add('hidden'); }, 200);
+    }
+
+    async function saveOnlineFile() {
+      const name    = document.getElementById('online-file-name').value.trim();
+      const url     = document.getElementById('online-file-url').value.trim();
+      const fType   = document.getElementById('online-file-type').value;
+
+      if (!name || !url) { alert('Por favor, rellena el nombre y la URL del archivo.'); return; }
+
+      // Validación básica de URL
+      try { new URL(url); } catch(e) { alert('La URL introducida no es válida.'); return; }
+
+      const authorName = await getCurrentDisplayName();
+      const { error }  = await supabaseClient.from('task_files').insert([{
+        task_id:     editId,
+        file_name:   name,
+        file_path:   null,
+        file_type:   'online',
+        online_url:  url,
+        online_type: fType,
+        uploaded_by: authorName
+      }]);
+
+      if (error) { alert('Error al guardar el enlace: ' + error.message); console.error(error); return; }
+
+      closeOnlineFileModal();
+      loadFiles(editId);
+    }
+
+    // ── INICIO DE APP ──────────────────────────────────────────
     (async function init() {
-
-  const { data: { session } } =
-    await supabaseClient.auth.getSession();
-
-  if (session) {
-
-    sessionStorage.setItem(
-      'gorfactory_auth',
-      'true'
-    );
-
-    await unlockDashboard();
-
-    const userName =
-      await getCurrentDisplayName();
-
-    document.getElementById('current-user')
-      .textContent = userName;
-
-  } else {
-
-    document.getElementById('gatekeeper-screen')
-      .classList.remove('hidden');
-
-    document.getElementById('gatekeeper-email')
-      .focus();
-
-  }
-
-})();
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        sessionStorage.setItem('gorfactory_auth', 'true');
+        await unlockDashboard();
+        const userName = await getCurrentDisplayName();
+        document.getElementById('current-user').textContent = userName;
+      } else {
+        document.getElementById('gatekeeper-screen').classList.remove('hidden');
+        document.getElementById('gatekeeper-email').focus();
+      }
+    })();
   </script>
 </body>
 </html>
