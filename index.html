@@ -1037,8 +1037,23 @@
         } else {
           sessionStorage.setItem('gorfactory_auth', 'true');
           await unlockDashboard();
-          const userName = await getCurrentDisplayName();
-          document.getElementById('current-user').textContent = userName;
+          // Sync user name to sidebar directly from session data (most reliable)
+          try {
+            const user = data.session.user;
+            if (user) {
+              const meta = user.user_metadata || {};
+              const name = meta.display_name || meta.full_name || meta.name || meta.username || user.email.split('@')[0];
+              _currentDisplayName = name;
+              document.getElementById('current-user').textContent = name;
+              const elU = document.getElementById('sb-username');
+              const elA = document.getElementById('sb-avatar');
+              if (elU) elU.textContent = name;
+              if (elA) {
+                const init2 = name.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+                elA.textContent = init2 || '?';
+              }
+            }
+          } catch(e2) { /* silently */ }
         }
       } catch(err) {
         errorMsg.textContent = 'Error de conexión. Inténtalo de nuevo.';
@@ -2413,18 +2428,7 @@
       }
     });
 
-    // ── INICIO DE APP ──────────────────────────────────────────
-    (async function init() {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        sessionStorage.setItem('gorfactory_auth', 'true');
-        await unlockDashboard();
-        const userName = await getCurrentDisplayName();
-        document.getElementById('current-user').textContent = userName;
-      } else {
-        document.getElementById('gatekeeper-screen').classList.remove('hidden');
-        document.getElementById('gatekeeper-email').focus();
-      }
+    // init() moved to end of script - see below
 
 
     // ════════════════════════════════════════════════════════
@@ -2478,37 +2482,10 @@
     }
 
     // Force refresh user info from Supabase, bypassing the cache
-    async function refreshSidebarUser() {
-      try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        if (!user) return;
-        // DEBUG: log all metadata so we can see what field contains the name
-        console.log('[GF] user.email:', user.email);
-        console.log('[GF] user.user_metadata:', JSON.stringify(user.user_metadata));
-        // Supabase stores Display Name in different fields depending on version/provider
-        const meta = user.user_metadata || {};
-        const name =
-          meta.display_name ||   // explicit display_name
-          meta.full_name     ||   // Google OAuth
-          meta.name          ||   // Supabase Dashboard "Display name" field
-          meta.username      ||   // some providers
-          user.email.split('@')[0]; // fallback: part before @
-        console.log('[GF] resolved name:', name);
-        // Update cache so rest of app uses correct name
-        _currentDisplayName = name;
-        syncSidebarUser(name);
-        // Also update the hidden current-user span used by other parts of the app
-        const cu = document.getElementById('current-user');
-        if (cu) cu.textContent = name;
-      } catch(e) { console.warn('refreshSidebarUser error:', e); }
-    }
-
-    // Patch unlockDashboard
+    // Patch unlockDashboard - add applyHeaderMargin and notifications after original
     const _origUnlock2 = unlockDashboard;
     unlockDashboard = async function() {
       await _origUnlock2();
-      // Refresh sidebar user directly from Supabase (bypasses any stale cache)
-      await refreshSidebarUser();
       setTimeout(applyHeaderMargin, 100);
       setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 1200);
     };
@@ -2822,7 +2799,48 @@
       }).join('');
     };
 
+
+    // ── ATAJO DE TECLADO ─────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey
+          && document.activeElement.tagName !== 'INPUT'
+          && document.activeElement.tagName !== 'TEXTAREA'
+          && isEditModeActive) {
+        showAddModal();
+      }
+    });
+
+    // ── INICIO DE APP (al final para que todas las funciones estén definidas) ──
+    (async function init() {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        sessionStorage.setItem('gorfactory_auth', 'true');
+        await unlockDashboard();
+        const userName = await getCurrentDisplayName();
+        document.getElementById('current-user').textContent = userName;
+        // Sincronizar nombre en sidebar
+        try {
+          const { data: { user } } = await supabaseClient.auth.getUser();
+          if (user) {
+            const meta = user.user_metadata || {};
+            const resolvedName = meta.display_name || meta.full_name || meta.name || meta.username || user.email.split('@')[0];
+            _currentDisplayName = resolvedName;
+            const elU = document.getElementById('sb-username');
+            const elA = document.getElementById('sb-avatar');
+            if (elU) elU.textContent = resolvedName;
+            if (elA) {
+              const initials = resolvedName.trim().split(/\s+/).map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+              elA.textContent = initials || '?';
+            }
+            document.getElementById('current-user').textContent = resolvedName;
+          }
+        } catch(ex) { console.warn('init sidebar sync error:', ex); }
+      } else {
+        document.getElementById('gatekeeper-screen').classList.remove('hidden');
+        document.getElementById('gatekeeper-email').focus();
+      }
     })();
+
   </script>
 
   <!-- ══ NOTIFICATION PANEL ══ -->
