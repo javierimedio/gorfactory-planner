@@ -2466,22 +2466,50 @@
 
     // SYNC SIDEBAR USER
     function syncSidebarUser(name) {
-      const el = document.getElementById('sb-username');
-      const av = document.getElementById('sb-avatar');
+      const el  = document.getElementById('sb-username');
+      const av  = document.getElementById('sb-avatar');
       const cav = document.getElementById('comment-avatar');
+      if (!name || name === 'Anónimo' || name === '—') return; // don't update with empty values
       if (el) el.textContent = name;
-      const init = name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() || '?';
-      if (av) av.textContent = init;
+      const parts = name.trim().split(/\s+/);
+      const init  = parts.map(function(w){ return w[0] || ''; }).join('').slice(0, 2).toUpperCase() || '?';
+      if (av)  av.textContent  = init;
       if (cav) cav.textContent = init;
+    }
+
+    // Force refresh user info from Supabase, bypassing the cache
+    async function refreshSidebarUser() {
+      try {
+        const { data: { user } } = await supabaseClient.auth.getUser();
+        if (!user) return;
+        // DEBUG: log all metadata so we can see what field contains the name
+        console.log('[GF] user.email:', user.email);
+        console.log('[GF] user.user_metadata:', JSON.stringify(user.user_metadata));
+        // Supabase stores Display Name in different fields depending on version/provider
+        const meta = user.user_metadata || {};
+        const name =
+          meta.display_name ||   // explicit display_name
+          meta.full_name     ||   // Google OAuth
+          meta.name          ||   // Supabase Dashboard "Display name" field
+          meta.username      ||   // some providers
+          user.email.split('@')[0]; // fallback: part before @
+        console.log('[GF] resolved name:', name);
+        // Update cache so rest of app uses correct name
+        _currentDisplayName = name;
+        syncSidebarUser(name);
+        // Also update the hidden current-user span used by other parts of the app
+        const cu = document.getElementById('current-user');
+        if (cu) cu.textContent = name;
+      } catch(e) { console.warn('refreshSidebarUser error:', e); }
     }
 
     // Patch unlockDashboard
     const _origUnlock2 = unlockDashboard;
     unlockDashboard = async function() {
       await _origUnlock2();
-      const name = await getCurrentDisplayName();
-      syncSidebarUser(name);
-      setTimeout(applyHeaderMargin, 100); // measure after layout settles
+      // Refresh sidebar user directly from Supabase (bypasses any stale cache)
+      await refreshSidebarUser();
+      setTimeout(applyHeaderMargin, 100);
       setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 1200);
     };
 
