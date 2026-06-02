@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es" class="light">
 <head>
@@ -27,144 +26,400 @@
   
   <style>
     *, *::before, *::after { box-sizing: border-box; }
-    
-    /* Configuración de Temas */
+
+    /* ── ASANA DESIGN TOKENS ── */
+    :root { --accent: #4573d2; --accent-h: #3a64c3; }
+
     .light {
-      --bg-main: #f8fafc;
-      --bg-panel: #ffffff;
-      --bg-sidebar: #f1f5f9;
-      --text-main: #0f172a;
-      --text-muted: #475569;
-      --border-color: #e2e8f0;
-      --bg-header: #f8fafc;
+      --bg-main:    #f3f4f6;
+      --bg-panel:   #ffffff;
+      --bg-sidebar: #1e1e2e;
+      --sb-hover:   rgba(255,255,255,0.07);
+      --sb-active:  rgba(255,255,255,0.13);
+      --sb-text:    rgba(255,255,255,0.72);
+      --sb-text-a:  #ffffff;
+      --text-main:  #1e1f21;
+      --text-muted: #6d6e6f;
+      --border-color: #e8eaed;
+      --bg-header:  #ffffff;
     }
     .dark {
-      --bg-main: #0f172a;
-      --bg-panel: #1e293b;
-      --bg-sidebar: #111827;
-      --text-main: #f8fafc;
+      --bg-main:    #111827;
+      --bg-panel:   #1e293b;
+      --bg-sidebar: #0d0d1a;
+      --sb-hover:   rgba(255,255,255,0.05);
+      --sb-active:  rgba(255,255,255,0.1);
+      --sb-text:    rgba(255,255,255,0.60);
+      --sb-text-a:  #f8fafc;
+      --text-main:  #f8fafc;
       --text-muted: #94a3b8;
-      --border-color: #334155;
-      --bg-header: #111827;
+      --border-color: #2d3748;
+      --bg-header:  #1a202c;
     }
 
     body {
       background-color: var(--bg-main);
       color: var(--text-main);
       overflow-x: hidden;
-      transition: background-color 0.2s ease, color 0.2s ease;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      transition: background-color 0.2s, color 0.2s;
     }
 
-    .theme-text { color: var(--text-main); }
+    .theme-text       { color: var(--text-main); }
     .theme-text-muted { color: var(--text-muted); }
-    .theme-panel { background-color: var(--bg-panel); border-color: var(--border-color); }
-    .theme-sidebar { background-color: var(--bg-sidebar); border-color: var(--border-color); }
-    .theme-border { border-color: var(--border-color); }
+    .theme-panel      { background-color: var(--bg-panel); border-color: var(--border-color); }
+    .theme-sidebar    { background-color: var(--bg-panel); border-color: var(--border-color); }
+    .theme-border     { border-color: var(--border-color); }
 
+    /* ── SCROLLBAR ── */
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 999px; }
+    .dark ::-webkit-scrollbar-thumb { background: #374151; }
 
     .sticky-row { position: sticky; left: 0; z-index: 20; }
 
-    /* ── KANBAN STYLES ── */
-    .kanban-col {
-      min-width: 220px;
-      flex: 1;
-    }
-    .kanban-card {
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
-    }
-    .kanban-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    }
-    .kanban-card.dragging {
-      opacity: 0.5;
-      transform: rotate(2deg);
-    }
-    .kanban-col-dropzone {
-      min-height: 80px;
-      border-radius: 0.5rem;
-      transition: background 0.15s;
-    }
+    /* ── KANBAN ── */
+    .kanban-col { min-width: 230px; flex: 1; }
+    .kanban-card { transition: transform 0.12s, box-shadow 0.12s; border-radius: 8px; }
+    .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.10); }
+    .kanban-card.dragging { opacity: 0.45; transform: rotate(1.5deg); }
+    .kanban-col-dropzone { min-height: 80px; border-radius: 8px; transition: background 0.15s; }
     .kanban-col-dropzone.drag-over {
-      background: rgba(59,130,246,0.06);
-      outline: 2px dashed rgba(59,130,246,0.4);
+      background: rgba(69,115,210,0.06);
+      outline: 2px dashed rgba(69,115,210,0.4);
       outline-offset: 2px;
     }
 
-    /* ── ONLINE FILES INDICATOR ── */
+    /* ── ONLINE FILES ── */
     .file-online-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 9999px;
-      background: rgba(16,185,129,0.12);
-      color: #059669;
-      border: 1px solid rgba(16,185,129,0.3);
-      letter-spacing: 0.04em;
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 9px; font-weight: 700; padding: 1px 6px;
+      border-radius: 9999px; background: rgba(16,185,129,0.12);
+      color: #059669; border: 1px solid rgba(16,185,129,0.3);
       text-transform: uppercase;
     }
-    .dark .file-online-badge {
-      background: rgba(16,185,129,0.15);
-      color: #34d399;
-    }
+    .dark .file-online-badge { background: rgba(16,185,129,0.15); color: #34d399; }
     .file-online-dot {
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: #10b981;
-      animation: pulse-dot 1.8s infinite;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #10b981; animation: pulse-dot 1.8s infinite;
     }
     @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.7); }
+      0%,100%{ opacity:1; transform:scale(1); }
+      50%{ opacity:0.5; transform:scale(0.7); }
+    }
+    .ftype-excel { color: #16a34a; }
+    .ftype-word  { color: #2563eb; }
+    .ftype-pdf   { color: #dc2626; }
+    .ftype-image { color: #7c3aed; }
+    .ftype-link  { color: #0891b2; }
+    .ftype-other { color: #64748b; }
+
+    /* ════════════════════════════════════════
+       ASANA-STYLE SIDEBAR
+    ════════════════════════════════════════ */
+    #asana-sidebar-wrap {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 240px;
+      background: var(--bg-sidebar);
+      display: flex; flex-direction: column;
+      z-index: 50;
+      overflow: hidden;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      transition: width 0.22s ease, transform 0.22s ease;
+    }
+    #asana-sidebar-wrap.sb-collapsed { width: 56px; }
+    #asana-sidebar-wrap.sb-collapsed .sb-lbl,
+    #asana-sidebar-wrap.sb-collapsed .sb-section,
+    #asana-sidebar-wrap.sb-collapsed .sb-count-badge,
+    #asana-sidebar-wrap.sb-collapsed .sb-logo-name { display: none !important; }
+    #asana-sidebar-wrap.sb-collapsed .sb-nav-btn  { justify-content: center; padding: 10px 0; }
+
+    .sb-nav-btn {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 12px;
+      font-size: 13px; font-weight: 500;
+      color: var(--sb-text);
+      border: none; background: none; width: 100%;
+      text-align: left; border-radius: 6px;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.12s, color 0.12s;
+      margin: 1px 0;
+    }
+    .sb-nav-btn:hover  { background: var(--sb-hover); color: var(--sb-text-a); }
+    .sb-nav-btn.active { background: var(--sb-active); color: var(--sb-text-a); }
+    .sb-nav-btn .sb-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .sb-section {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(255,255,255,0.35);
+      padding: 14px 12px 4px;
+    }
+    .sb-count-badge {
+      margin-left: auto; flex-shrink: 0;
+      font-size: 10px; font-family: monospace;
+      background: rgba(255,255,255,0.1);
+      padding: 1px 6px; border-radius: 10px;
+      color: rgba(255,255,255,0.45);
+    }
+    .sb-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 2px 0 8px; }
+    .sb-kpi-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 8px; padding: 8px;
+      text-align: center; cursor: pointer;
+      transition: background 0.14s, transform 0.1s;
+    }
+    .sb-kpi-card:hover { background: rgba(255,255,255,0.09); transform: translateY(-1px); }
+    .sb-kpi-card.active-kpi { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.13); }
+    .sb-kpi-val { font-size: 19px; font-weight: 700; font-family: monospace; color: #fff; }
+    .sb-kpi-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255,255,255,0.4); }
+
+    /* Push main content to the right of sidebar */
+    #app-content { margin-left: 240px; transition: margin-left 0.22s ease; }
+    #app-content.sb-collapsed-main { margin-left: 56px; }
+
+    /* ── VIEW TABS (Asana style) ── */
+    .asana-tab {
+      display: flex; align-items: center; gap: 5px;
+      padding: 8px 14px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-muted);
+      border: none; background: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer; transition: color 0.12s, border-color 0.12s;
+      white-space: nowrap;
+    }
+    .asana-tab:hover { color: var(--text-main); }
+    .asana-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+    /* ── TOPBAR ── */
+    #asana-topbar {
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
+      height: 54px;
+      display: flex; align-items: center;
+      padding: 0 16px; gap: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      overflow: hidden;
     }
 
-    /* ── FILE TYPE ICONS COLORS ── */
-    .ftype-excel  { color: #16a34a; }
-    .ftype-word   { color: #2563eb; }
-    .ftype-pdf    { color: #dc2626; }
-    .ftype-image  { color: #7c3aed; }
-    .ftype-link   { color: #0891b2; }
-    .ftype-other  { color: #64748b; }
-	
-/* ==========================================
-   HEADER FIJO SOLO DESKTOP
-========================================== */
+    /* ── FILTER CHIPS ── */
+    .filter-chip {
+      display: flex; align-items: center; gap: 5px;
+      padding: 4px 10px;
+      font-size: 12px; font-weight: 500;
+      border: 1px solid var(--border-color);
+      border-radius: 999px;
+      background: var(--bg-panel);
+      color: var(--text-muted);
+      cursor: pointer; transition: border-color 0.12s; white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .filter-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-chip select {
+      border: none; background: none; outline: none;
+      font-size: 12px; font-weight: 500;
+      color: inherit; cursor: pointer; padding: 0;
+      max-width: 110px;
+      /* Prevent select from causing layout reflow */
+      appearance: none; -webkit-appearance: none;
+    }
 
-@media (min-width: 1024px) {
+    /* ── MODAL ── */
+    /* Modal visibility is fully controlled by JS via Tailwind .hidden class */
+    /* Just ensure the inner scrollable area works */
+    #modal .space-y-3,
+    #modal .space-y-4 { overflow: visible; }
+    /* max-height on the overlay already handles scrolling */
 
-  #desktop-header{
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(1600px, calc(100vw - 32px));
-    z-index: 100;
-    padding-top: 24px;
-    padding-bottom: 12px;
+    /* ── NOTIFICATION PANEL ── */
+    #notif-panel {
+      position: fixed; top: 0; right: 0; bottom: 0;
+      width: 340px;
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border-color);
+      z-index: 300; display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.22s ease;
+      box-shadow: -4px 0 24px rgba(0,0,0,0.1);
+    }
+    #notif-panel.notif-open { transform: translateX(0); }
+    .notif-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer; transition: background 0.1s;
+    }
+    .notif-item:hover { background: rgba(69,115,210,0.05); }
+    .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
 
-	background-color: var(--bg-main);
+    /* ── MENTION DROPDOWN ── */
+    #mention-dropdown {
+      position: absolute;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      z-index: 9999; min-width: 200px; max-height: 180px; overflow-y: auto;
+    }
+    .mention-opt {
+      padding: 8px 12px; font-size: 12.5px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px; transition: background 0.1s;
+      color: var(--text-main);
+    }
+    .mention-opt:hover { background: rgba(69,115,210,0.08); }
+    .mention-av {
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: white; flex-shrink: 0;
+    }
+    .user-av {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: white; flex-shrink: 0;
+    }
 
-    border-bottom: 1px solid #e5e7eb;
-  }
+    /* ── DESKTOP HEADER (keep fixed positioning) ── */
+    @media (min-width: 1024px) {
+      #desktop-header {
+        position: fixed; top: 0; left: 240px; right: 0;
+        z-index: 40;
+        background-color: var(--bg-header);
+        border-bottom: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        transition: left 0.22s ease;
+      }
+      #desktop-header.sb-collapsed-header { left: 56px; }
+      .dark #desktop-header { background: var(--bg-header); }
+      /* margin-top set dynamically by JS after render */
+      #main-content { margin-top: 96px; }
+    }
 
-  .dark #desktop-header{
-    background: #0f172a;
-    border-color: #334155;
-  }
-
-  #main-content{
-    margin-top: 190px;
-  }
-}	
-	
   </style>
 </head>
-<body class="p-4 md:p-8 font-sans antialiased">
+<body class="font-sans antialiased">
+
+  <!-- ══ ASANA SIDEBAR ══ -->
+  <div id="asana-sidebar-wrap">
+
+    <!-- Logo + collapse -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:9px;overflow:hidden">
+        <div style="background:white;border-radius:5px;padding:3px 5px;flex-shrink:0">
+          <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="GF" style="height:19px;object-fit:contain;mix-blend-mode:multiply;display:block">
+        </div>
+        <span class="sb-logo-name sb-lbl" style="font-size:13px;font-weight:700;color:white;white-space:nowrap">Gor Factory</span>
+      </div>
+      <button onclick="toggleSidebarAsana()" style="background:none;border:none;padding:4px;cursor:pointer;color:rgba(255,255,255,0.38);border-radius:4px" title="Contraer panel">
+        <i data-lucide="panel-left-close" style="width:15px;height:15px"></i>
+      </button>
+    </div>
+
+    <!-- User info -->
+    <div style="padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="user-av" id="sb-avatar" style="background:linear-gradient(135deg,#f06a6a,#c84b4b)">?</div>
+        <div class="sb-lbl" style="overflow:hidden;min-width:0">
+          <div id="sb-username" style="font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">—</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.38)">Marketing · Gor Factory</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scroll area -->
+    <div style="flex:1;overflow-y:auto;overflow-x:hidden" class="no-scrollbar">
+
+      <!-- Views nav -->
+      <div style="padding:8px">
+        <div class="sb-section">Vistas</div>
+        <button id="sb-nav-gantt"     class="sb-nav-btn active" onclick="switchView('gantt')">
+          <i data-lucide="gantt-chart"      class="sb-icon" style="color:#60a5fa"></i><span class="sb-lbl">Diagrama de Gantt</span>
+        </button>
+        <button id="sb-nav-kanban"    class="sb-nav-btn" onclick="switchView('kanban')">
+          <i data-lucide="columns"          class="sb-icon" style="color:#34d399"></i><span class="sb-lbl">Kanban</span>
+        </button>
+        <button id="sb-nav-calendar"  class="sb-nav-btn" onclick="switchView('calendar')">
+          <i data-lucide="calendar"         class="sb-icon" style="color:#fbbf24"></i><span class="sb-lbl">Calendario</span>
+        </button>
+        <button id="sb-nav-dashboard" class="sb-nav-btn" onclick="switchView('dashboard')">
+          <i data-lucide="layout-dashboard" class="sb-icon" style="color:#a78bfa"></i><span class="sb-lbl">Métricas &amp; Alertas</span>
+        </button>
+      </div>
+
+      <!-- KPIs -->
+      <div style="padding:4px 8px 8px">
+        <div class="sb-section">Métricas clave</div>
+        <div class="sb-kpi-grid">
+          <div class="sb-kpi-card">
+            <div class="sb-kpi-val" id="s-projects">0</div>
+            <div class="sb-kpi-lbl sb-lbl">Proyectos</div>
+          </div>
+          <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()" class="sb-kpi-card" style="cursor:pointer">
+            <div class="sb-kpi-val" style="color:#22d3ee" id="s-projects-done">0</div>
+            <div class="sb-kpi-lbl sb-lbl">Completados</div>
+          </button>
+          <button id="kpi-tasks-all" onclick="kpiToggleAll()" class="sb-kpi-card" style="cursor:pointer">
+            <div class="sb-kpi-val" id="s-tasks">0</div>
+            <div class="sb-kpi-lbl sb-lbl">Total Tareas</div>
+          </button>
+          <div class="sb-kpi-card">
+            <div class="sb-kpi-val" style="color:#34d399" id="s-active">0</div>
+            <div class="sb-kpi-lbl sb-lbl">Activas</div>
+          </div>
+          <button id="kpi-blocked" onclick="kpiToggleBlocked()" class="sb-kpi-card" style="cursor:pointer">
+            <div class="sb-kpi-val" style="color:#f87171" id="s-blocked">0</div>
+            <div class="sb-kpi-lbl sb-lbl">Bloqueadas</div>
+          </button>
+          <button id="kpi-overdue" onclick="kpiToggleOverdue()" class="sb-kpi-card" style="cursor:pointer">
+            <div class="sb-kpi-val" style="color:#fbbf24" id="s-overdue">0</div>
+            <div class="sb-kpi-lbl sb-lbl">Vencidas</div>
+          </button>
+        </div>
+        <button id="kpi-done" onclick="kpiToggleCompleted()" class="sb-kpi-card" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:7px">
+          <span class="sb-kpi-val" style="color:#34d399;font-size:15px" id="s-done">0</span>
+          <span class="sb-kpi-lbl sb-lbl">Tareas Completadas</span>
+        </button>
+      </div>
+
+      <!-- Projects list -->
+      <div style="padding:0 8px">
+        <div class="sb-section" style="display:flex;align-items:center;justify-content:space-between">
+          <span>Proyectos</span>
+          <span id="sidebar-proj-count" class="sb-count-badge">0</span>
+        </div>
+        <div id="sidebar-projects-list" style="max-height:220px;overflow-y:auto" class="no-scrollbar"></div>
+      </div>
+
+      <!-- Categories -->
+      <div style="padding:0 8px">
+        <div class="sb-section">Categorías</div>
+        <div id="sidebar-categories"></div>
+      </div>
+
+      <!-- Upcoming -->
+      <div style="padding:0 8px 8px">
+        <div class="sb-section">Próximos vencimientos</div>
+        <div id="sidebar-upcoming">
+          <div style="font-size:11px;color:rgba(255,255,255,0.3);padding:4px 4px;font-style:italic" class="sb-lbl">Sin datos</div>
+        </div>
+      </div>
+
+    </div><!-- /scroll area -->
+
+    <!-- Bottom actions -->
+    <div style="padding:6px 8px 10px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0">
+      <button class="sb-nav-btn" onclick="exportCSV()">
+        <i data-lucide="download" class="sb-icon" style="color:#34d399"></i>
+        <span class="sb-lbl">Exportar CSV</span>
+      </button>
+      <button class="sb-nav-btn" onclick="logout()" style="color:rgba(239,68,68,0.8)">
+        <i data-lucide="log-out" class="sb-icon" style="color:rgba(239,68,68,0.7)"></i>
+        <span class="sb-lbl">Cerrar sesión</span>
+      </button>
+    </div>
+  </div><!-- /sidebar -->
+
 
   <!-- ══════════════════════════════════════════════
        PANTALLA DE ACCESO
@@ -205,235 +460,112 @@
   ══════════════════════════════════════════════ -->
   <div id="app-content" class="max-w-[1600px] mx-auto space-y-6 hidden">
 <div id="desktop-header">
-    <!-- CABECERA -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b theme-border pb-4">
-      <div class="flex items-center space-x-4">
-        <div class="bg-white p-2 rounded-lg inline-block shadow-sm">
-          <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="Gor Factory" class="h-7 object-contain" style="mix-blend-mode: multiply;">
-        </div>
-        <div>
-          <h1 class="text-lg font-bold tracking-tight theme-text flex items-center gap-2">
-            PLANIFICADOR DE TAREAS
-            <span class="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-mono">SUPABASE CLOUD v3.0</span>
-          </h1>
-          <p class="text-xs theme-text-muted">Panel corporativo de control y líneas de tiempo para proyectos de marketing de Gor Factory.</p>
-        </div>
+    <!-- ── ASANA TOPBAR ── -->
+    <div id="asana-topbar">
+      <!-- Sidebar collapse toggle (visible only when collapsed) -->
+      <button id="sb-open-btn" onclick="toggleSidebarAsana()" style="display:none;background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px" title="Expandir panel">
+        <i data-lucide="panel-left-open" style="width:16px;height:16px"></i>
+      </button>
+
+      <!-- Title -->
+      <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+        <h1 style="font-size:14px;font-weight:700;color:var(--text-main);margin:0;white-space:nowrap">
+          PLANIFICADOR DE TAREAS
+        </h1>
+        <span style="font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(69,115,210,0.1);color:#4573d2;border:1px solid rgba(69,115,210,0.2);font-family:monospace;white-space:nowrap">v3.0</span>
       </div>
-      
-      <div class="flex flex-wrap items-center gap-3 self-end md:self-auto">
-        <button id="btn-toggle-mode" onclick="toggleEditMode()"
-          class="px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm bg-amber-50 border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-400"
-          title="Alternar entre modo lectura y edición">
-          <i data-lucide="lock" id="icon-mode" class="w-3.5 h-3.5"></i>
-          <span id="text-mode">Modo Visualización</span>
-        </button>
-        <button onclick="goToday()" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text hover:bg-gray-100 dark:hover:bg-slate-700 transition-all">
-          Hoy
-        </button>
-        <button id="btn-add-task" onclick="showAddModal()"
-          class="px-4 py-1.5 rounded-lg bg-gray-400 text-white text-xs font-semibold tracking-wide shadow-md opacity-60 cursor-not-allowed transition-all flex items-center space-x-1.5" disabled>
-          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-          <span>Nueva Tarea</span>
-        </button>
-        <span id="current-user" class="px-3 py-1.5 rounded-lg theme-panel border text-xs font-medium theme-text"></span>
-        <button onclick="logout()"
-          class="px-3 py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-xs font-semibold shadow-md transition-all flex items-center gap-1.5">
-          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
-          <span>Cerrar sesión</span>
-        </button>
+
+      <!-- Search -->
+      <div style="position:relative;flex-shrink:0">
+        <i data-lucide="search" style="position:absolute;left:9px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text-muted);pointer-events:none"></i>
+        <input id="filter-search" type="text" placeholder="Buscar tarea, proyecto..." oninput="queueFilters()"
+          style="padding:6px 10px 6px 28px;border:1px solid var(--border-color);border-radius:20px;font-size:12px;background:var(--bg-main);color:var(--text-main);outline:none;width:190px;transition:all .15s;font-family:inherit"
+          onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
       </div>
+
+      <!-- My tasks -->
+      <button id="btn-my-tasks" onclick="toggleMyTasks()"
+        style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-main);font-size:12px;font-weight:500;color:var(--text-muted);cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0">
+        <i data-lucide="user" style="width:13px;height:13px"></i>
+        Mis tareas
+        <span id="my-tasks-count" class="hidden ml-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">0</span>
+      </button>
+
+      <!-- Today -->
+      <button onclick="goToday()" style="padding:6px 12px;border-radius:6px;border:1px solid var(--border-color);background:var(--bg-main);font-size:12px;font-weight:500;color:var(--text-main);cursor:pointer;flex-shrink:0">
+        Hoy
+      </button>
+
+      <!-- Edit mode -->
+      <button id="btn-toggle-mode" onclick="toggleEditMode()"
+        style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid #fde68a;background:#fffbeb;font-size:12px;font-weight:600;color:#b45309;cursor:pointer;flex-shrink:0">
+        <i data-lucide="lock" id="icon-mode" style="width:13px;height:13px"></i>
+        <span id="text-mode">Visualización</span>
+      </button>
+
+      <!-- Add task -->
+      <button id="btn-add-task" onclick="showAddModal()" disabled
+        style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;border:none;background:#d1d5db;color:white;font-size:12px;font-weight:600;cursor:not-allowed;opacity:0.6;flex-shrink:0">
+        <i data-lucide="plus" style="width:13px;height:13px"></i> Nueva Tarea
+      </button>
+
+      <!-- Notifications -->
+      <button id="btn-notif" onclick="toggleNotifPanel()"
+        style="position:relative;background:none;border:none;cursor:pointer;padding:6px;border-radius:6px;color:var(--text-muted);flex-shrink:0" title="Notificaciones">
+        <i data-lucide="bell" style="width:18px;height:18px"></i>
+        <span id="notif-badge" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#ef4444;border:1.5px solid var(--bg-header)"></span>
+      </button>
+
+      <!-- Hidden elements needed by JS (user display) -->
+      <span id="current-user" style="display:none"></span>
     </div>
 
-    <!-- FILTROS -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 theme-sidebar p-3 rounded-xl border mt-6 mb-6">
-      <div class="sm:col-span-2 md:col-span-1 hidden">
-        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Buscar</label>
-        <div class="relative">
-          <i data-lucide="search" class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 theme-text-muted pointer-events-none"></i>
-          <input id="filter-search" type="text" placeholder="Tarea, proyecto, responsable..."
-            oninput="queueFilters()"
-            class="w-full theme-panel border theme-text text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none focus:border-blue-500">
+    <!-- ── VIEW TABS + FILTER CHIPS ── -->
+    <div style="background:var(--bg-header);border-bottom:1px solid var(--border-color);display:flex;align-items:center;padding:0 20px;gap:0;overflow-x:auto" class="no-scrollbar">
+      <button id="nav-gantt"     class="asana-tab active" onclick="switchView('gantt')">     <i data-lucide="gantt-chart"      style="width:13px;height:13px"></i> Línea de tiempo</button>
+      <button id="nav-kanban"    class="asana-tab"         onclick="switchView('kanban')">    <i data-lucide="columns"          style="width:13px;height:13px"></i> Tablero</button>
+      <button id="nav-calendar"  class="asana-tab"         onclick="switchView('calendar')">  <i data-lucide="calendar"         style="width:13px;height:13px"></i> Calendario</button>
+      <button id="nav-dashboard" class="asana-tab"         onclick="switchView('dashboard')"> <i data-lucide="bar-chart-2"      style="width:13px;height:13px"></i> Métricas</button>
+
+      <div style="flex:1"></div>
+      <!-- Filter chips -->
+      <div style="display:flex;align-items:center;gap:5px;padding:7px 0;flex-shrink:0">
+        <div class="filter-chip"><i data-lucide="tag" style="width:11px;height:11px"></i>
+          <select id="filter-cat" onchange="queueFilters()">
+            <option value="">Categoría</option>
+            <option>Catálogos</option><option>Ferias</option><option>Web/Digital</option>
+            <option>Shootings</option><option>Eventos</option><option>Branding</option>
+            <option>Marketing Digital</option><option>Comunicación</option>
+          </select>
         </div>
-      </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Categoría</label>
-        <select id="filter-cat" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
-          <option value="">Todas las categorías</option>
-          <option value="Catálogos">Catálogos</option>
-          <option value="Ferias">Ferias</option>
-          <option value="Web/Digital">Web/Digital</option>
-          <option value="Shootings">Shootings</option>
-          <option value="Eventos">Eventos</option>
-          <option value="Branding">Branding</option>
-          <option value="Marketing Digital">Marketing Digital</option>
-          <option value="Comunicación">Comunicación</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Estado</label>
-        <select id="filter-status" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
-          <option value="">Todos los estados</option>
-          <option value="Sin comenzar">Sin comenzar</option>
-          <option value="En planificación">En planificación</option>
-          <option value="En curso">En curso</option>
-          <option value="Pendiente revisión">Pendiente revisión</option>
-          <option value="Bloqueado">Bloqueado</option>
-          <option value="Completado">Completado</option>
-          <option value="Cancelado">Cancelado</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Proyecto</label>
-        <select id="filter-proj" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
-          <option value="">Todos los proyectos</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Responsable</label>
-        <select id="filter-resp" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
-          <option value="">Todos los responsables</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider mb-1">Filtrar Tarea</label>
-        <select id="filter-task" onchange="queueFilters()" class="w-full theme-panel border theme-text text-xs rounded-lg px-2.5 py-1.5 outline-none focus:border-blue-500">
-          <option value="">Todas las tareas</option>
-        </select>
-      </div>
-      <div class="flex items-end">
-        <button onclick="clearFilters()"
-          class="w-full px-3 py-1.5 rounded-lg border text-xs font-semibold flex items-center justify-center gap-2 transition-all theme-panel hover:bg-gray-100 dark:hover:bg-slate-700 theme-text">
-          <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
-          Limpiar filtros
+        <div class="filter-chip"><i data-lucide="circle-dot" style="width:11px;height:11px"></i>
+          <select id="filter-status" onchange="queueFilters()">
+            <option value="">Estado</option>
+            <option>Sin comenzar</option><option>En planificación</option><option>En curso</option>
+            <option>Pendiente revisión</option><option>Bloqueado</option><option>Completado</option><option>Cancelado</option>
+          </select>
+        </div>
+        <div class="filter-chip"><i data-lucide="folder" style="width:11px;height:11px"></i>
+          <select id="filter-proj" onchange="queueFilters()"><option value="">Proyecto</option></select>
+        </div>
+        <div class="filter-chip"><i data-lucide="user" style="width:11px;height:11px"></i>
+          <select id="filter-resp" onchange="queueFilters()"><option value="">Responsable</option></select>
+        </div>
+        <div class="filter-chip"><i data-lucide="list" style="width:11px;height:11px"></i>
+          <select id="filter-task" onchange="queueFilters()"><option value="">Tarea</option></select>
+        </div>
+        <button onclick="clearFilters()" style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;border:1px solid var(--border-color);background:none;font-size:11.5px;color:var(--text-muted);cursor:pointer">
+          <i data-lucide="x" style="width:11px;height:11px"></i> Limpiar
         </button>
       </div>
-    </div>
+    </div><!-- /tabs+filters bar -->
+  </div><!-- /desktop-header -->
 
-</div>
-
-<div id="main-content" class="pt-4">
-</div>
     <!-- LAYOUT PRINCIPAL -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-      <!-- SIDEBAR -->
-      <div class="lg:col-span-3 theme-panel p-4 rounded-xl border overflow-y-auto" style="max-height:calc(100vh - 160px)">
-        <div class="space-y-4">
-
-          <!-- VISTAS -->
-          <div class="space-y-1">
-            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Visualización</label>
-            <button id="nav-gantt" onclick="switchView('gantt')"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all">
-              <i data-lucide="gantt-chart" class="w-3.5 h-3.5 shrink-0"></i><span>Diagrama de Gantt</span>
-            </button>
-            <button id="nav-kanban" onclick="switchView('kanban')"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
-              <i data-lucide="columns" class="w-3.5 h-3.5 shrink-0 text-indigo-500"></i><span>Kanban</span>
-            </button>
-            <button id="nav-calendar" onclick="switchView('calendar')"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
-              <i data-lucide="calendar-days" class="w-3.5 h-3.5 shrink-0 text-rose-500"></i><span>Calendario</span>
-            </button>
-            <button id="nav-dashboard" onclick="switchView('dashboard')"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
-              <i data-lucide="layout-dashboard" class="w-3.5 h-3.5 shrink-0 text-purple-500"></i><span>Métricas &amp; Alertas</span>
-            </button>
-          </div>
-
-          <hr class="theme-border">
-
-          <!-- ACCESO RÁPIDO -->
-          <div class="space-y-1">
-            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Acceso Rápido</label>
-            <button id="btn-my-tasks" onclick="toggleMyTasks()"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
-              <i data-lucide="user-check" class="w-3.5 h-3.5 shrink-0 text-blue-500"></i>
-              <span class="flex-1 text-left">Mis tareas</span>
-              <span id="my-tasks-count" class="hidden text-[10px] font-mono bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded-full">0</span>
-            </button>
-            <button onclick="exportCSV()"
-              class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all">
-              <i data-lucide="download" class="w-3.5 h-3.5 shrink-0 text-emerald-500"></i><span class="text-left">Exportar CSV</span>
-            </button>
-          </div>
-
-          <hr class="theme-border">
-
-          <!-- PRÓXIMOS VENCIMIENTOS -->
-          <div class="space-y-2">
-            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Próximos vencimientos</label>
-            <div id="sidebar-upcoming" class="space-y-0.5">
-              <div class="text-[11px] theme-text-muted italic px-2">Sin datos</div>
-            </div>
-          </div>
-
-          <hr class="theme-border">
-
-          <!-- MÉTRICAS CLAVE -->
-          <div class="space-y-2">
-            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Métricas Clave</label>
-            <div class="grid grid-cols-2 gap-1.5">
-              <div class="theme-sidebar p-2 rounded-lg border text-center">
-                <span class="block text-lg font-bold theme-text font-mono" id="s-projects">0</span>
-                <span class="text-[10px] theme-text-muted">Proyectos</span>
-              </div>
-              <button id="kpi-projects-done" onclick="kpiToggleCompletedProjects()"
-                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer">
-                <span class="block text-lg font-bold text-cyan-600 dark:text-cyan-400 font-mono" id="s-projects-done">0</span>
-                <span class="text-[10px] theme-text-muted">Completados</span>
-              </button>
-              <button id="kpi-tasks-all" onclick="kpiToggleAll()"
-                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer">
-                <span class="block text-lg font-bold theme-text font-mono" id="s-tasks">0</span>
-                <span class="text-[10px] theme-text-muted">Total Tareas</span>
-              </button>
-              <div class="theme-sidebar p-2 rounded-lg border text-center">
-                <span class="block text-lg font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-active">0</span>
-                <span class="text-[10px] theme-text-muted">Activas</span>
-              </div>
-              <button id="kpi-blocked" onclick="kpiToggleBlocked()"
-                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer">
-                <span class="block text-lg font-bold text-red-600 dark:text-red-400 font-mono" id="s-blocked">0</span>
-                <span class="text-[10px] theme-text-muted">Bloqueadas</span>
-              </button>
-              <button id="kpi-overdue" onclick="kpiToggleOverdue()"
-                class="theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer">
-                <span class="block text-lg font-bold text-amber-600 dark:text-amber-500 font-mono" id="s-overdue">0</span>
-                <span class="text-[10px] theme-text-muted">Vencidas</span>
-              </button>
-            </div>
-            <button id="kpi-done" onclick="kpiToggleCompleted()"
-              class="w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer">
-              <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="s-done">0</span>
-              <span class="text-[10px] text-emerald-600 dark:text-emerald-500 block">Tareas Completadas</span>
-            </button>
-          </div>
-
-          <hr class="theme-border">
-
-          <!-- PROYECTOS (estilo Asana) -->
-          <div class="space-y-2">
-            <div class="flex items-center justify-between px-1">
-              <label class="text-[10px] uppercase font-bold theme-text-muted tracking-wider">Proyectos</label>
-              <span id="sidebar-proj-count" class="text-[10px] theme-text-muted font-mono">0</span>
-            </div>
-            <div id="sidebar-projects-list" class="space-y-0.5 max-h-[220px] overflow-y-auto no-scrollbar"></div>
-          </div>
-
-          <hr class="theme-border">
-
-          <!-- CATEGORÍAS -->
-          <div class="space-y-2">
-            <label class="block text-[10px] uppercase font-bold theme-text-muted tracking-wider px-1">Categorías</label>
-            <div id="sidebar-categories" class="space-y-1"></div>
-          </div>
-
-        </div>
-      </div>
+    <div id="main-content" style="width:100%">
 
       <!-- PANEL DE VISTAS -->
-      <div class="lg:col-span-9 theme-panel rounded-xl border overflow-hidden shadow-sm relative">
+      <div class="theme-panel rounded-xl border overflow-hidden relative">
 
         <!-- ── VISTA GANTT ── -->
         <div id="view-gantt-container" class="flex divide-x theme-border">
@@ -549,38 +681,49 @@
        MODAL TAREA
   ══════════════════════════════════════════════ -->
   <div id="modal-overlay"
-     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden justify-center items-start overflow-y-auto p-4 opacity-0 transition-opacity duration-200">
+     class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000] hidden justify-center items-start overflow-y-auto p-6 opacity-0 transition-opacity duration-200">
     <div id="modal"
-      class="theme-panel border p-6 rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto overscroll-contain space-y-4 transform scale-95 transition-transform duration-200 shadow-2xl">
+      style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:12px;width:100%;max-width:580px;box-shadow:0 20px 60px rgba(0,0,0,0.2);overflow:visible">
 
-      <div class="flex items-center justify-between border-b theme-border pb-2">
-        <h2 id="modal-title" class="text-xs font-bold tracking-wider uppercase theme-text-muted">Gestión de Tarea</h2>
-        <button onclick="closeModal()" class="theme-text-muted hover:theme-text transition">
-          <i data-lucide="x" class="w-4 h-4"></i>
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border-color)">
+        <h2 id="modal-title" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:0">Gestión de Tarea</h2>
+        <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='none'">
+          <i data-lucide="x" style="width:16px;height:16px"></i>
         </button>
       </div>
 
-      <div class="space-y-3 text-xs">
+      <!-- Body -->
+      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+
+        <!-- Proyecto -->
         <div>
-          <label class="block theme-text-muted font-medium mb-1">Nombre del Proyecto</label>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Nombre del Proyecto</label>
           <input id="m-proj" type="text" list="project-list" placeholder="Selecciona o escribe un proyecto"
-            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+            style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
+            onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           <datalist id="project-list"></datalist>
         </div>
+
+        <!-- Tarea -->
         <div>
-          <label class="block theme-text-muted font-medium mb-1">Nombre de la Tarea u Operación</label>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Nombre de la Tarea u Operación</label>
           <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar"
-            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+            style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
+            onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
         </div>
-        <div class="grid grid-cols-2 gap-3">
+
+        <!-- Responsable + Categoría -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
-            <label class="block theme-text-muted font-medium mb-1">Responsable</label>
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Responsable</label>
             <input id="m-resp" type="text" placeholder="Ej: Lorenzo G."
-              class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500">
+              style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
+              onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
           <div>
-            <label class="block theme-text-muted font-medium mb-1">Categoría</label>
-            <select id="m-cat" class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Categoría</label>
+            <select id="m-cat" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
               <option value="Catálogos">Catálogos</option>
               <option value="Ferias">Ferias</option>
               <option value="Web/Digital">Web/Digital</option>
@@ -592,22 +735,28 @@
             </select>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+
+        <!-- Fechas -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
-            <label class="block theme-text-muted font-medium mb-1">Fecha Inicio</label>
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Fecha Inicio</label>
             <input id="m-start" type="date"
-              class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
+              style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
+              onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
           <div>
-            <label class="block theme-text-muted font-medium mb-1">Fecha Fin</label>
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Fecha Fin</label>
             <input id="m-end" type="date"
-              class="w-full theme-sidebar border rounded-lg px-3 py-1.5 theme-text outline-none focus:border-blue-500">
+              style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
+              onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+
+        <!-- Estado + Prioridad -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
-            <label class="block theme-text-muted font-medium mb-1">Estado Actual</label>
-            <select id="m-status" class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Estado Actual</label>
+            <select id="m-status" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
               <option value="Sin comenzar">Sin comenzar</option>
               <option value="En planificación">En planificación</option>
               <option value="En curso">En curso</option>
@@ -618,8 +767,8 @@
             </select>
           </div>
           <div>
-            <label class="block theme-text-muted font-medium mb-1">Prioridad</label>
-            <select id="m-prio" class="w-full theme-sidebar border rounded-lg px-2.5 py-2 theme-text outline-none focus:border-blue-500">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Prioridad</label>
+            <select id="m-prio" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
               <option value="Baja">Baja</option>
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
@@ -628,81 +777,80 @@
           </div>
         </div>
 
-        <!-- Notas (ocultas internamente, se guardan igual) -->
-        <div style="display:none;">
-          <textarea id="m-notes" rows="3" placeholder="Observaciones..."
-            class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs leading-relaxed"></textarea>
-        </div>
+        <!-- Notas ocultas -->
+        <textarea id="m-notes" style="display:none"></textarea>
 
-        <!-- ── SECCIÓN ARCHIVOS ── -->
-        <div class="mt-4 pt-4 border-t theme-border space-y-3">
-          <div class="flex items-center justify-between">
-            <label class="text-xs font-bold uppercase tracking-wider theme-text-muted flex items-center gap-1.5">
-              <i data-lucide="paperclip" class="w-3.5 h-3.5"></i> Adjuntos
-            </label>
-          </div>
-
-          <div id="task-files" class="space-y-2">
-            <div class="text-[11px] theme-text-muted italic">Sin adjuntos todavía</div>
-          </div>
-
-          <!-- Botones de subida -->
-          <div class="flex flex-wrap items-center gap-2">
-            <!-- Subida local -->
-            <input type="file" id="file-upload" class="hidden" onchange="uploadFile()">
-            <button type="button" onclick="document.getElementById('file-upload').click()"
-              class="px-3 py-1.5 rounded-lg bg-slate-600 hover:bg-slate-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
-              <i data-lucide="upload" class="w-3 h-3"></i>
-              Subir archivo
-            </button>
-
-            <!-- Enlace en línea (OneDrive/Drive/URL) -->
-            <button type="button" onclick="showOnlineFileModal()"
-              class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-all">
-              <i data-lucide="link" class="w-3 h-3"></i>
-              Añadir enlace en línea
-            </button>
-          </div>
-        </div>
-
-        <!-- ── SECCIÓN COMENTARIOS ── -->
-        <div class="mt-4 pt-4 border-t theme-border space-y-3">
-          <label class="text-xs font-bold uppercase tracking-wider theme-text-muted flex items-center gap-1.5">
-            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Historial de actividad
+        <!-- Adjuntos -->
+        <div style="padding-top:12px;border-top:1px solid var(--border-color)">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px">
+            <i data-lucide="paperclip" style="width:13px;height:13px"></i> Adjuntos
           </label>
-          <div id="task-comments" class="space-y-3 max-h-60 overflow-y-auto pr-1">
-            <div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>
+          <div id="task-files" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+            <div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin adjuntos todavía</div>
           </div>
-          <div class="space-y-2">
-            <textarea id="new-comment" rows="3" placeholder="Escribe un comentario..."
-              class="w-full theme-sidebar border rounded-lg px-3 py-2 theme-text outline-none focus:border-blue-500 resize-none text-xs"></textarea>
-            <div class="flex justify-end">
-              <button type="button" onclick="addComment()"
-                class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md transition">
-                Publicar comentario
-              </button>
-            </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input type="file" id="file-upload" style="display:none" onchange="uploadFile()">
+            <button type="button" onclick="document.getElementById('file-upload').click()"
+              style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;background:#475569;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s"
+              onmouseover="this.style.background='#374151'" onmouseout="this.style.background='#475569'">
+              <i data-lucide="upload" style="width:12px;height:12px"></i> Subir archivo
+            </button>
+            <button type="button" onclick="showOnlineFileModal()"
+              style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:7px;background:#059669;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s"
+              onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
+              <i data-lucide="link" style="width:12px;height:12px"></i> Añadir enlace en línea
+            </button>
           </div>
         </div>
 
-      </div><!-- /space-y-3 -->
+        <!-- Comentarios / Actividad -->
+        <div style="padding-top:12px;border-top:1px solid var(--border-color)">
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:10px">
+            <i data-lucide="message-circle" style="width:13px;height:13px"></i> Historial de actividad
+          </label>
+          <div id="task-comments" style="display:flex;flex-direction:column;gap:10px;max-height:200px;overflow-y:auto;margin-bottom:10px" class="no-scrollbar">
+            <div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin comentarios todavía</div>
+          </div>
+          <div style="position:relative">
+            <textarea id="new-comment" rows="3"
+              placeholder="Escribe un comentario... Usa @ para mencionar a alguien"
+              oninput="handleCommentInput(this)" onkeydown="handleCommentKeydown(event)"
+              style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:9px 12px;color:var(--text-main);font-size:13px;outline:none;resize:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
+              onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+            <div id="mention-dropdown" style="display:none;bottom:calc(100% + 4px);left:0;position:absolute"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:8px">
+            <button type="button" onclick="addComment()"
+              style="padding:6px 16px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s"
+              onmouseover="this.style.background='#3a64c3'" onmouseout="this.style.background='#4573d2'">
+              Publicar comentario
+            </button>
+          </div>
+        </div>
 
-      <div class="flex items-center justify-between border-t theme-border pt-3">
+      </div><!-- /body -->
+
+      <!-- Footer -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 16px;border-top:1px solid var(--border-color)">
         <button id="btn-delete" onclick="deleteTask()"
-          class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 border border-red-500/20 font-medium text-xs hover:bg-red-600 hover:text-white transition-all hidden">
+          style="display:none;padding:6px 14px;border-radius:7px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s"
+          onmouseover="this.style.background='#ef4444';this.style.color='white'" onmouseout="this.style.background='rgba(239,68,68,.08)';this.style.color='#ef4444'">
           Eliminar
         </button>
-        <div class="flex items-center space-x-2 ml-auto">
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
           <button id="btn-modal-cancel" onclick="closeModal()"
-            class="px-3 py-1.5 rounded-lg theme-sidebar theme-text border text-xs font-medium hover:bg-gray-100 dark:hover:bg-slate-700 transition">
+            style="padding:6px 16px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s"
+            onmouseover="this.style.borderColor='#4573d2';this.style.color='#4573d2'" onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-main)'">
             Cancelar
           </button>
           <button id="btn-modal-save" onclick="saveModal()"
-            class="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-md shadow-blue-600/10 transition">
+            style="padding:6px 18px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s"
+            onmouseover="this.style.background='#3a64c3'" onmouseout="this.style.background='#4573d2'">
             Guardar
           </button>
         </div>
       </div>
+
     </div>
   </div>
 
@@ -1051,7 +1199,12 @@
       showOnlyCompletedProjects = false;
       showOnlyMyTasks = false;
       const btnMt = document.getElementById('btn-my-tasks');
-      if (btnMt) btnMt.className = 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all';
+      if (btnMt) {
+        btnMt.style.borderColor = 'var(--border-color)';
+        btnMt.style.background  = 'var(--bg-main)';
+        btnMt.style.color       = 'var(--text-muted)';
+        btnMt.style.fontWeight  = '500';
+      }
       _resetAllKpi();
       applyFilters();
     }
@@ -1169,9 +1322,20 @@
     function toggleMyTasks() {
       showOnlyMyTasks = !showOnlyMyTasks;
       const btn = document.getElementById('btn-my-tasks');
-      if (btn) btn.className = showOnlyMyTasks
-        ? 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all'
-        : 'w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all';
+      if (btn) {
+        // Only change color/border, keep the inline style base intact
+        if (showOnlyMyTasks) {
+          btn.style.borderColor  = '#4573d2';
+          btn.style.background   = 'rgba(69,115,210,0.1)';
+          btn.style.color        = '#4573d2';
+          btn.style.fontWeight   = '600';
+        } else {
+          btn.style.borderColor  = 'var(--border-color)';
+          btn.style.background   = 'var(--bg-main)';
+          btn.style.color        = 'var(--text-muted)';
+          btn.style.fontWeight   = '500';
+        }
+      }
       applyFilters();
     }
 
@@ -1431,17 +1595,32 @@
     function switchView(viewName) {
       currentActiveView = viewName;
       const views = { gantt: 'view-gantt-container', kanban: 'view-kanban-container', calendar: 'view-calendar-container', dashboard: 'view-dashboard-container' };
-      const navs  = { gantt: 'nav-gantt', kanban: 'nav-kanban', calendar: 'nav-calendar', dashboard: 'nav-dashboard' };
-      const BASE_NAV = "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-gray-100 dark:hover:bg-slate-800 font-medium text-xs transition-all";
-      const ACTIVE_NAV = "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg bg-blue-600 text-white font-medium text-xs transition-all";
+      // Tab IDs in the header bar
+      const topTabs = ['nav-gantt', 'nav-kanban', 'nav-calendar', 'nav-dashboard'];
+      // Sidebar nav IDs
+      const sbNavs  = ['sb-nav-gantt', 'sb-nav-kanban', 'sb-nav-calendar', 'sb-nav-dashboard'];
 
+      // Show/hide view panels
       Object.entries(views).forEach(([v, id]) => {
         const el = document.getElementById(id);
         if (el) v === viewName ? el.classList.remove('hidden') : el.classList.add('hidden');
       });
-      Object.entries(navs).forEach(([v, id]) => {
+
+      // Update top tab buttons: just toggle .active class, keep existing classes
+      topTabs.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.className = v === viewName ? ACTIVE_NAV : BASE_NAV;
+        if (!el) return;
+        const v = id.replace('nav-', '');
+        // Ensure asana-tab class is always present
+        el.className = 'asana-tab' + (v === viewName ? ' active' : '');
+      });
+
+      // Update sidebar nav buttons: just toggle .active class
+      sbNavs.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const v = id.replace('sb-nav-', '');
+        el.classList.toggle('active', v === viewName);
       });
 
       if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
@@ -1589,7 +1768,7 @@
 
         const sbProj = document.createElement('div');
         sbProj.className = 'flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
-        sbProj.style.backgroundColor = 'var(--bg-sidebar)';
+        sbProj.style.backgroundColor = 'var(--bg-main)';
         sbProj.innerHTML = `<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
         sbProj.onclick = () => { expanded[proj.name] = !isOpen; render(); };
         sbRows.appendChild(sbProj);
@@ -1871,11 +2050,16 @@
 
     // ── GANTT RESIZE ───────────────────────────────────────────
     function applyGanttHeight() {
-      const sbRows  = document.getElementById('sb-rows');
+      const sbRows   = document.getElementById('sb-rows');
       const tlScroll = document.getElementById('tl-scroll');
+      const hdr      = document.getElementById('desktop-header');
       if (!sbRows || !tlScroll) return;
-      sbRows.style.maxHeight  = (ganttHeight - 80) + 'px';
-      tlScroll.style.maxHeight = ganttHeight + 'px';
+      // Calculate available height: viewport minus fixed header
+      const hdrH = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 96;
+      const availH = Math.max(400, window.innerHeight - hdrH - 32);
+      const h = Math.min(ganttHeight, availH);
+      sbRows.style.maxHeight  = (h - 80) + 'px';
+      tlScroll.style.maxHeight = h + 'px';
     }
 
     function initResizeHandle() {
@@ -1915,10 +2099,10 @@
       document.getElementById('m-prio').value   = 'Media';
       document.getElementById('m-cat').value    = 'Catálogos';
       document.getElementById('m-notes').value  = '';
-      document.getElementById('btn-delete').classList.add('hidden');
-      document.getElementById('btn-modal-save').classList.remove('hidden');
-      document.getElementById('task-files').innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin adjuntos todavía</div>';
-      document.getElementById('task-comments').innerHTML = '<div class="text-[11px] theme-text-muted italic">Sin comentarios todavía</div>';
+      document.getElementById('btn-delete').style.display = 'none';
+      document.getElementById('btn-modal-save').style.display = 'block';
+      document.getElementById('task-files').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin adjuntos todavía</div>';
+      document.getElementById('task-comments').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin comentarios todavía</div>';
       toggleModalInputs(false);
       _openModalOverlay();
     }
@@ -1941,14 +2125,14 @@
 
       if (isEditModeActive) {
         document.getElementById('modal-title').textContent = 'Modificar Planificación';
-        document.getElementById('btn-delete').classList.remove('hidden');
-        document.getElementById('btn-modal-save').classList.remove('hidden');
+        document.getElementById('btn-delete').style.display = 'block';
+        document.getElementById('btn-modal-save').style.display = 'block';
         document.getElementById('btn-modal-cancel').textContent = 'Cancelar';
         toggleModalInputs(false);
       } else {
         document.getElementById('modal-title').textContent = 'Detalles de la Tarea (Solo Lectura)';
-        document.getElementById('btn-delete').classList.add('hidden');
-        document.getElementById('btn-modal-save').classList.add('hidden');
+        document.getElementById('btn-delete').style.display = 'none';
+        document.getElementById('btn-modal-save').style.display = 'none';
         document.getElementById('btn-modal-cancel').textContent = 'Cerrar';
         toggleModalInputs(true);
       }
@@ -2241,7 +2425,397 @@
         document.getElementById('gatekeeper-screen').classList.remove('hidden');
         document.getElementById('gatekeeper-email').focus();
       }
+
+
+    // ════════════════════════════════════════════════════════
+    // ASANA UI ADDITIONS – sidebar, notifications, mentions
+    // ════════════════════════════════════════════════════════
+
+    // AUTO-MEASURE HEADER HEIGHT and apply margin to main-content
+    function applyHeaderMargin() {
+      const hdr = document.getElementById('desktop-header');
+      const mc  = document.getElementById('main-content');
+      if (!hdr || !mc) return;
+      const h = hdr.getBoundingClientRect().height;
+      mc.style.marginTop = Math.ceil(h) + 'px';
+    }
+    // Run after fonts/icons load, and on resize
+    window.addEventListener('load', applyHeaderMargin);
+    window.addEventListener('resize', applyHeaderMargin);
+    // Also run after lucide renders (icons affect height)
+    const _origCreateIcons = lucide.createIcons;
+    lucide.createIcons = function(opts) {
+      _origCreateIcons(opts);
+      setTimeout(applyHeaderMargin, 30);
+    };
+
+    // SIDEBAR TOGGLE
+    let _sbCollapsed = false;
+    function toggleSidebarAsana() {
+      _sbCollapsed = !_sbCollapsed;
+      const sb = document.getElementById('asana-sidebar-wrap');
+      const app = document.getElementById('app-content');
+      const hdr = document.getElementById('desktop-header');
+      const openBtn = document.getElementById('sb-open-btn');
+      if (sb)  sb.classList.toggle('sb-collapsed', _sbCollapsed);
+      if (app) app.classList.toggle('sb-collapsed-main', _sbCollapsed);
+      if (hdr) hdr.classList.toggle('sb-collapsed-header', _sbCollapsed);
+      if (openBtn) openBtn.style.display = _sbCollapsed ? 'flex' : 'none';
+      setTimeout(applyHeaderMargin, 250); // after transition
+    }
+
+    // SYNC SIDEBAR USER
+    function syncSidebarUser(name) {
+      const el = document.getElementById('sb-username');
+      const av = document.getElementById('sb-avatar');
+      const cav = document.getElementById('comment-avatar');
+      if (el) el.textContent = name;
+      const init = name.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase() || '?';
+      if (av) av.textContent = init;
+      if (cav) cav.textContent = init;
+    }
+
+    // Patch unlockDashboard
+    const _origUnlock2 = unlockDashboard;
+    unlockDashboard = async function() {
+      await _origUnlock2();
+      const name = await getCurrentDisplayName();
+      syncSidebarUser(name);
+      setTimeout(applyHeaderMargin, 100); // measure after layout settles
+      setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 1200);
+    };
+
+    // switchView already syncs both top tabs and sidebar nav (patched inline above)
+
+    // Patch toggleEditMode for topbar style
+    const _origTE2 = toggleEditMode;
+    toggleEditMode = function() {
+      _origTE2();
+      const btn = document.getElementById('btn-toggle-mode');
+      const icon = document.getElementById('icon-mode');
+      const text = document.getElementById('text-mode');
+      const addBtn = document.getElementById('btn-add-task');
+      if (!btn) return;
+      if (isEditModeActive) {
+        btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid #a7f3d0;background:#ecfdf5;font-size:12px;font-weight:600;color:#065f46;cursor:pointer;flex-shrink:0';
+        if (icon) icon.setAttribute('data-lucide','lock-open');
+        if (text) text.textContent = 'Edicion';
+        if (addBtn) { addBtn.disabled = false; addBtn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;border:none;background:#4573d2;color:white;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0'; }
+      } else {
+        btn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid #fde68a;background:#fffbeb;font-size:12px;font-weight:600;color:#b45309;cursor:pointer;flex-shrink:0';
+        if (icon) icon.setAttribute('data-lucide','lock');
+        if (text) text.textContent = 'Visualizacion';
+        if (addBtn) { addBtn.disabled = true; addBtn.style.cssText = 'display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:6px;border:none;background:#d1d5db;color:white;font-size:12px;font-weight:600;cursor:not-allowed;opacity:0.6;flex-shrink:0'; }
+      }
+      lucide.createIcons();
+    };
+
+    // Patch renderSidebarCategories for dark style
+    const _origCats2 = renderSidebarCategories;
+    renderSidebarCategories = function() {
+      const counts = {};
+      TASKS.forEach(function(t) { counts[t.cat] = (counts[t.cat] || 0) + 1; });
+      const container = document.getElementById('sidebar-categories');
+      if (!container) return;
+      container.innerHTML = '';
+      Object.keys(CAT_COLOR).forEach(function(c) {
+        if (c === 'default') return;
+        const n = counts[c] || 0;
+        const col = CAT_COLOR[c];
+        const btn = document.createElement('button');
+        btn.className = 'sb-nav-btn';
+        btn.style.cssText = 'padding:6px 12px;font-size:12px';
+        btn.onclick = function() { const s = document.getElementById('filter-cat'); if(s) s.value = c; applyFilters(); };
+        btn.innerHTML = '<span style="width:8px;height:8px;border-radius:50%;background:' + col + ';flex-shrink:0"></span><span class="sb-lbl" style="flex:1;text-align:left">' + esc(c) + '</span><span class="sb-count-badge">' + n + '</span>';
+        container.appendChild(btn);
+      });
+    };
+
+    // Patch renderSidebarProjects for dark style
+    const _origProjs2 = renderSidebarProjects;
+    renderSidebarProjects = function() {
+      const container = document.getElementById('sidebar-projects-list');
+      const countEl   = document.getElementById('sidebar-proj-count');
+      if (!container) return;
+      const projs = buildProjects(TASKS);
+      if (countEl) countEl.textContent = projs.length;
+      if (!projs.length) { container.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,0.3);padding:4px 12px;font-style:italic">Sin proyectos</div>'; return; }
+      container.innerHTML = projs.map(function(p) {
+        const total = p.tasks.length;
+        const done  = p.tasks.filter(function(t) { return t.status === 'Completado'; }).length;
+        const pct   = total > 0 ? Math.round(done / total * 100) : 0;
+        const col   = CAT_COLOR[p.cat] || CAT_COLOR.default;
+        const active = p.tasks.filter(function(t) { return t.status === 'En curso' || t.status === 'Bloqueado'; }).length;
+        const dot = active > 0 ? '<span style="width:5px;height:5px;border-radius:50%;background:#34d399;flex-shrink:0"></span>' : '';
+        return '<button class="sb-nav-btn" style="padding:6px 12px;flex-direction:column;align-items:flex-start;gap:3px" onclick="filterByProject(\'' + esc(p.name) + '\')">'
+          + '<div style="display:flex;align-items:center;gap:7px;width:100%">'
+          + '<span style="width:7px;height:7px;border-radius:50%;background:' + col + ';flex-shrink:0"></span>' + dot
+          + '<span class="sb-lbl" style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left">' + esc(p.name) + '</span>'
+          + '<span style="font-size:10px;color:rgba(255,255,255,0.38);font-family:monospace;flex-shrink:0">' + done + '/' + total + '</span></div>'
+          + '<div class="sb-lbl" style="margin-left:14px;width:calc(100% - 14px);height:2px;background:rgba(255,255,255,0.1);border-radius:999px;overflow:hidden">'
+          + '<div style="height:100%;width:' + pct + '%;background:' + col + ';border-radius:999px"></div></div></button>';
+      }).join('');
+    };
+
+    // Patch renderSidebarUpcoming for dark style
+    const _origUp2 = renderSidebarUpcoming;
+    renderSidebarUpcoming = function() {
+      const container = document.getElementById('sidebar-upcoming');
+      if (!container) return;
+      const upcoming = TASKS
+        .filter(function(t) { return t.end && t.status !== 'Completado' && t.status !== 'Cancelado'; })
+        .sort(function(a,b) { return a.end - b.end; }).slice(0,5);
+      if (!upcoming.length) { container.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,0.3);padding:4px 12px;font-style:italic">Sin vencimientos</div>'; return; }
+      container.innerHTML = upcoming.map(function(t) {
+        const diff = Math.round((t.end - TODAY) / (1000*60*60*24));
+        const isOv = diff < 0, isCrt = diff >= 0 && diff <= 3;
+        const col  = isOv ? '#f87171' : isCrt ? '#fbbf24' : 'rgba(255,255,255,0.55)';
+        const lbl  = isOv ? (Math.abs(diff) + 'd venc.') : diff === 0 ? 'Hoy' : (diff + 'd');
+        const sc   = STATUS_COLOR[t.status] || '#9ca3af';
+        return '<button class="sb-nav-btn" style="padding:5px 12px;font-size:11.5px" onclick="openEdit(' + t.id + ')">'
+          + '<span style="width:6px;height:6px;border-radius:50%;background:' + sc + ';flex-shrink:0"></span>'
+          + '<span class="sb-lbl" style="flex:1;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(t.task) + '</span>'
+          + '<span style="font-size:10px;font-family:monospace;color:' + col + ';flex-shrink:0;font-weight:600">' + lbl + '</span></button>';
+      }).join('');
+    };
+
+    // CSS fix: gantt project rows must use light bg, not dark sidebar color
+    (function fixGanttBg() {
+      const style = document.createElement('style');
+      style.textContent = [
+        /* Project header rows */
+        '#sb-rows > div[style*="var(--bg-sidebar)"] { background-color: var(--bg-main) !important; }',
+        /* All rows text */
+        '#sb-rows > div { color: var(--text-main) !important; }',
+        /* Gantt grid rows */
+        '#tl-inner div[style*="var(--bg-main)"] { background-color: var(--bg-main); }',
+      ].join('\n');
+      document.head.appendChild(style);
+    })();
+
+    // Override _setKpiActive to NOT wipe sb-kpi-card class
+    // The original does el.className = ... which destroys sidebar card styling
+    _setKpiActive = function(id, active) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      // If it's a sidebar KPI card, just toggle active-kpi class
+      if (el.classList.contains('sb-kpi-card')) {
+        el.classList.toggle('active-kpi', active);
+        return;
+      }
+      // For any other element (none in new layout), use original approach
+      const KPI_BASE_ORIG = {
+        'kpi-projects-done':'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-cyan-400 cursor-pointer',
+        'kpi-tasks-all':    'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-blue-400 cursor-pointer',
+        'kpi-overdue':      'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-amber-400 cursor-pointer',
+        'kpi-done':         'w-full bg-emerald-500/10 text-center p-2 rounded-lg border border-emerald-500/20 transition-all hover:ring-2 hover:ring-emerald-400 cursor-pointer',
+        'kpi-blocked':      'theme-sidebar p-2 rounded-lg border text-center w-full transition-all hover:ring-2 hover:ring-red-400 cursor-pointer',
+      };
+      const KPI_ACTIVE_ORIG = {
+        'kpi-projects-done':'ring-2 ring-cyan-500 bg-cyan-50 dark:bg-cyan-950/30 p-2 rounded-lg border border-cyan-400 text-center w-full transition-all cursor-pointer',
+        'kpi-tasks-all':    'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-950/30 p-2 rounded-lg border border-blue-400 text-center w-full transition-all cursor-pointer',
+        'kpi-overdue':      'ring-2 ring-amber-500 bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg border border-amber-400 text-center w-full transition-all cursor-pointer',
+        'kpi-done':         'ring-2 ring-emerald-500 w-full bg-emerald-500/20 text-center p-2 rounded-lg border border-emerald-500 transition-all cursor-pointer',
+        'kpi-blocked':      'ring-2 ring-red-500 bg-red-50 dark:bg-red-950/30 p-2 rounded-lg border border-red-400 text-center w-full transition-all cursor-pointer',
+      };
+      el.className = active ? (KPI_ACTIVE_ORIG[id] || '') : (KPI_BASE_ORIG[id] || '');
+    };
+    // Also override _resetAllKpi to use the new _setKpiActive
+    _resetAllKpi = function() {
+      ['kpi-projects-done','kpi-tasks-all','kpi-overdue','kpi-done','kpi-blocked'].forEach(id => _setKpiActive(id, false));
+    };
+
+    // NOTIFICATIONS
+    let NOTIFICATIONS = [];
+    let _notifOpen = false;
+    function toggleNotifPanel() {
+      _notifOpen = !_notifOpen;
+      const panel    = document.getElementById('notif-panel');
+      const backdrop = document.getElementById('notif-backdrop');
+      if (panel)    panel.classList.toggle('notif-open', _notifOpen);
+      if (backdrop) backdrop.style.display = _notifOpen ? 'block' : 'none';
+      if (_notifOpen) renderNotifications();
+    }
+    function closeNotifPanel() {
+      _notifOpen = false;
+      const panel    = document.getElementById('notif-panel');
+      const backdrop = document.getElementById('notif-backdrop');
+      if (panel)    panel.classList.remove('notif-open');
+      if (backdrop) backdrop.style.display = 'none';
+    }
+    async function loadNotifications() {
+      try {
+        const me = await getCurrentDisplayName();
+        const r1 = await supabaseClient.from('task_comments').select('*, tareas(task,proj)')
+          .ilike('comment', '%@' + me + '%').order('created_at', { ascending: false }).limit(30);
+        const data = r1.data || [];
+        const myIds = TASKS.filter(function(t) { return t.resp && t.resp.toLowerCase().includes(me.toLowerCase()); }).map(function(t){return t.id;}).slice(0,20);
+        let actData = [];
+        if (myIds.length) {
+          const r2 = await supabaseClient.from('task_comments').select('*, tareas(task,proj)')
+            .in('task_id', myIds).neq('author', me).order('created_at',{ascending:false}).limit(20);
+          actData = r2.data || [];
+        }
+        const seen = new Set();
+        NOTIFICATIONS = [...data,...actData]
+          .filter(function(n){if(seen.has(n.id))return false;seen.add(n.id);return true;})
+          .sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);}).slice(0,25);
+        const badge = document.getElementById('notif-badge');
+        if (badge) badge.style.display = NOTIFICATIONS.length ? 'block' : 'none';
+        if (_notifOpen) renderNotifications();
+      } catch(e) {}
+    }
+    function renderNotifications() {
+      const list = document.getElementById('notif-list');
+      if (!list) return;
+      if (!NOTIFICATIONS.length) {
+        list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px"><i data-lucide="bell-off" style="width:30px;height:30px;margin:0 auto 10px;display:block;opacity:0.35"></i>Sin notificaciones nuevas</div>';
+        lucide.createIcons(); return;
+      }
+      const me = _currentDisplayName || '';
+      list.innerHTML = NOTIFICATIONS.map(function(n) {
+        const date = new Date(n.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        const taskName = (n.tareas && n.tareas.task) ? n.tareas.task : 'Tarea';
+        const projName = (n.tareas && n.tareas.proj) ? n.tareas.proj : '';
+        const isMention = n.comment && n.comment.indexOf('@'+me) >= 0;
+        const preview = n.comment.length > 80 ? n.comment.slice(0,80)+'...' : n.comment;
+        const highlighted = esc(preview).replace(/@(\w+)/g,'<span style="color:#4573d2;font-weight:600">@$1</span>');
+        return '<div class="notif-item" onclick="openEdit('+n.task_id+');closeNotifPanel()">'
+          + '<div style="display:flex;gap:10px;align-items:flex-start">'
+          + '<div class="notif-dot" style="' + (!isMention?'background:#94a3b8':'') + ';margin-top:4px"></div>'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:12.5px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(taskName) + '</div>'
+          + '<div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px">' + esc(n.author) + (isMention?' <strong>te menciono</strong>':' comento') + ' &middot; ' + esc(projName) + '</div>'
+          + '<div style="font-size:12px;color:var(--text-muted);font-style:italic">' + highlighted + '</div>'
+          + '<div style="font-size:10px;color:var(--text-muted);margin-top:4px;opacity:0.65">' + date + '</div>'
+          + '</div></div></div>';
+      }).join('');
+      lucide.createIcons();
+    }
+    function markAllNotifsRead() {
+      NOTIFICATIONS = [];
+      const badge = document.getElementById('notif-badge');
+      if (badge) badge.style.display = 'none';
+      renderNotifications();
+    }
+    function setupNotifRealtime() {
+      try {
+        supabaseClient.channel('notif-ch')
+          .on('postgres_changes',{event:'INSERT',schema:'public',table:'task_comments'}, async function(payload) {
+            const me = await getCurrentDisplayName();
+            const c = payload.new;
+            const isMyTask = TASKS.some(function(t){return t.id===c.task_id&&t.resp&&t.resp.toLowerCase().indexOf(me.toLowerCase())>=0;});
+            const isMention = c.comment && c.comment.indexOf('@'+me) >= 0;
+            if ((isMyTask||isMention) && c.author !== me) {
+              await loadNotifications();
+              const task = TASKS.find(function(t){return t.id===c.task_id;});
+              showToast((isMention ? me+' te menciono en "' : c.author+' comento en "') + (task?task.task:'una tarea') + '"', 'info');
+            }
+          }).subscribe();
+      } catch(e) {}
+    }
+
+    // MENTION AUTOCOMPLETE
+    let _mentionQuery='', _mentionStart=-1, _mentionActive=false, _mentionIdx=0;
+    function getKnownUsers() {
+      return [...new Set(TASKS.map(function(t){return t.resp;}).filter(function(r){return r&&r!=='--';}))]
+        .sort(function(a,b){return a.localeCompare(b);});
+    }
+    function handleCommentInput(ta) {
+      const val=ta.value, pos=ta.selectionStart;
+      let atIdx=-1;
+      for (let i=pos-1;i>=0;i--) { if(val[i]==='@'){atIdx=i;break;} if(val[i]===' '||val[i]==='\n')break; }
+      const dd=document.getElementById('mention-dropdown');
+      if (!dd) return;
+      if (atIdx>=0) {
+        _mentionQuery=val.slice(atIdx+1,pos).toLowerCase(); _mentionStart=atIdx;
+        const users=getKnownUsers().filter(function(u){return u.toLowerCase().indexOf(_mentionQuery)>=0;});
+        if (users.length) {
+          _mentionActive=true; _mentionIdx=0;
+          const colors=['#f06a6a','#60a5fa','#34d399','#fbbf24','#a78bfa','#f97316'];
+          dd.innerHTML=users.map(function(u,i){
+            const init=u.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+            return '<div class="mention-opt" data-user="'+esc(u)+'" onclick="insertMention(\''+esc(u)+'\')">'
+              +'<div class="mention-av" style="background:'+colors[i%colors.length]+'">'+init+'</div><span>'+esc(u)+'</span></div>';
+          }).join('');
+          dd.style.display='block'; return;
+        }
+      }
+      _mentionActive=false; dd.style.display='none';
+    }
+    function handleCommentKeydown(e) {
+      const dd=document.getElementById('mention-dropdown');
+      if (!_mentionActive||!dd||dd.style.display==='none') return;
+      const items=dd.querySelectorAll('.mention-opt');
+      if (e.key==='ArrowDown'){e.preventDefault();_mentionIdx=Math.min(_mentionIdx+1,items.length-1);items.forEach(function(el,i){el.style.background=i===_mentionIdx?'rgba(69,115,210,0.08)':'';});}
+      else if (e.key==='ArrowUp'){e.preventDefault();_mentionIdx=Math.max(_mentionIdx-1,0);items.forEach(function(el,i){el.style.background=i===_mentionIdx?'rgba(69,115,210,0.08)':'';});}
+      else if (e.key==='Enter'||e.key==='Tab'){if(items[_mentionIdx]){e.preventDefault();insertMention(items[_mentionIdx].dataset.user);}}
+      else if (e.key==='Escape'){_mentionActive=false;dd.style.display='none';}
+    }
+    function insertMention(username) {
+      const ta=document.getElementById('new-comment');
+      if (!ta) return;
+      const val=ta.value, pos=ta.selectionStart;
+      ta.value=val.slice(0,_mentionStart)+'@'+username+' '+val.slice(pos);
+      ta.selectionStart=ta.selectionEnd=_mentionStart+username.length+2;
+      _mentionActive=false;
+      const dd=document.getElementById('mention-dropdown');
+      if (dd) dd.style.display='none';
+      ta.focus();
+    }
+    document.addEventListener('click',function(e){
+      const dd=document.getElementById('mention-dropdown');
+      if(dd&&!dd.contains(e.target)&&e.target.id!=='new-comment'){dd.style.display='none';_mentionActive=false;}
+    });
+
+    // Patch loadComments to highlight mentions + avatars
+    const _origLC2 = loadComments;
+    loadComments = async function(taskId) {
+      const container=document.getElementById('task-comments');
+      if (!container) return;
+      container.innerHTML='<div class="text-[11px] theme-text-muted italic">Cargando comentarios...</div>';
+      const r=await supabaseClient.from('task_comments').select('*').eq('task_id',taskId).order('created_at',{ascending:true});
+      if (r.error){container.innerHTML='<div class="text-[11px] text-red-500">Error</div>';return;}
+      if (!r.data.length){container.innerHTML='<div class="text-[11px] theme-text-muted italic">Sin comentarios. Usa @ para mencionar.</div>';return;}
+      const colors=['#f06a6a','#60a5fa','#34d399','#fbbf24','#a78bfa','#f97316'];
+      container.innerHTML=r.data.map(function(c){
+        const date=new Date(c.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        const init=c.author.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+        const col=colors[c.author.charCodeAt(0)%colors.length];
+        const html=esc(c.comment).replace(/@(\w+)/g,'<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
+        return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
+          +'<div class="user-av" style="background:'+col+';font-size:10px;flex-shrink:0;margin-top:1px">'+init+'</div>'
+          +'<div style="flex:1;min-width:0">'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+          +'<span style="font-size:12px;font-weight:600;color:var(--text-main)">'+esc(c.author)+'</span>'
+          +'<span style="font-size:10.5px;color:var(--text-muted)">'+date+'</span></div>'
+          +'<div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:8px 12px;font-size:12.5px;color:var(--text-main);line-height:1.5;word-break:break-word">'+html+'</div>'
+          +'</div></div>';
+      }).join('');
+    };
+
     })();
   </script>
+
+  <!-- ══ NOTIFICATION PANEL ══ -->
+  <div id="notif-panel">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+      <h3 style="font-size:14px;font-weight:700;color:var(--text-main);margin:0">Notificaciones</h3>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="markAllNotifsRead()" style="font-size:11.5px;color:#4573d2;background:none;border:none;cursor:pointer;font-weight:500">Marcar leídas</button>
+        <button onclick="closeNotifPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px">
+          <i data-lucide="x" style="width:16px;height:16px"></i>
+        </button>
+      </div>
+    </div>
+    <div id="notif-list" style="flex:1;overflow-y:auto" class="no-scrollbar">
+      <div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px">
+        <i data-lucide="bell-off" style="width:30px;height:30px;margin:0 auto 10px;display:block;opacity:0.35"></i>
+        Sin notificaciones nuevas
+      </div>
+    </div>
+  </div>
+  <div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;z-index:299;background:transparent"></div>
+
 </body>
 </html>
