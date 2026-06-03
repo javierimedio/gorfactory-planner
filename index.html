@@ -699,9 +699,7 @@
                 <button onclick="showAddBudgetModal()" id="btn-add-budget" style="display:none;padding:6px 14px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">+ Añadir presupuesto</button>
               </div>
             </div>
-            <div id="budget-kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px"></div>
-            <!-- Filter indicator -->
-            <div id="budget-filter-indicator" style="display:none;align-items:center;gap:6px;padding:8px 12px;margin-bottom:12px;background:rgba(69,115,210,.07);border:1px solid rgba(69,115,210,.2);border-radius:8px;font-size:12px;color:#4573d2"></div>
+            <div id="budget-kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px"></div>
             <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
               <div style="display:grid;grid-template-columns:2fr 100px 110px 110px 110px 90px 80px 36px;background:var(--bg-main);border-bottom:1px solid var(--border-color);padding:0 16px">
                 <div style="padding:10px 8px 10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Proyecto</div>
@@ -746,13 +744,7 @@
               <p style="font-size:12px;color:var(--text-muted);margin:0">Visión global de presupuesto y control de gestión</p>
             </div>
             <div id="exec-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px"></div>
-            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px;margin-bottom:16px">
-              <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0 0 14px;display:flex;align-items:center;justify-content:space-between">
-                Seguimiento vs presupuesto maestro por CECO
-                <span style="font-size:10px;font-weight:500;color:var(--text-muted);text-transform:none">Comprometido + Ejecutado de proyectos vs techo aprobado en Vista anual</span>
-              </h3>
-              <div id="exec-ceco-tracking" style="display:flex;flex-direction:column;gap:8px"></div>
-            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
               <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px">
                 <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0 0 14px">Distribución por categoría</h3>
                 <div id="exec-cat-bars" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -1375,9 +1367,6 @@
       if      (currentActiveView === 'gantt')     render();
       else if (currentActiveView === 'kanban')    renderKanban();
       else if (currentActiveView === 'calendar')  renderCalendar();
-      else if (currentActiveView === 'budget')    renderBudget();
-      else if (currentActiveView === 'annual')    renderAnnual();
-      else if (currentActiveView === 'exec')      renderExec();
       else                                        renderDashboard();
     }
 
@@ -3040,35 +3029,9 @@
       const year=parseInt(document.getElementById('budget-year-filter')?.value||new Date().getFullYear());
       const addBtn=document.getElementById('btn-add-budget');
       if(addBtn)addBtn.style.display=isEditModeActive?'block':'none';
-
-      // ── Read active filters ──────────────────────────────────
-      const filterCat    = (document.getElementById('filter-cat')?.value    || '').trim();
-      const filterProj   = (document.getElementById('filter-proj')?.value   || '').trim();
-      const filterSearch = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
-      // Status filter maps to financial_status in budget context
-      const filterStatus = (document.getElementById('filter-status')?.value || '').trim();
-
-      // Show active filter indicator if any filter is set
-      const hasFilter = filterCat || filterProj || filterSearch || filterStatus;
-      const filterIndicator = document.getElementById('budget-filter-indicator');
-      if(filterIndicator){
-        if(hasFilter){
-          const parts=[];
-          if(filterCat) parts.push(`Categoría: ${filterCat}`);
-          if(filterProj) parts.push(`Proyecto: ${filterProj}`);
-          if(filterSearch) parts.push(`Búsqueda: "${filterSearch}"`);
-          if(filterStatus) parts.push(`Estado presupuesto: ${filterStatus}`);
-          filterIndicator.innerHTML=`<i data-lucide="filter" style="width:12px;height:12px"></i> Filtrando por: <strong>${parts.join(' · ')}</strong> — mostrando solo proyectos coincidentes`;
-          filterIndicator.style.display='flex';
-        } else {
-          filterIndicator.style.display='none';
-        }
-      }
-      // KPIs — calculated from filtered projects only
-      const filteredBudgets = PROJECT_BUDGETS.filter(b => ps.includes(b.proj));
-      const ta=filteredBudgets.reduce((a,b)=>a+(b.approved||0),0);
-      const tc=filteredBudgets.reduce((a,b)=>a+(b.committed||0),0);
-      const te=filteredBudgets.reduce((a,b)=>a+(b.executed||0),0);
+      const ta=PROJECT_BUDGETS.reduce((a,b)=>a+(b.approved||0),0);
+      const tc=PROJECT_BUDGETS.reduce((a,b)=>a+(b.committed||0),0);
+      const te=PROJECT_BUDGETS.reduce((a,b)=>a+(b.executed||0),0);
       const av=ta-te;
       const gd=devPct(ta,te);
       const gdS=gd===null?'—':(gd>0?'+':'')+gd+'%';
@@ -3076,29 +3039,9 @@
       const ks=document.getElementById('budget-kpi-strip');
       if(ks)ks.innerHTML=[{l:'Aprobado total',v:fmtEurK(ta),c:'#059669'},{l:'Comprometido',v:fmtEurK(tc),c:'#4573d2'},{l:'Ejecutado',v:fmtEurK(te),c:'#f59e0b'},{l:'Disponible',v:fmtEurK(av),c:av<0?'#ef4444':'#64748b'},{l:'Desviación global',v:gdS,c:gdC}]
         .map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px"><div style="font-size:18px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:3px">${k.v}</div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${k.l}</div></div>`).join('');
-      // Build project list respecting active filters
-      // Start from all known projects (tasks + budget entries)
-      const allProjNames = [...new Set([...TASKS.map(t=>t.proj),...PROJECT_BUDGETS.map(b=>b.proj)])].sort((a,b)=>a.localeCompare(b));
-
-      const ps = allProjNames.filter(proj => {
-        const tasks = TASKS.filter(t => t.proj === proj);
-        const cat   = tasks[0]?.cat || '';
-        // Category filter
-        if(filterCat && cat !== filterCat) return false;
-        // Project filter (exact match from dropdown)
-        if(filterProj && proj !== filterProj) return false;
-        // Search filter (partial match on project name)
-        if(filterSearch && !proj.toLowerCase().includes(filterSearch)) return false;
-        // Status filter (matches financial_status of the budget entry)
-        if(filterStatus){
-          const bud = PROJECT_BUDGETS.find(b=>b.proj===proj);
-          const budStatus = bud?.financial_status || 'En preparación';
-          if(budStatus !== filterStatus) return false;
-        }
-        return true;
-      });
+      const ps=[...new Set([...TASKS.map(t=>t.proj),...PROJECT_BUDGETS.map(b=>b.proj)])].sort((a,b)=>a.localeCompare(b));
       const tb=document.getElementById('budget-table-body');if(!tb)return;
-      if(!ps.length){tb.innerHTML=`<div style="padding:32px;text-align:center;font-size:13px;color:var(--text-muted)">${hasFilter?'Ningún proyecto coincide con los filtros activos. <button onclick="clearFilters()" style="color:#4573d2;background:none;border:none;cursor:pointer;font-size:13px;text-decoration:underline">Limpiar filtros</button>':'No hay proyectos todavía.'}</div>`;return;}
+      if(!ps.length){tb.innerHTML='<div style="padding:32px;text-align:center;font-size:13px;color:var(--text-muted)">No hay proyectos todavía.</div>';return;}
       tb.innerHTML=ps.map(proj=>{
         const bud=PROJECT_BUDGETS.find(b=>b.proj===proj);
         const tasks=TASKS.filter(t=>t.proj===proj);
@@ -3180,50 +3123,18 @@
       const year=parseInt(document.getElementById('annual-year-filter')?.value||new Date().getFullYear());
       const{data:ad}=await supabaseClient.from('annual_budget').select('*').eq('year',year);
       ANNUAL_BUDGETS=ad||[];
-
-      // Build master budget map: category → month → {planned, executed}
       const dm={};BUDGET_CATS.forEach(c=>{dm[c]={};for(let m=1;m<=12;m++)dm[c][m]={planned:0,executed:0,notes:''};});
       ANNUAL_BUDGETS.forEach(r=>{if(dm[r.category])dm[r.category][r.month]={planned:r.planned||0,executed:r.executed||0,notes:r.notes||''};});
-
-      // Build committed map from project_budgets: category → total committed + executed
-      // (A project's category = its CECO, one category per project per Opción A)
-      const projCommitted={};  // cat → committed total from projects
-      const projExecuted={};   // cat → executed total from projects
-      BUDGET_CATS.forEach(c=>{projCommitted[c]=0;projExecuted[c]=0;});
-      PROJECT_BUDGETS.forEach(b=>{
-        const tasks=TASKS.filter(t=>t.proj===b.proj);
-        const cat=tasks[0]?.cat||null;
-        if(cat&&projCommitted[cat]!==undefined){
-          projCommitted[cat]+=(b.committed||0);
-          projExecuted[cat]+=(b.executed||0);
-        }
-      });
-
       const mt={};for(let m=1;m<=12;m++)mt[m]=BUDGET_CATS.reduce((a,c)=>a+(dm[c][m]?.planned||0),0);
       const tp=Object.values(mt).reduce((a,b)=>a+b,0);
       const grid=document.getElementById('annual-grid');if(!grid)return;
-
       let html=`<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px"><thead><tr>
-        <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);position:sticky;left:0;z-index:2;min-width:150px">Categoría</th>`;
+        <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);position:sticky;left:0;z-index:2;min-width:140px">Categoría</th>`;
       for(let m=1;m<=12;m++){const t=mt[m];const pct=tp?Math.round(t/tp*100):0;const h=pct>20;html+=`<th style="text-align:center;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:76px"><div style="color:${h?'#ef4444':'var(--text-muted)'}">${MONTHS_ES[m-1]}</div><div style="font-size:9px;font-weight:600;color:${h?'#ef4444':'var(--text-muted)'};margin-top:2px">${fmtEurK(t)}</div></th>`;}
-      html+=`<th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px">Total</th>
-              <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4573d2;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px;border-left:2px solid var(--border-color)">Comprometido</th>
-              <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#f59e0b;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px">Ejecutado</th>
-              <th style="text-align:center;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:90px">Vs maestro</th>
-              </tr></thead><tbody>`;
-
+      html+=`<th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px">Total</th></tr></thead><tbody>`;
       BUDGET_CATS.forEach(cat=>{
         const rt=Object.values(dm[cat]).reduce((a,b)=>a+(b.planned||0),0);
         const cc=CAT_COLOR[cat]||CAT_COLOR.default;
-        const committed=projCommitted[cat]||0;
-        const executed=projExecuted[cat]||0;
-        const used=Math.max(committed,executed); // lo más alto entre comprometido y ejecutado
-        const vsDevPct=rt>0?Math.round((used-rt)/rt*100):null;
-        const vsColor=vsDevPct===null?'var(--text-muted)':vsDevPct>15?'#ef4444':vsDevPct>0?'#b45309':'#059669';
-        const vsLabel=vsDevPct===null?'—':(vsDevPct>0?'+':'')+vsDevPct+'%';
-        const barPct=rt>0?Math.min(100,Math.round(used/rt*100)):0;
-        const barColor=vsDevPct===null?'#e5e7eb':vsDevPct>15?'#ef4444':vsDevPct>0?'#f59e0b':'#059669';
-
         html+=`<tr style="border-bottom:1px solid var(--border-color)"><td style="padding:6px 10px;font-weight:500;color:var(--text-main);background:var(--bg-panel);position:sticky;left:0;z-index:1;border-right:1px solid var(--border-color)"><div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:${cc};flex-shrink:0"></span>${esc(cat)}</div></td>`;
         for(let m=1;m<=12;m++){
           const cell=dm[cat][m];const pl=cell.planned;const ex2=cell.executed;
@@ -3232,61 +3143,22 @@
           const k=`${year}-${m}-${cat}`;
           html+=`<td style="padding:0;text-align:center;background:${bg};cursor:pointer;transition:background .1s" onclick="openAnnualCellModal('${k.replace(/'/g,"\\'")}','${cat.replace(/'/g,"\\'")}',${m},${year},${pl},${ex2},'${(cell.notes||'').replace(/'/g,"\\'")}')" onmouseover="this.style.outline='2px solid #4573d2'" onmouseout="this.style.outline='none'" title="${esc(cat)} · ${MONTHS_FULL[m-1]} · Previsto: ${fmtEur(pl)}"><div style="padding:6px 4px">${pl?`<div style="font-size:11px;font-weight:600;color:var(--text-main);font-family:monospace">${fmtEurK(pl)}</div>`:'<div style="font-size:11px;color:var(--border-color)">—</div>'}${ex2?`<div style="font-size:9px;color:var(--text-muted);font-family:monospace">${fmtEurK(ex2)}</div>`:''}</div></td>`;
         }
-        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(rt)}</td>`;
-        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;color:${committed?'#4573d2':'var(--text-muted)'};font-family:monospace;border-left:2px solid var(--border-color)">${fmtEurK(committed)||'—'}</td>`;
-        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;color:${executed?'#f59e0b':'var(--text-muted)'};font-family:monospace">${fmtEurK(executed)||'—'}</td>`;
-        html+=`<td style="text-align:center;padding:6px 10px">`;
-        if(rt>0){
-          html+=`<div style="font-size:11px;font-weight:700;color:${vsColor};font-family:monospace;margin-bottom:3px">${vsLabel}</div>`;
-          html+=`<div style="height:4px;background:var(--bg-main);border-radius:999px;overflow:hidden;width:100%"><div style="height:100%;width:${barPct}%;background:${barColor};border-radius:999px"></div></div>`;
-        } else {
-          html+=`<span style="font-size:11px;color:var(--text-muted)">Sin maestro</span>`;
-        }
-        html+=`</td></tr>`;
+        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(rt)}</td></tr>`;
       });
-
       html+=`<tr style="background:var(--bg-main);border-top:2px solid var(--border-color)"><td style="padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);background:var(--bg-main);position:sticky;left:0;z-index:1;border-right:1px solid var(--border-color)">TOTAL MENSUAL</td>`;
       for(let m=1;m<=12;m++){const t=mt[m];const pct=tp?Math.round(t/tp*100):0;const h=pct>20;html+=`<td style="text-align:center;padding:8px 4px"><div style="font-size:12px;font-weight:700;color:${h?'#ef4444':'var(--text-main)'};font-family:monospace">${t?fmtEurK(t):'—'}</div>${t?`<div style="font-size:9px;color:${h?'#ef4444':'var(--text-muted)'}">${pct}%</div>`:''}</td>`;}
-      const totalCommitted=BUDGET_CATS.reduce((a,c)=>a+(projCommitted[c]||0),0);
-      const totalExecuted=BUDGET_CATS.reduce((a,c)=>a+(projExecuted[c]||0),0);
-      const totalUsed=Math.max(totalCommitted,totalExecuted);
-      const totalVsPct=tp>0?Math.round((totalUsed-tp)/tp*100):null;
-      const totalVsColor=totalVsPct===null?'var(--text-muted)':totalVsPct>15?'#ef4444':totalVsPct>0?'#b45309':'#059669';
-      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(tp)}</td>`;
-      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:#4573d2;font-family:monospace;border-left:2px solid var(--border-color)">${fmtEurK(totalCommitted)||'—'}</td>`;
-      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:#f59e0b;font-family:monospace">${fmtEurK(totalExecuted)||'—'}</td>`;
-      html+=`<td style="text-align:center;padding:8px 10px;font-size:13px;font-weight:700;color:${totalVsColor};font-family:monospace">${totalVsPct!==null?(totalVsPct>0?'+':'')+totalVsPct+'%':'—'}</td>`;
-      html+=`</tr></tbody></table>`;
+      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(tp)}</td></tr></tbody></table>`;
       grid.innerHTML=html;
-      renderAnnualAlerts(mt,tp,year,projCommitted,projExecuted);
+      renderAnnualAlerts(mt,tp,year);
     }
-    function renderAnnualAlerts(mt,tp,year,projCommitted,projExecuted){
+    function renderAnnualAlerts(mt,tp,year){
       const d=document.getElementById('annual-alerts');if(!d)return;
       const al=[];
-      // Meses sobrecargados en presupuesto maestro
       for(let m=1;m<=12;m++){const p=tp?Math.round(mt[m]/tp*100):0;if(p>20)al.push({t:'warn',m:`<strong>${MONTHS_FULL[m-1]}</strong> concentra el ${p}% del presupuesto anual (${fmtEur(mt[m])})`});}
-      // Meses próximos sin presupuesto maestro
       const cur=new Date().getMonth()+1;
-      for(let m=cur;m<=Math.min(12,cur+3);m++){if(!mt[m])al.push({t:'info',m:`<strong>${MONTHS_FULL[m-1]}</strong> no tiene presupuesto maestro asignado`});}
-      // Proyectos sin presupuesto individual
+      for(let m=cur;m<=Math.min(12,cur+3);m++){if(!mt[m])al.push({t:'info',m:`<strong>${MONTHS_FULL[m-1]}</strong> no tiene presupuesto asignado`});}
       const np=[...new Set(TASKS.map(t=>t.proj))].filter(p=>!PROJECT_BUDGETS.find(b=>b.proj===p));
-      if(np.length)al.push({t:'warn',m:`${np.length} proyecto${np.length>1?'s':''} sin presupuesto individual: <em>${np.slice(0,4).map(p=>esc(p)).join(', ')}${np.length>4?'…':''}</em>`});
-      // Alertas de cruce: categoría donde comprometido supera el maestro
-      if(projCommitted&&projExecuted){
-        BUDGET_CATS.forEach(cat=>{
-          const masterTotal=ANNUAL_BUDGETS.filter(r=>r.category===cat).reduce((a,r)=>a+(r.planned||0),0);
-          const committed=projCommitted[cat]||0;
-          const executed=projExecuted[cat]||0;
-          const used=Math.max(committed,executed);
-          if(masterTotal>0&&used>masterTotal){
-            const overPct=Math.round((used-masterTotal)/masterTotal*100);
-            al.push({t:'warn',m:`<strong>${esc(cat)}</strong>: lo comprometido/ejecutado en proyectos (${fmtEur(used)}) supera el presupuesto maestro (${fmtEur(masterTotal)}) en un <strong style="color:#ef4444">+${overPct}%</strong>`});
-          } else if(masterTotal>0&&used>masterTotal*0.85){
-            const pctUsed=Math.round(used/masterTotal*100);
-            al.push({t:'warn',m:`<strong>${esc(cat)}</strong>: al ${pctUsed}% del techo presupuestario maestro (${fmtEur(used)} de ${fmtEur(masterTotal)})`});
-          }
-        });
-      }
+      if(np.length)al.push({t:'warn',m:`${np.length} proyecto${np.length>1?'s':''} sin presupuesto: <em>${np.slice(0,4).map(p=>esc(p)).join(', ')}${np.length>4?'…':''}</em>`});
       if(!al.length){d.innerHTML='';return;}
       d.innerHTML=al.map(a=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;background:${a.t==='warn'?'rgba(245,158,11,.08)':'rgba(69,115,210,.07)'};border:1px solid ${a.t==='warn'?'rgba(245,158,11,.2)':'rgba(69,115,210,.15)'}"><i data-lucide="${a.t==='warn'?'alert-triangle':'info'}" style="width:14px;height:14px;flex-shrink:0;margin-top:1px;color:${a.t==='warn'?'#b45309':'#4573d2'}"></i><span style="font-size:12px;color:var(--text-main)">${a.m}</span></div>`).join('');
       lucide.createIcons();
@@ -3314,93 +3186,22 @@
 
     async function renderExec(){
       await loadBudgetData();
-      // Also load annual budget for cross-comparison
       const year=parseInt(document.getElementById('annual-year-filter')?.value||new Date().getFullYear());
-      const{data:annData}=await supabaseClient.from('annual_budget').select('*').eq('year',year);
-      const annualData=annData||[];
-
       const ta=PROJECT_BUDGETS.reduce((a,b)=>a+(b.approved||0),0);
       const tc=PROJECT_BUDGETS.reduce((a,b)=>a+(b.committed||0),0);
       const te=PROJECT_BUDGETS.reduce((a,b)=>a+(b.executed||0),0);
       const gd=devPct(ta,te);
       const ae=[...new Set(TASKS.filter(t=>(t.cat==='Ferias'||t.cat==='Eventos')&&(t.status==='En curso'||t.status==='En planificación')).map(t=>t.proj))].length;
       const dl2=PROJECT_BUDGETS.filter(b=>{const s=autoFinStatus(b.approved,b.committed,b.executed);return s==='Desviado'||s==='En riesgo';}).length;
-
-      // Annual master totals per category
-      const masterByCat={};
-      BUDGET_CATS.forEach(c=>{masterByCat[c]=annualData.filter(r=>r.category===c).reduce((a,r)=>a+(r.planned||0),0);});
-      const totalMaster=Object.values(masterByCat).reduce((a,b)=>a+b,0);
-
-      // Committed/executed per category from projects
-      const projCommitted={};const projExecuted={};
-      BUDGET_CATS.forEach(c=>{projCommitted[c]=0;projExecuted[c]=0;});
-      PROJECT_BUDGETS.forEach(b=>{
-        const tasks=TASKS.filter(t=>t.proj===b.proj);
-        const cat=tasks[0]?.cat||null;
-        if(cat&&projCommitted[cat]!==undefined){
-          projCommitted[cat]+=(b.committed||0);
-          projExecuted[cat]+=(b.executed||0);
-        }
-      });
-
       const ek=document.getElementById('exec-kpis');
       if(ek)ek.innerHTML=[
-        {l:'Presupuesto maestro anual',v:fmtEur(totalMaster),c:'#059669',s:`Vista anual ${year} — techo por CECO`},
-        {l:'Comprometido en proyectos',v:fmtEur(tc),c:'#4573d2',s:totalMaster?Math.round(tc/totalMaster*100)+'% del presupuesto maestro':''},
-        {l:'Ejecutado en proyectos',v:fmtEur(te),c:'#f59e0b',s:totalMaster?Math.round(te/totalMaster*100)+'% del presupuesto maestro':''},
-        {l:'Presupuesto individual aprobado',v:fmtEur(ta),c:'#6366f1',s:'Suma de proyectos con presupuesto asignado'},
+        {l:'Presupuesto aprobado',v:fmtEur(ta),c:'#059669',s:`Año ${year}`},
+        {l:'Comprometido',v:fmtEur(tc),c:'#4573d2',s:ta?Math.round(tc/ta*100)+'% del aprobado':''},
+        {l:'Ejecutado',v:fmtEur(te),c:'#f59e0b',s:ta?Math.round(te/ta*100)+'% del aprobado':''},
+        {l:'Desviación acumulada',v:gd===null?'—':(gd>0?'+':'')+gd+'%',c:gd===null?'var(--text-muted)':Math.abs(gd)<=5?'#059669':Math.abs(gd)<=15?'#b45309':'#ef4444',s:fmtEur(Math.abs(te-ta))+' sobre aprobado'},
         {l:'Ferias y Eventos activos',v:String(ae),c:'#f97316',s:'en curso o planificación'},
-        {l:'Proyectos con desviación',v:String(dl2),c:dl2>0?'#ef4444':'#059669',s:dl2>0?'Desviados o en riesgo':'Todo en orden'}
-      ].map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 18px"><div style="font-size:22px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:4px">${k.v}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:2px">${k.l}</div><div style="font-size:11px;color:var(--text-muted)">${k.s}</div></div>`).join('');
-
-      // CECO tracking: master vs projects
-      const cecoDiv=document.getElementById('exec-ceco-tracking');
-      if(cecoDiv){
-        const rows=BUDGET_CATS.map(cat=>{
-          const master=masterByCat[cat]||0;
-          const committed=projCommitted[cat]||0;
-          const executed=projExecuted[cat]||0;
-          const used=Math.max(committed,executed);
-          const barPct=master>0?Math.min(100,Math.round(used/master*100)):0;
-          const overPct=master>0?Math.round((used-master)/master*100):null;
-          const statusColor=overPct===null?'var(--text-muted)':overPct>15?'#ef4444':overPct>5?'#b45309':'#059669';
-          const statusLabel=overPct===null?'Sin maestro':overPct>15?'Superado':overPct>5?'En riesgo':'Correcto';
-          const statusBg=overPct===null?'rgba(100,116,139,.1)':overPct>15?'rgba(239,68,68,.1)':overPct>5?'rgba(245,158,11,.1)':'rgba(5,150,105,.1)';
-          const statusBorder=overPct===null?'rgba(100,116,139,.25)':overPct>15?'rgba(239,68,68,.25)':overPct>5?'rgba(245,158,11,.25)':'rgba(5,150,105,.25)';
-          const barColor=overPct===null?'#e5e7eb':overPct>15?'#ef4444':overPct>5?'#f59e0b':'#059669';
-          const cc=CAT_COLOR[cat]||CAT_COLOR.default;
-          return`<div style="display:grid;grid-template-columns:130px 100px 100px 100px 1fr 80px;align-items:center;gap:12px;padding:10px 12px;border-radius:8px;background:var(--bg-main);border:1px solid var(--border-color)">
-            <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--text-main)">
-              <span style="width:8px;height:8px;border-radius:50%;background:${cc};flex-shrink:0"></span>${esc(cat)}
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:11px;color:var(--text-muted)">Maestro</div>
-              <div style="font-size:13px;font-weight:600;color:#059669;font-family:monospace">${master?fmtEurK(master):'—'}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:11px;color:var(--text-muted)">Comprometido</div>
-              <div style="font-size:13px;font-weight:600;color:${committed?'#4573d2':'var(--text-muted)'};font-family:monospace">${committed?fmtEurK(committed):'—'}</div>
-            </div>
-            <div style="text-align:right">
-              <div style="font-size:11px;color:var(--text-muted)">Ejecutado</div>
-              <div style="font-size:13px;font-weight:600;color:${executed?'#f59e0b':'var(--text-muted)'};font-family:monospace">${executed?fmtEurK(executed):'—'}</div>
-            </div>
-            <div>
-              <div style="display:flex;justify-content:space-between;margin-bottom:3px">
-                <span style="font-size:10px;color:var(--text-muted)">${barPct}% del techo</span>
-                ${overPct!==null&&overPct>0?`<span style="font-size:10px;font-weight:700;color:${statusColor}">${overPct>0?'+':''}${overPct}% sobre maestro</span>`:''}
-              </div>
-              <div style="height:6px;background:var(--border-color);border-radius:999px;overflow:hidden">
-                <div style="height:100%;width:${barPct}%;background:${barColor};border-radius:999px;transition:width .4s"></div>
-              </div>
-            </div>
-            <div style="display:flex;justify-content:center">
-              <span style="font-size:10px;font-weight:600;padding:3px 8px;border-radius:999px;background:${statusBg};color:${statusColor};border:1px solid ${statusBorder};white-space:nowrap">${statusLabel}</span>
-            </div>
-          </div>`;
-        });
-        cecoDiv.innerHTML=rows.join('');
-      }
+        {l:'Proyectos con alertas',v:String(dl2),c:dl2>0?'#ef4444':'#059669',s:dl2>0?'Desviados o en riesgo':'Todo en orden'}
+      ].map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 18px"><div style="font-size:24px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:4px">${k.v}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:2px">${k.l}</div><div style="font-size:11px;color:var(--text-muted)">${k.s}</div></div>`).join('');
       const cb=document.getElementById('exec-cat-bars');
       if(cb){
         const ct={};
