@@ -1705,38 +1705,38 @@
     // ── CAMBIO DE VISTA ────────────────────────────────────────
     function switchView(viewName) {
       currentActiveView = viewName;
-      const views = { gantt: 'view-gantt-container', kanban: 'view-kanban-container', calendar: 'view-calendar-container', dashboard: 'view-dashboard-container' };
-      // Tab IDs in the header bar
-      const topTabs = ['nav-gantt', 'nav-kanban', 'nav-calendar', 'nav-dashboard'];
-      // Sidebar nav IDs
-      const sbNavs  = ['sb-nav-gantt', 'sb-nav-kanban', 'sb-nav-calendar', 'sb-nav-dashboard'];
+      // ALL views — original + budget layer
+      const allViews = {
+        gantt:     'view-gantt-container',
+        kanban:    'view-kanban-container',
+        calendar:  'view-calendar-container',
+        dashboard: 'view-dashboard-container',
+        budget:    'view-budget-container',
+        annual:    'view-annual-container',
+        exec:      'view-exec-container'
+      };
+      const sbNavs = ['sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
 
-      // Show/hide view panels
-      Object.entries(views).forEach(([v, id]) => {
+      // Show active, hide all others
+      Object.entries(allViews).forEach(([v, id]) => {
         const el = document.getElementById(id);
         if (el) v === viewName ? el.classList.remove('hidden') : el.classList.add('hidden');
       });
 
-      // Update top tab buttons (now hidden spans — skip className update)
-      topTabs.forEach(id => {
-        const el = document.getElementById(id);
-        if (!el || el.tagName !== 'BUTTON') return;
-        const v = id.replace('nav-', '');
-        el.className = 'asana-tab' + (v === viewName ? ' active' : '');
-      });
-
-      // Update sidebar nav buttons: just toggle .active class
+      // Update sidebar nav buttons
       sbNavs.forEach(id => {
         const el = document.getElementById(id);
-        if (!el) return;
-        const v = id.replace('sb-nav-', '');
-        el.classList.toggle('active', v === viewName);
+        if (el) el.classList.toggle('active', id === `sb-nav-${viewName}`);
       });
 
+      // Render the right content
       if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
       else if (viewName === 'kanban')    renderKanban();
       else if (viewName === 'calendar')  renderCalendar();
-      else                               renderDashboard();
+      else if (viewName === 'dashboard') renderDashboard();
+      else if (viewName === 'budget')    renderBudget();
+      else if (viewName === 'annual')    renderAnnual();
+      else if (viewName === 'exec')      renderExec();
       lucide.createIcons();
     }
 
@@ -3242,26 +3242,7 @@
       }
     }
 
-    // Patch switchView for budget views
-    const _origSVBudget = switchView;
-    switchView = function(viewName) {
-      if(['budget','annual','exec'].includes(viewName)){
-        const allV=['gantt','kanban','calendar','dashboard','budget','annual','exec'];
-        allV.forEach(v=>{const vc=document.getElementById(`view-${v}-container`);if(vc)vc.classList.toggle('hidden',v!==viewName);});
-      // Top tabs are now hidden spans (kept for JS compat) — only update sidebar
-      ['nav-gantt','nav-kanban','nav-calendar','nav-dashboard','nav-budget','nav-annual','nav-exec'].forEach(id=>{
-        const el=document.getElementById(id);
-        if(el&&el.tagName==='BUTTON') el.className='asana-tab'+(id===`nav-${viewName}`?' active':'');
-      });
-        ['sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('active',id===`sb-nav-${viewName}`);});
-        currentActiveView=viewName;
-        if(viewName==='budget')renderBudget();
-        if(viewName==='annual')renderAnnual();
-        if(viewName==='exec')renderExec();
-        lucide.createIcons();return;
-      }
-      _origSVBudget(viewName);
-    };
+    // switchView already handles all views including budget/annual/exec (unified above)
 
     // Patch unlockDashboard
     const _origUnlockBudget = unlockDashboard;
