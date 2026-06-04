@@ -345,15 +345,6 @@
         <button id="sb-nav-dashboard" class="sb-nav-btn" onclick="switchView('dashboard')">
           <i data-lucide="layout-dashboard" class="sb-icon" style="color:#a78bfa"></i><span class="sb-lbl">Métricas &amp; Alertas</span>
         </button>
-        <button id="sb-nav-budget" class="sb-nav-btn" onclick="switchView('budget')">
-          <i data-lucide="circle-dollar-sign" class="sb-icon" style="color:#34d399"></i><span class="sb-lbl">Presupuesto</span>
-        </button>
-        <button id="sb-nav-annual" class="sb-nav-btn" onclick="switchView('annual')">
-          <i data-lucide="calendar-range" class="sb-icon" style="color:#fbbf24"></i><span class="sb-lbl">Vista anual</span>
-        </button>
-        <button id="sb-nav-exec" class="sb-nav-btn" onclick="switchView('exec')">
-          <i data-lucide="trending-up" class="sb-icon" style="color:#f87171"></i><span class="sb-lbl">Dashboard ejecutivo</span>
-        </button>
       </div>
 
       <!-- KPIs -->
@@ -529,17 +520,14 @@
       <span id="current-user" style="display:none"></span>
     </div>
 
-    <!-- ── FILTER CHIPS BAR (sin pestañas de vista — están en el sidebar) ── -->
-    <div style="background:var(--bg-header);border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:flex-end;padding:0 20px;gap:0;overflow-x:auto" class="no-scrollbar">
-      <!-- Hidden nav elements kept for JS compatibility -->
-      <span id="nav-gantt"     style="display:none"></span>
-      <span id="nav-kanban"    style="display:none"></span>
-      <span id="nav-calendar"  style="display:none"></span>
-      <span id="nav-dashboard" style="display:none"></span>
-      <span id="nav-budget"    style="display:none"></span>
-      <span id="nav-annual"    style="display:none"></span>
-      <span id="nav-exec"      style="display:none"></span>
+    <!-- ── VIEW TABS + FILTER CHIPS ── -->
+    <div style="background:var(--bg-header);border-bottom:1px solid var(--border-color);display:flex;align-items:center;padding:0 20px;gap:0;overflow-x:auto" class="no-scrollbar">
+      <button id="nav-gantt"     class="asana-tab active" onclick="switchView('gantt')">     <i data-lucide="gantt-chart"      style="width:13px;height:13px"></i> Línea de tiempo</button>
+      <button id="nav-kanban"    class="asana-tab"         onclick="switchView('kanban')">    <i data-lucide="columns"          style="width:13px;height:13px"></i> Tablero</button>
+      <button id="nav-calendar"  class="asana-tab"         onclick="switchView('calendar')">  <i data-lucide="calendar"         style="width:13px;height:13px"></i> Calendario</button>
+      <button id="nav-dashboard" class="asana-tab"         onclick="switchView('dashboard')"> <i data-lucide="bar-chart-2"      style="width:13px;height:13px"></i> Métricas</button>
 
+      <div style="flex:1"></div>
       <!-- Filter chips -->
       <div style="display:flex;align-items:center;gap:5px;padding:7px 0;flex-shrink:0">
         <div class="filter-chip"><i data-lucide="tag" style="width:11px;height:11px"></i>
@@ -570,7 +558,7 @@
           <i data-lucide="x" style="width:11px;height:11px"></i> Limpiar
         </button>
       </div>
-    </div><!-- /filter chips bar -->
+    </div><!-- /tabs+filters bar -->
   </div><!-- /desktop-header -->
 
     <!-- LAYOUT PRINCIPAL -->
@@ -682,88 +670,6 @@
           <div class="theme-sidebar p-4 rounded-xl border space-y-4">
             <h3 class="text-xs font-bold theme-text-muted tracking-wider uppercase">Progreso Global por Proyectos</h3>
             <div id="dashboard-progress-bars" class="space-y-3 max-h-[250px] overflow-y-auto pr-1"></div>
-          </div>
-        </div>
-
-
-        <!-- ── VISTA PRESUPUESTOS ── -->
-        <div id="view-budget-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:20px">
-          <div style="max-width:1200px;margin:0 auto">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <div>
-                <h2 style="font-size:16px;font-weight:600;color:var(--text-main);margin:0 0 3px">Control presupuestario</h2>
-                <p style="font-size:12px;color:var(--text-muted);margin:0">Presupuesto aprobado, comprometido y ejecutado por proyecto</p>
-              </div>
-              <div style="display:flex;align-items:center;gap:10px">
-                <select id="budget-year-filter" onchange="renderBudget()" style="padding:5px 10px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-panel);color:var(--text-main);font-size:12px;outline:none"></select>
-                <button onclick="showAddBudgetModal()" id="btn-add-budget" style="display:none;padding:6px 14px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">+ Añadir presupuesto</button>
-              </div>
-            </div>
-            <div id="budget-kpi-strip" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px"></div>
-            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
-              <div style="display:grid;grid-template-columns:2fr 100px 110px 110px 110px 90px 80px 36px;background:var(--bg-main);border-bottom:1px solid var(--border-color);padding:0 16px">
-                <div style="padding:10px 8px 10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Proyecto</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Aprobado</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Comprometido</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Ejecutado</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Disponible</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:center">Desviación</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:center">Estado</div>
-                <div style="padding:10px 4px"></div>
-              </div>
-              <div id="budget-table-body"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ── VISTA ANUAL ── -->
-        <div id="view-annual-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:20px">
-          <div style="max-width:1400px;margin:0 auto">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-              <div>
-                <h2 style="font-size:16px;font-weight:600;color:var(--text-main);margin:0 0 3px">Vista anual de presupuesto</h2>
-                <p style="font-size:12px;color:var(--text-muted);margin:0">Distribución mensual por categoría · haz clic en una celda para editar</p>
-              </div>
-              <select id="annual-year-filter" onchange="renderAnnual()" style="padding:5px 10px;border:1px solid var(--border-color);border-radius:6px;background:var(--bg-panel);color:var(--text-main);font-size:12px;outline:none"></select>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;font-size:11px;color:var(--text-muted)">
-              <span>Intensidad de color = % del presupuesto total anual en ese mes</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#ef4444;display:inline-block"></span>Sobrecargado (&gt;20%)</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:var(--border-color);display:inline-block"></span>Sin presupuesto</span>
-            </div>
-            <div id="annual-grid" style="overflow-x:auto"></div>
-            <div id="annual-alerts" style="margin-top:16px;display:flex;flex-direction:column;gap:8px"></div>
-          </div>
-        </div>
-
-        <!-- ── VISTA EJECUTIVA ── -->
-        <div id="view-exec-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:20px">
-          <div style="max-width:1200px;margin:0 auto">
-            <div style="margin-bottom:16px">
-              <h2 style="font-size:16px;font-weight:600;color:var(--text-main);margin:0 0 3px">Dashboard ejecutivo</h2>
-              <p style="font-size:12px;color:var(--text-muted);margin:0">Visión global de presupuesto y control de gestión</p>
-            </div>
-            <div id="exec-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px"></div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px">
-                <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0 0 14px">Distribución por categoría</h3>
-                <div id="exec-cat-bars" style="display:flex;flex-direction:column;gap:8px"></div>
-              </div>
-              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px">
-                <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0 0 14px">Distribución del gasto</h3>
-                <div id="exec-status-donut" style="display:flex;align-items:center;gap:20px">
-                  <canvas id="exec-donut-canvas" width="140" height="140"></canvas>
-                  <div id="exec-donut-legend" style="display:flex;flex-direction:column;gap:6px"></div>
-                </div>
-              </div>
-            </div>
-            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px">
-              <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0 0 12px;display:flex;align-items:center;justify-content:space-between">
-                Proyectos con desviación de gasto
-                <span id="exec-alerts-count" style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:999px;background:rgba(239,68,68,.1);color:#ef4444"></span>
-              </h3>
-              <div id="exec-alerts-list" style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto" class="no-scrollbar"></div>
-            </div>
           </div>
         </div>
 
@@ -1004,7 +910,7 @@
   </div>
 
   <!-- TOAST CONTAINER -->
-  <div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed top-4 right-4 z-[200] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- ══════════════════════════════════════════════
        JAVASCRIPT
@@ -1089,7 +995,6 @@
       'Shootings':'#10b981','Eventos':'#eab308','Branding':'#ec4899',
       'Marketing Digital':'#0ea5e9','Comunicación':'#8b5cf6','default':'#6b7280'
     };
-    const B2B_SUBS = ['Ferias'];
     const PRIO_COLOR = {
       'Baja':'#64748b','Media':'#3b82f6','Alta':'#f97316','Crítica':'#ef4444'
     };
@@ -1705,38 +1610,39 @@
     // ── CAMBIO DE VISTA ────────────────────────────────────────
     function switchView(viewName) {
       currentActiveView = viewName;
-      // ALL views — original + budget layer
-      const allViews = {
-        gantt:     'view-gantt-container',
-        kanban:    'view-kanban-container',
-        calendar:  'view-calendar-container',
-        dashboard: 'view-dashboard-container',
-        budget:    'view-budget-container',
-        annual:    'view-annual-container',
-        exec:      'view-exec-container'
-      };
-      const sbNavs = ['sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
+      const views = { gantt: 'view-gantt-container', kanban: 'view-kanban-container', calendar: 'view-calendar-container', dashboard: 'view-dashboard-container' };
+      // Tab IDs in the header bar
+      const topTabs = ['nav-gantt', 'nav-kanban', 'nav-calendar', 'nav-dashboard'];
+      // Sidebar nav IDs
+      const sbNavs  = ['sb-nav-gantt', 'sb-nav-kanban', 'sb-nav-calendar', 'sb-nav-dashboard'];
 
-      // Show active, hide all others
-      Object.entries(allViews).forEach(([v, id]) => {
+      // Show/hide view panels
+      Object.entries(views).forEach(([v, id]) => {
         const el = document.getElementById(id);
         if (el) v === viewName ? el.classList.remove('hidden') : el.classList.add('hidden');
       });
 
-      // Update sidebar nav buttons
-      sbNavs.forEach(id => {
+      // Update top tab buttons: just toggle .active class, keep existing classes
+      topTabs.forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.classList.toggle('active', id === `sb-nav-${viewName}`);
+        if (!el) return;
+        const v = id.replace('nav-', '');
+        // Ensure asana-tab class is always present
+        el.className = 'asana-tab' + (v === viewName ? ' active' : '');
       });
 
-      // Render the right content
+      // Update sidebar nav buttons: just toggle .active class
+      sbNavs.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const v = id.replace('sb-nav-', '');
+        el.classList.toggle('active', v === viewName);
+      });
+
       if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
       else if (viewName === 'kanban')    renderKanban();
       else if (viewName === 'calendar')  renderCalendar();
-      else if (viewName === 'dashboard') renderDashboard();
-      else if (viewName === 'budget')    renderBudget();
-      else if (viewName === 'annual')    renderAnnual();
-      else if (viewName === 'exec')      renderExec();
+      else                               renderDashboard();
       lucide.createIcons();
     }
 
@@ -2975,294 +2881,7 @@
     };
 
 
-
-    // ══════════════════════════════════════════════════════════════
-    // CAPA ECONÓMICA
-    // ══════════════════════════════════════════════════════════════
-    let PROJECT_BUDGETS = [], ANNUAL_BUDGETS = [], _bmEditId = null, _acmKey = null;
-    const BUDGET_CATS = ['Catálogos','Ferias','Web/Digital','Shootings','Eventos','Branding','Marketing Digital','Comunicación'];
-    // Estados administrativos del presupuesto (se elige manualmente)
-    const FIN_STATUS_STYLE = {
-      'En preparación':{bg:'rgba(100,116,139,.1)',color:'#64748b',border:'rgba(100,116,139,.25)'},
-      'Aprobado':      {bg:'rgba(5,150,105,.1)',  color:'#059669',border:'rgba(5,150,105,.25)'},
-      'Congelado':     {bg:'rgba(99,102,241,.1)', color:'#6366f1',border:'rgba(99,102,241,.25)'},
-      'Cerrado':       {bg:'rgba(100,116,139,.08)',color:'#94a3b8',border:'rgba(100,116,139,.2)'}
-    };
-    // Estados de gasto calculados automáticamente (no se eligen, se calculan)
-    const DEV_STATUS_STYLE = {
-      'Correcto':  {bg:'rgba(5,150,105,.1)',  color:'#059669',border:'rgba(5,150,105,.25)'},
-      'En riesgo': {bg:'rgba(245,158,11,.1)', color:'#b45309',border:'rgba(245,158,11,.25)'},
-      'Desviado':  {bg:'rgba(239,68,68,.1)',  color:'#ef4444',border:'rgba(239,68,68,.25)'},
-      'Sin datos': {bg:'rgba(100,116,139,.08)',color:'#94a3b8',border:'rgba(100,116,139,.2)'}
-    };
-    const MONTHS_FULL = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
-    function fmtEur(n){if(!n&&n!==0)return'—';return new Intl.NumberFormat('es-ES',{minimumFractionDigits:0,maximumFractionDigits:0}).format(n)+' €';}
-    function fmtEurK(n){if(!n)return'—';if(n>=1000)return new Intl.NumberFormat('es-ES',{minimumFractionDigits:0,maximumFractionDigits:1}).format(n/1000)+'k €';return fmtEur(n);}
-    function devPct(approved,executed){if(!approved)return null;return Math.round(((executed-approved)/approved)*100);}
-    function autoFinStatus(approved,committed,executed){if(!approved)return'Sin datos';const p=devPct(approved,executed);if(p===null)return'Sin datos';if(Math.abs(p)<=5)return'Correcto';if(Math.abs(p)<=15)return'En riesgo';return'Desviado';}
-    function getDevStyle(approved,executed){const s=autoFinStatus(approved,0,executed);return DEV_STATUS_STYLE[s]||DEV_STATUS_STYLE['Sin datos'];}
-
-    function populateYearSelects(){
-      const cy=new Date().getFullYear();
-      const ys=[cy-1,cy,cy+1,cy+2];
-      ['budget-year-filter','annual-year-filter'].forEach(id=>{
-        const s=document.getElementById(id);if(!s)return;
-        s.innerHTML=ys.map(y=>`<option value="${y}"${y===cy?' selected':''}>${y}</option>`).join('');
-      });
-    }
-
-    async function loadBudgetData(){
-      const year=parseInt(document.getElementById('budget-year-filter')?.value||new Date().getFullYear());
-      try{
-        const[r1,r2]=await Promise.all([
-          supabaseClient.from('project_budgets').select('*').eq('year',year).order('proj'),
-          supabaseClient.from('annual_budget').select('*').eq('year',year).order('month')
-        ]);
-        if(!r1.error)PROJECT_BUDGETS=r1.data||[];
-        if(!r2.error)ANNUAL_BUDGETS=r2.data||[];
-      }catch(e){console.warn('loadBudgetData:',e);}
-    }
-
-    async function renderBudget(){
-      await loadBudgetData();
-      const year=parseInt(document.getElementById('budget-year-filter')?.value||new Date().getFullYear());
-      const addBtn=document.getElementById('btn-add-budget');
-      if(addBtn)addBtn.style.display=isEditModeActive?'block':'none';
-      const ta=PROJECT_BUDGETS.reduce((a,b)=>a+(b.approved||0),0);
-      const tc=PROJECT_BUDGETS.reduce((a,b)=>a+(b.committed||0),0);
-      const te=PROJECT_BUDGETS.reduce((a,b)=>a+(b.executed||0),0);
-      const av=ta-te;
-      const gd=devPct(ta,te);
-      const gdS=gd===null?'—':(gd>0?'+':'')+gd+'%';
-      const gdC=gd===null?'var(--text-muted)':Math.abs(gd)<=5?'#059669':Math.abs(gd)<=15?'#b45309':'#ef4444';
-      const ks=document.getElementById('budget-kpi-strip');
-      if(ks)ks.innerHTML=[{l:'Aprobado total',v:fmtEurK(ta),c:'#059669'},{l:'Comprometido',v:fmtEurK(tc),c:'#4573d2'},{l:'Ejecutado',v:fmtEurK(te),c:'#f59e0b'},{l:'Disponible',v:fmtEurK(av),c:av<0?'#ef4444':'#64748b'},{l:'Desviación global',v:gdS,c:gdC}]
-        .map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px"><div style="font-size:18px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:3px">${k.v}</div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${k.l}</div></div>`).join('');
-      const ps=[...new Set([...TASKS.map(t=>t.proj),...PROJECT_BUDGETS.map(b=>b.proj)])].sort((a,b)=>a.localeCompare(b));
-      const tb=document.getElementById('budget-table-body');if(!tb)return;
-      if(!ps.length){tb.innerHTML='<div style="padding:32px;text-align:center;font-size:13px;color:var(--text-muted)">No hay proyectos todavía.</div>';return;}
-      tb.innerHTML=ps.map(proj=>{
-        const bud=PROJECT_BUDGETS.find(b=>b.proj===proj);
-        const tasks=TASKS.filter(t=>t.proj===proj);
-        const cat=tasks[0]?.cat||'—';const catC=CAT_COLOR[cat]||CAT_COLOR.default;
-        const done=tasks.filter(t=>t.status==='Completado').length;
-        const pct=tasks.length?Math.round(done/tasks.length*100):0;
-        const ap=bud?.approved||0,cm=bud?.committed||0,ex=bud?.executed||0,av2=ap-ex;
-        const dev=devPct(ap,ex);const devS=dev===null?'—':(dev>0?'+':'')+dev+'%';
-        const devC=dev===null?'var(--text-muted)':Math.abs(dev)<=5?'#059669':Math.abs(dev)<=15?'#b45309':'#ef4444';
-        // Estado administrativo (elegido manualmente)
-        const adminSt=bud?.financial_status||'En preparación';
-        const adminSty=FIN_STATUS_STYLE[adminSt]||FIN_STATUS_STYLE['En preparación'];
-        const bar=ap>0?`<div style="margin-top:4px;height:3px;background:var(--border-color);border-radius:999px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.round(ex/ap*100))}%;background:${devC};border-radius:999px"></div></div>`:'';
-        return`<div style="display:grid;grid-template-columns:2fr 100px 110px 110px 110px 90px 80px 36px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border-color);transition:background .1s" onmouseover="this.style.background='rgba(0,0,0,.02)'" onmouseout="this.style.background='transparent'">
-          <div style="padding-right:12px;min-width:0">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span><span style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(proj)}</span></div>
-            <div style="font-size:10px;color:var(--text-muted)">${esc(cat)} · ${pct}% completado · ${tasks.length} tareas</div>${bar}
-          </div>
-          <div style="text-align:right;font-size:13px;font-family:monospace;color:${ap?'#059669':'var(--text-muted)'}">${fmtEurK(ap)}</div>
-          <div style="text-align:right;font-size:13px;font-family:monospace;color:${cm?'#4573d2':'var(--text-muted)'}">${fmtEurK(cm)}</div>
-          <div style="text-align:right;font-size:13px;font-family:monospace;color:${ex?'#f59e0b':'var(--text-muted)'}">${fmtEurK(ex)}</div>
-          <div style="text-align:right;font-size:13px;font-family:monospace;color:${av2<0?'#ef4444':'var(--text-muted)'}">${ap?fmtEurK(av2):'—'}</div>
-          <div style="text-align:center"><span style="font-size:12px;font-weight:700;color:${devC};font-family:monospace">${devS}</span></div>
-          <div style="display:flex;justify-content:center"><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:${adminSty.bg};color:${adminSty.color};border:1px solid ${adminSty.border};white-space:nowrap">${adminSt}</span></div>
-          <div style="display:flex;justify-content:center"><button onclick="openBudgetModal('${esc(proj).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}',${bud?.id||'null'})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:4px" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button></div>
-        </div>`;
-      }).join('');
-      lucide.createIcons();
-    }
-
-    function openBudgetModal(projName,budId){
-      if(!isEditModeActive){showToast('Activa el modo edición para modificar presupuestos','info');return;}
-      _bmEditId=budId;
-      const year=parseInt(document.getElementById('budget-year-filter')?.value||new Date().getFullYear());
-      const bud=budId?PROJECT_BUDGETS.find(b=>b.id===budId):null;
-      document.getElementById('bm-title').textContent=bud?'Editar presupuesto':'Añadir presupuesto';
-      document.getElementById('bm-proj').value=projName;
-      document.getElementById('bm-year').value=bud?.year||year;
-      document.getElementById('bm-approved').value=bud?.approved||'';
-      document.getElementById('bm-committed').value=bud?.committed||'';
-      document.getElementById('bm-executed').value=bud?.executed||'';
-      document.getElementById('bm-status').value=bud?.financial_status||'En preparación';
-      document.getElementById('bm-notes').value=bud?.notes||'';
-      document.getElementById('bm-delete').style.display=bud?'block':'none';
-      const dl=document.getElementById('bm-project-list');
-      if(dl)dl.innerHTML=[...new Set(TASKS.map(t=>t.proj))].sort().map(p=>`<option value="${esc(p)}">`).join('');
-      updateBudgetDevPreview();
-      document.getElementById('budget-modal-overlay').style.display='flex';
-      lucide.createIcons();
-    }
-    function closeBudgetModal(e){if(e&&e.target!==document.getElementById('budget-modal-overlay'))return;document.getElementById('budget-modal-overlay').style.display='none';}
-    function showAddBudgetModal(){_bmEditId=null;openBudgetModal('',null);setTimeout(()=>{const p=document.getElementById('bm-proj');if(p){p.readOnly=false;p.focus();}},50);}
-    function updateBudgetDevPreview(){
-      const ap=parseFloat(document.getElementById('bm-approved')?.value)||0;
-      const ex=parseFloat(document.getElementById('bm-executed')?.value)||0;
-      const el=document.getElementById('bm-dev-val');if(!el)return;
-      if(!ap){el.textContent='—';el.style.color='var(--text-muted)';return;}
-      const p=devPct(ap,ex);el.textContent=(p>0?'+':'')+p+'%';
-      el.style.color=Math.abs(p)<=5?'#059669':Math.abs(p)<=15?'#b45309':'#ef4444';
-    }
-    document.addEventListener('input',function(e){if(['bm-approved','bm-committed','bm-executed'].includes(e.target.id))updateBudgetDevPreview();});
-    async function saveBudget(){
-      const proj=document.getElementById('bm-proj').value.trim();
-      if(!proj){showToast('Selecciona un proyecto','error');return;}
-      const payload={proj,year:parseInt(document.getElementById('bm-year').value),approved:parseFloat(document.getElementById('bm-approved').value)||0,committed:parseFloat(document.getElementById('bm-committed').value)||0,executed:parseFloat(document.getElementById('bm-executed').value)||0,financial_status:document.getElementById('bm-status').value,notes:document.getElementById('bm-notes').value.trim(),updated_at:new Date().toISOString()};
-      try{
-        if(_bmEditId){const{error}=await supabaseClient.from('project_budgets').update(payload).eq('id',_bmEditId);if(error)throw error;}
-        else{const{error}=await supabaseClient.from('project_budgets').insert([payload]);if(error)throw error;}
-        closeBudgetModal();await renderBudget();showToast('Presupuesto guardado','success');
-      }catch(e){showToast('Error al guardar: '+e.message,'error');}
-    }
-    async function deleteBudget(){
-      if(!_bmEditId||!confirm('¿Eliminar este presupuesto?'))return;
-      try{await supabaseClient.from('project_budgets').delete().eq('id',_bmEditId);closeBudgetModal();await renderBudget();showToast('Eliminado','success');}
-      catch(e){showToast('Error: '+e.message,'error');}
-    }
-
-    async function renderAnnual(){
-      const year=parseInt(document.getElementById('annual-year-filter')?.value||new Date().getFullYear());
-      const{data:ad}=await supabaseClient.from('annual_budget').select('*').eq('year',year);
-      ANNUAL_BUDGETS=ad||[];
-      const dm={};BUDGET_CATS.forEach(c=>{dm[c]={};for(let m=1;m<=12;m++)dm[c][m]={planned:0,executed:0,notes:''};});
-      ANNUAL_BUDGETS.forEach(r=>{if(dm[r.category])dm[r.category][r.month]={planned:r.planned||0,executed:r.executed||0,notes:r.notes||''};});
-      const mt={};for(let m=1;m<=12;m++)mt[m]=BUDGET_CATS.reduce((a,c)=>a+(dm[c][m]?.planned||0),0);
-      const tp=Object.values(mt).reduce((a,b)=>a+b,0);
-      const grid=document.getElementById('annual-grid');if(!grid)return;
-      let html=`<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px"><thead><tr>
-        <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);position:sticky;left:0;z-index:2;min-width:140px">Categoría</th>`;
-      for(let m=1;m<=12;m++){const t=mt[m];const pct=tp?Math.round(t/tp*100):0;const h=pct>20;html+=`<th style="text-align:center;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:76px"><div style="color:${h?'#ef4444':'var(--text-muted)'}">${MONTHS_ES[m-1]}</div><div style="font-size:9px;font-weight:600;color:${h?'#ef4444':'var(--text-muted)'};margin-top:2px">${fmtEurK(t)}</div></th>`;}
-      html+=`<th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px">Total</th></tr></thead><tbody>`;
-      BUDGET_CATS.forEach(cat=>{
-        const rt=Object.values(dm[cat]).reduce((a,b)=>a+(b.planned||0),0);
-        const cc=CAT_COLOR[cat]||CAT_COLOR.default;
-        html+=`<tr style="border-bottom:1px solid var(--border-color)"><td style="padding:6px 10px;font-weight:500;color:var(--text-main);background:var(--bg-panel);position:sticky;left:0;z-index:1;border-right:1px solid var(--border-color)"><div style="display:flex;align-items:center;gap:6px"><span style="width:7px;height:7px;border-radius:50%;background:${cc};flex-shrink:0"></span>${esc(cat)}</div></td>`;
-        for(let m=1;m<=12;m++){
-          const cell=dm[cat][m];const pl=cell.planned;const ex2=cell.executed;
-          const int2=tp?Math.min(1,pl/(tp*0.15)):0;const h2=mt[m]>0&&tp&&mt[m]/tp>0.2;
-          const bg=pl===0?'transparent':`rgba(${h2?'239,68,68':'69,115,210'},${0.06+int2*0.22})`;
-          const k=`${year}-${m}-${cat}`;
-          html+=`<td style="padding:0;text-align:center;background:${bg};cursor:pointer;transition:background .1s" onclick="openAnnualCellModal('${k.replace(/'/g,"\\'")}','${cat.replace(/'/g,"\\'")}',${m},${year},${pl},${ex2},'${(cell.notes||'').replace(/'/g,"\\'")}')" onmouseover="this.style.outline='2px solid #4573d2'" onmouseout="this.style.outline='none'" title="${esc(cat)} · ${MONTHS_FULL[m-1]} · Previsto: ${fmtEur(pl)}"><div style="padding:6px 4px">${pl?`<div style="font-size:11px;font-weight:600;color:var(--text-main);font-family:monospace">${fmtEurK(pl)}</div>`:'<div style="font-size:11px;color:var(--border-color)">—</div>'}${ex2?`<div style="font-size:9px;color:var(--text-muted);font-family:monospace">${fmtEurK(ex2)}</div>`:''}</div></td>`;
-        }
-        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(rt)}</td></tr>`;
-      });
-      html+=`<tr style="background:var(--bg-main);border-top:2px solid var(--border-color)"><td style="padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);background:var(--bg-main);position:sticky;left:0;z-index:1;border-right:1px solid var(--border-color)">TOTAL MENSUAL</td>`;
-      for(let m=1;m<=12;m++){const t=mt[m];const pct=tp?Math.round(t/tp*100):0;const h=pct>20;html+=`<td style="text-align:center;padding:8px 4px"><div style="font-size:12px;font-weight:700;color:${h?'#ef4444':'var(--text-main)'};font-family:monospace">${t?fmtEurK(t):'—'}</div>${t?`<div style="font-size:9px;color:${h?'#ef4444':'var(--text-muted)'}">${pct}%</div>`:''}</td>`;}
-      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(tp)}</td></tr></tbody></table>`;
-      grid.innerHTML=html;
-      renderAnnualAlerts(mt,tp,year);
-    }
-    function renderAnnualAlerts(mt,tp,year){
-      const d=document.getElementById('annual-alerts');if(!d)return;
-      const al=[];
-      for(let m=1;m<=12;m++){const p=tp?Math.round(mt[m]/tp*100):0;if(p>20)al.push({t:'warn',m:`<strong>${MONTHS_FULL[m-1]}</strong> concentra el ${p}% del presupuesto anual (${fmtEur(mt[m])})`});}
-      const cur=new Date().getMonth()+1;
-      for(let m=cur;m<=Math.min(12,cur+3);m++){if(!mt[m])al.push({t:'info',m:`<strong>${MONTHS_FULL[m-1]}</strong> no tiene presupuesto asignado`});}
-      const np=[...new Set(TASKS.map(t=>t.proj))].filter(p=>!PROJECT_BUDGETS.find(b=>b.proj===p));
-      if(np.length)al.push({t:'warn',m:`${np.length} proyecto${np.length>1?'s':''} sin presupuesto: <em>${np.slice(0,4).map(p=>esc(p)).join(', ')}${np.length>4?'…':''}</em>`});
-      if(!al.length){d.innerHTML='';return;}
-      d.innerHTML=al.map(a=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;background:${a.t==='warn'?'rgba(245,158,11,.08)':'rgba(69,115,210,.07)'};border:1px solid ${a.t==='warn'?'rgba(245,158,11,.2)':'rgba(69,115,210,.15)'}"><i data-lucide="${a.t==='warn'?'alert-triangle':'info'}" style="width:14px;height:14px;flex-shrink:0;margin-top:1px;color:${a.t==='warn'?'#b45309':'#4573d2'}"></i><span style="font-size:12px;color:var(--text-main)">${a.m}</span></div>`).join('');
-      lucide.createIcons();
-    }
-    function openAnnualCellModal(key,cat,month,year,planned,executed,notes){
-      _acmKey={key,cat,month:parseInt(month),year:parseInt(year)};
-      document.getElementById('acm-title').textContent=`${esc(cat)} · ${MONTHS_FULL[parseInt(month)-1]} ${year}`;
-      document.getElementById('acm-planned').value=planned||'';
-      document.getElementById('acm-executed').value=executed||'';
-      document.getElementById('acm-notes').value=notes||'';
-      document.getElementById('annual-cell-overlay').style.display='flex';
-      lucide.createIcons();
-    }
-    function closeAnnualCellModal(e){if(e&&e.target!==document.getElementById('annual-cell-overlay'))return;document.getElementById('annual-cell-overlay').style.display='none';}
-    async function saveAnnualCell(){
-      if(!_acmKey)return;
-      const{cat,month,year}=_acmKey;
-      const payload={year,month,category:cat,planned:parseFloat(document.getElementById('acm-planned').value)||0,executed:parseFloat(document.getElementById('acm-executed').value)||0,notes:document.getElementById('acm-notes').value.trim(),updated_at:new Date().toISOString()};
-      try{
-        const{error}=await supabaseClient.from('annual_budget').upsert([payload],{onConflict:'year,month,category'});
-        if(error)throw error;
-        closeAnnualCellModal();await renderAnnual();showToast('Actualizado','success');
-      }catch(e){showToast('Error: '+e.message,'error');}
-    }
-
-    async function renderExec(){
-      await loadBudgetData();
-      const year=parseInt(document.getElementById('annual-year-filter')?.value||new Date().getFullYear());
-      const ta=PROJECT_BUDGETS.reduce((a,b)=>a+(b.approved||0),0);
-      const tc=PROJECT_BUDGETS.reduce((a,b)=>a+(b.committed||0),0);
-      const te=PROJECT_BUDGETS.reduce((a,b)=>a+(b.executed||0),0);
-      const gd=devPct(ta,te);
-      const ae=[...new Set(TASKS.filter(t=>(t.cat==='Ferias'||t.cat==='Eventos')&&(t.status==='En curso'||t.status==='En planificación')).map(t=>t.proj))].length;
-      const dl2=PROJECT_BUDGETS.filter(b=>{const s=autoFinStatus(b.approved,b.committed,b.executed);return s==='Desviado'||s==='En riesgo';}).length;
-      const ek=document.getElementById('exec-kpis');
-      if(ek)ek.innerHTML=[
-        {l:'Presupuesto aprobado',v:fmtEur(ta),c:'#059669',s:`Año ${year}`},
-        {l:'Comprometido',v:fmtEur(tc),c:'#4573d2',s:ta?Math.round(tc/ta*100)+'% del aprobado':''},
-        {l:'Ejecutado',v:fmtEur(te),c:'#f59e0b',s:ta?Math.round(te/ta*100)+'% del aprobado':''},
-        {l:'Desviación acumulada',v:gd===null?'—':(gd>0?'+':'')+gd+'%',c:gd===null?'var(--text-muted)':Math.abs(gd)<=5?'#059669':Math.abs(gd)<=15?'#b45309':'#ef4444',s:fmtEur(Math.abs(te-ta))+' sobre aprobado'},
-        {l:'Ferias y Eventos activos',v:String(ae),c:'#f97316',s:'en curso o planificación'},
-        {l:'Proyectos con alertas',v:String(dl2),c:dl2>0?'#ef4444':'#059669',s:dl2>0?'Desviados o en riesgo':'Todo en orden'}
-      ].map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 18px"><div style="font-size:24px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:4px">${k.v}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:2px">${k.l}</div><div style="font-size:11px;color:var(--text-muted)">${k.s}</div></div>`).join('');
-      const cb=document.getElementById('exec-cat-bars');
-      if(cb){
-        const ct={};
-        PROJECT_BUDGETS.forEach(b=>{const tasks=TASKS.filter(t=>t.proj===b.proj);const cat=tasks[0]?.cat||'Sin cat';ct[cat]=(ct[cat]||0)+(b.approved||0);});
-        const mx=Math.max(...Object.values(ct),1);
-        cb.innerHTML=Object.entries(ct).sort((a,b)=>b[1]-a[1]).map(([cat,val])=>{
-          const p=Math.round(val/mx*100);const col=CAT_COLOR[cat]||CAT_COLOR.default;
-          return`<div style="display:flex;align-items:center;gap:8px"><div style="font-size:11px;color:var(--text-main);min-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cat)}</div><div style="flex:1;height:8px;background:var(--bg-main);border-radius:999px;overflow:hidden"><div style="height:100%;width:${p}%;background:${col};border-radius:999px"></div></div><div style="font-size:11px;color:var(--text-muted);font-family:monospace;min-width:60px;text-align:right">${fmtEurK(val)}</div></div>`;
-        }).join('')||'<div style="font-size:12px;color:var(--text-muted)">Sin datos de presupuesto</div>';
-      }
-      const canvas=document.getElementById('exec-donut-canvas');
-      // Donut: distribución del gasto (calculado automáticamente)
-      const sc2={Correcto:0,'En riesgo':0,Desviado:0,'Sin datos':0};
-      PROJECT_BUDGETS.forEach(b=>{const s=autoFinStatus(b.approved,b.committed,b.executed);if(sc2[s]!==undefined)sc2[s]++;});
-      [...new Set(TASKS.map(t=>t.proj))].forEach(p=>{if(!PROJECT_BUDGETS.find(b=>b.proj===p))sc2['Sin datos']++;});
-      const dc={Correcto:'#059669','En riesgo':'#f59e0b',Desviado:'#ef4444','Sin datos':'#94a3b8'};
-      if(canvas){
-        const ctx=canvas.getContext('2d');ctx.clearRect(0,0,140,140);
-        const tot=Object.values(sc2).reduce((a,b)=>a+b,0)||1;
-        let ang=-Math.PI/2;
-        Object.entries(sc2).forEach(([st,cnt])=>{const sl=(cnt/tot)*Math.PI*2;ctx.beginPath();ctx.moveTo(70,70);ctx.arc(70,70,58,ang,ang+sl);ctx.closePath();ctx.fillStyle=dc[st];ctx.fill();ang+=sl;});
-        ctx.beginPath();ctx.arc(70,70,35,0,Math.PI*2);
-        const bgc=getComputedStyle(document.documentElement).getPropertyValue('--bg-panel').trim()||'#fff';
-        ctx.fillStyle=bgc;ctx.fill();
-        const txc=getComputedStyle(document.documentElement).getPropertyValue('--text-main').trim()||'#111';
-        ctx.fillStyle=txc;ctx.font='bold 16px monospace';ctx.textAlign='center';ctx.fillText(tot,70,67);
-        ctx.font='10px sans-serif';ctx.fillStyle='#94a3b8';ctx.fillText('proyectos',70,82);
-      }
-      const leg=document.getElementById('exec-donut-legend');
-      if(leg)leg.innerHTML=Object.entries(sc2).map(([st,cnt])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-main)"><span style="width:10px;height:10px;border-radius:50%;background:${dc[st]};flex-shrink:0"></span><span>${st}</span><span style="font-weight:700;font-family:monospace;margin-left:auto">${cnt}</span></div>`).join('');
-      const al=document.getElementById('exec-alerts-list');
-      const ac=document.getElementById('exec-alerts-count');
-      const ap2=PROJECT_BUDGETS.filter(b=>{const s=autoFinStatus(b.approved,b.committed,b.executed);return s==='Desviado'||s==='En riesgo';});
-      if(ac)ac.textContent=ap2.length?ap2.length+' alerta'+(ap2.length>1?'s':''):'';
-      if(al){
-        if(!ap2.length){al.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted)">No hay alertas de gasto activas.</div>';}
-        else{al.innerHTML=ap2.map(b=>{const d=devPct(b.approved,b.executed);const devSt=autoFinStatus(b.approved,b.committed,b.executed);const sty=DEV_STATUS_STYLE[devSt]||DEV_STATUS_STYLE['Sin datos'];const adminSt2=b.financial_status||'En preparación';const adminSty2=FIN_STATUS_STYLE[adminSt2]||FIN_STATUS_STYLE['En preparación'];return`<div style="display:grid;grid-template-columns:2fr 90px 90px 70px 90px 80px;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;background:var(--bg-main);border:1px solid var(--border-color)"><div style="font-size:13px;font-weight:500;color:var(--text-main)">${esc(b.proj)}</div><div style="text-align:right;font-size:12px;font-family:monospace;color:#059669">${fmtEurK(b.approved)}</div><div style="text-align:right;font-size:12px;font-family:monospace;color:#f59e0b">${fmtEurK(b.executed)}</div><div style="text-align:center;font-size:12px;font-weight:700;color:${sty.color};font-family:monospace">${d!==null?(d>0?'+':'')+d+'%':'—'}</div><div style="display:flex;justify-content:center"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:${sty.bg};color:${sty.color};border:1px solid ${sty.border}">${devSt}</span></div><div style="display:flex;justify-content:center"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:${adminSty2.bg};color:${adminSty2.color};border:1px solid ${adminSty2.border}">${adminSt2}</span></div></div>`;}).join('');}
-      }
-    }
-
-    // switchView already handles all views including budget/annual/exec (unified above)
-
-    // Patch unlockDashboard
-    const _origUnlockBudget = unlockDashboard;
-    unlockDashboard = async function(){
-      await _origUnlockBudget();
-      populateYearSelects();
-      await loadBudgetData();
-    };
-
-    // Patch toggleEditMode to show/hide add budget button
-    const _origToggleEditBudget = toggleEditMode;
-    toggleEditMode = function(){
-      _origToggleEditBudget();
-      const ab=document.getElementById('btn-add-budget');
-      if(ab&&currentActiveView==='budget')ab.style.display=isEditModeActive?'block':'none';
-    };
-
-
-
-        // ── ATAJO DE TECLADO ─────────────────────────────────────
+    // ── ATAJO DE TECLADO ─────────────────────────────────────
     document.addEventListener('keydown', function(e) {
       if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey
           && document.activeElement.tagName !== 'INPUT'
@@ -3324,112 +2943,6 @@
     </div>
   </div>
   <div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;z-index:299;background:transparent"></div>
-
-
-  <!-- ══ MODAL PRESUPUESTO ══ -->
-  <div id="budget-modal-overlay" onclick="closeBudgetModal(event)"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:2100;justify-content:center;align-items:flex-start;overflow-y:auto;padding:40px 16px">
-    <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:12px;width:100%;max-width:500px;box-shadow:0 20px 60px rgba(0,0,0,0.18)">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border-color)">
-        <h2 id="bm-title" style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:0">Presupuesto de proyecto</h2>
-        <button onclick="closeBudgetModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px"><i data-lucide="x" style="width:16px;height:16px"></i></button>
-      </div>
-      <div style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Proyecto</label>
-          <input id="bm-proj" type="text" list="bm-project-list" placeholder="Nombre del proyecto"
-            style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-          <datalist id="bm-project-list"></datalist>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Año</label>
-            <input id="bm-year" type="number" min="2020" max="2035"
-              style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-          </div>
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Estado del presupuesto</label>
-            <select id="bm-status" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-              <option value="En preparación">En preparación</option>
-              <option value="Aprobado">Aprobado</option>
-              <option value="Congelado">Congelado</option>
-              <option value="Cerrado">Cerrado</option>
-            </select>
-            <div style="font-size:10px;color:var(--text-muted);margin-top:4px">La desviación del gasto se calcula automáticamente</div>
-          </div>
-        </div>
-        <div style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#059669;margin-bottom:5px">Presupuesto aprobado (€)</label>
-            <input id="bm-approved" type="number" min="0" step="100" placeholder="0"
-              style="width:100%;background:var(--bg-panel);border:1px solid #a7f3d0;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-          </div>
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#4573d2;margin-bottom:5px">Comprometido (€)</label>
-            <input id="bm-committed" type="number" min="0" step="100" placeholder="0"
-              style="width:100%;background:var(--bg-panel);border:1px solid #bfdbfe;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-          </div>
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#f59e0b;margin-bottom:5px">Ejecutado / Facturado (€)</label>
-            <input id="bm-executed" type="number" min="0" step="100" placeholder="0"
-              style="width:100%;background:var(--bg-panel);border:1px solid #fde68a;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-          </div>
-          <div style="display:flex;flex-direction:column;justify-content:flex-end">
-            <div style="padding:10px;background:rgba(69,115,210,.05);border:1px solid rgba(69,115,210,.15);border-radius:7px;text-align:center">
-              <div style="font-size:18px;font-weight:700;color:var(--text-main)" id="bm-dev-val">—</div>
-              <div style="font-size:10px;color:var(--text-muted)">Desviación s/ aprobado</div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Notas</label>
-          <textarea id="bm-notes" rows="2" placeholder="Observaciones..."
-            style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;resize:none;box-sizing:border-box;font-family:inherit"></textarea>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 16px;border-top:1px solid var(--border-color)">
-        <button id="bm-delete" onclick="deleteBudget()"
-          style="display:none;padding:6px 14px;border-radius:7px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-size:12px;font-weight:600;cursor:pointer">Eliminar</button>
-        <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
-          <button onclick="closeBudgetModal()" style="padding:6px 16px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px;font-weight:500;cursor:pointer">Cancelar</button>
-          <button onclick="saveBudget()" style="padding:6px 18px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Guardar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ MODAL CELDA ANUAL ══ -->
-  <div id="annual-cell-overlay" onclick="closeAnnualCellModal(event)"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);z-index:2100;justify-content:center;align-items:center;padding:16px">
-    <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:12px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,0.18)">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border-color)">
-        <h2 id="acm-title" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:0">Presupuesto mensual</h2>
-        <button onclick="closeAnnualCellModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted)"><i data-lucide="x" style="width:15px;height:15px"></i></button>
-      </div>
-      <div style="padding:14px 18px 18px;display:flex;flex-direction:column;gap:10px">
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:#059669;margin-bottom:4px">Previsto (€)</label>
-          <input id="acm-planned" type="number" min="0" step="100" placeholder="0"
-            style="width:100%;background:var(--bg-main);border:1px solid #a7f3d0;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:#f59e0b;margin-bottom:4px">Ejecutado (€)</label>
-          <input id="acm-executed" type="number" min="0" step="100" placeholder="0"
-            style="width:100%;background:var(--bg-main);border:1px solid #fde68a;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-        </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Notas</label>
-          <input id="acm-notes" type="text" placeholder="Observación..."
-            style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-        </div>
-        <input type="hidden" id="acm-key">
-        <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
-          <button onclick="closeAnnualCellModal()" style="padding:6px 14px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px;cursor:pointer">Cancelar</button>
-          <button onclick="saveAnnualCell()" style="padding:6px 16px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Guardar</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
 </body>
 </html>
