@@ -351,7 +351,7 @@
         <button id="sb-nav-annual" class="sb-nav-btn" onclick="switchView('annual')" style="display:none">
           <i data-lucide="calendar-range" class="sb-icon" style="color:#fbbf24"></i><span class="sb-lbl">Vista anual</span>
         </button>
-        <button id="sb-nav-exec" class="sb-nav-btn" onclick="switchView('exec')">
+        <button id="sb-nav-exec" class="sb-nav-btn" onclick="switchView('exec')" style="display:none">
           <i data-lucide="trending-up" class="sb-icon" style="color:#f87171"></i><span class="sb-lbl">Dashboard ejecutivo</span>
         </button>
       </div>
@@ -3070,7 +3070,30 @@
           filterIndicator.style.display='none';
         }
       }
-      // KPIs — calculated from filtered projects only
+      // Build project list FIRST — needed for KPI calculation
+      const taskProjSet   = new Set(TASKS.map(t => t.proj));
+      const budgetProjSet = new Set(PROJECT_BUDGETS.map(b => b.proj));
+      const allProjNames  = [...new Set([...taskProjSet, ...budgetProjSet])].sort((a,b) => a.localeCompare(b));
+
+      const ps = allProjNames.filter(proj => {
+        const tasks = TASKS.filter(t => t.proj === proj);
+        const cat = tasks[0]?.cat || '';
+        if(filterCat && cat && cat !== filterCat) return false;
+        if(filterCat && !cat) {
+          const budNote = (PROJECT_BUDGETS.find(b=>b.proj===proj)?.notes||'').toLowerCase();
+          if(!budNote.includes(filterCat.toLowerCase()) && !proj.toLowerCase().includes(filterCat.toLowerCase())) return false;
+        }
+        if(filterProj && proj !== filterProj) return false;
+        if(filterSearch && !proj.toLowerCase().includes(filterSearch)) return false;
+        if(filterStatus){
+          const bud = PROJECT_BUDGETS.find(b=>b.proj===proj);
+          const budStatus = bud?.financial_status || 'En preparación';
+          if(budStatus !== filterStatus) return false;
+        }
+        return true;
+      });
+
+      // KPIs — calculated from filtered projects
       const filteredBudgets = PROJECT_BUDGETS.filter(b => ps.includes(b.proj));
       const ta=filteredBudgets.reduce((a,b)=>a+(b.approved||0),0);
       const tc=filteredBudgets.reduce((a,b)=>a+(b.committed||0),0);
@@ -3082,38 +3105,6 @@
       const ks=document.getElementById('budget-kpi-strip');
       if(ks)ks.innerHTML=[{l:'Aprobado total',v:fmtEurK(ta),c:'#059669'},{l:'Comprometido',v:fmtEurK(tc),c:'#4573d2'},{l:'Ejecutado',v:fmtEurK(te),c:'#f59e0b'},{l:'Disponible',v:fmtEurK(av),c:av<0?'#ef4444':'#64748b'},{l:'Desviación global',v:gdS,c:gdC}]
         .map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px"><div style="font-size:18px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:3px">${k.v}</div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${k.l}</div></div>`).join('');
-      // Build project list: union of tasks + budget entries, respecting filters
-      // For projects that only exist in project_budgets (e.g. imported via SQL),
-      // we use the budget notes/proj name directly — no task match required
-      const taskProjSet  = new Set(TASKS.map(t => t.proj));
-      const budgetProjSet = new Set(PROJECT_BUDGETS.map(b => b.proj));
-      const allProjNames = [...new Set([...taskProjSet, ...budgetProjSet])].sort((a,b) => a.localeCompare(b));
-
-      const ps = allProjNames.filter(proj => {
-        const tasks = TASKS.filter(t => t.proj === proj);
-        // Category: from tasks if available, otherwise try to infer from budget notes
-        const cat = tasks[0]?.cat || '';
-        // Category filter
-        if(filterCat && cat && cat !== filterCat) return false;
-        // If filterCat set but proj has no tasks (SQL-only), match by checking if
-        // any budget note or proj name contains the filter (loose match)
-        if(filterCat && !cat) {
-          const budNote = (PROJECT_BUDGETS.find(b=>b.proj===proj)?.notes||'').toLowerCase();
-          if(!budNote.toLowerCase().includes(filterCat.toLowerCase()) &&
-             !proj.toLowerCase().includes(filterCat.toLowerCase())) return false;
-        }
-        // Project filter (exact match from dropdown)
-        if(filterProj && proj !== filterProj) return false;
-        // Search filter (partial match on project name)
-        if(filterSearch && !proj.toLowerCase().includes(filterSearch)) return false;
-        // Status filter (matches financial_status of the budget entry)
-        if(filterStatus){
-          const bud = PROJECT_BUDGETS.find(b=>b.proj===proj);
-          const budStatus = bud?.financial_status || 'En preparación';
-          if(budStatus !== filterStatus) return false;
-        }
-        return true;
-      });
       const tb=document.getElementById('budget-table-body');if(!tb)return;
       if(!ps.length){tb.innerHTML=`<div style="padding:32px;text-align:center;font-size:13px;color:var(--text-muted)">${hasFilter?'Ningún proyecto coincide con los filtros activos. <button onclick="clearFilters()" style="color:#4573d2;background:none;border:none;cursor:pointer;font-size:13px;text-decoration:underline">Limpiar filtros</button>':'No hay proyectos todavía.'}</div>`;return;}
       tb.innerHTML=ps.map(proj=>{
@@ -3474,12 +3465,14 @@
       const cy = populateYearSelects(); // returns current year and sets selects
       await loadBudgetData(cy);         // pre-load with explicit year
 
-      // Show Vista anual only for javierimedio@gorfactory.es
+      // Show Vista anual y Dashboard ejecutivo solo para javierimedio@gorfactory.es
       try {
         const { data: { user } } = await supabaseClient.auth.getUser();
         const isJavier = user?.email === 'javierimedio@gorfactory.es';
         const annualBtn = document.getElementById('sb-nav-annual');
+        const execBtn   = document.getElementById('sb-nav-exec');
         if (annualBtn) annualBtn.style.display = isJavier ? 'flex' : 'none';
+        if (execBtn)   execBtn.style.display   = isJavier ? 'flex' : 'none';
       } catch(e) {}
     };
 
