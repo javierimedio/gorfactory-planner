@@ -2359,6 +2359,30 @@
     }
 
     // ── COMENTARIOS ────────────────────────────────────────────
+    // ── FORMATEO INTELIGENTE DE COMENTARIOS ──────────────────
+    function formatComment(rawText) {
+      if (!rawText) return '';
+      const lines = rawText.split('\n').filter(l => l.trim() !== '');
+      const isTable = lines.length >= 2 && lines.filter(l => l.includes('\t')).length >= 2;
+      if (isTable) {
+        const rows = rawText.split('\n').filter(l => l.trim() !== '');
+        return '<div style="overflow-x:auto;margin-top:4px"><table style="border-collapse:collapse;font-size:12px;width:100%">'
+          + rows.map(function(row, i) {
+              const cells = row.split('\t');
+              const isHeader = i === 0;
+              const tag = isHeader ? 'th' : 'td';
+              const st = isHeader
+                ? 'padding:5px 10px;background:var(--bg-main);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);border:1px solid var(--border-color);text-align:left;white-space:nowrap'
+                : 'padding:5px 10px;border:1px solid var(--border-color);color:var(--text-main);white-space:nowrap';
+              return '<tr>' + cells.map(function(cell){ return '<'+tag+' style="'+st+'">'+esc(cell.trim())+'</'+tag+'>'; }).join('') + '</tr>';
+            }).join('')
+          + '</table></div>';
+      }
+      return esc(rawText)
+        .split('\n').join('<br>')
+        .replace(/@([\w\.]+)/g, '<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
+    }
+
     async function loadComments(taskId) {
       const container = document.getElementById('task-comments');
       if (!container) return;
@@ -2378,9 +2402,7 @@
       }
       container.innerHTML = data.map(c => {
         const date = new Date(c.created_at).toLocaleString('es-ES');
-        const commentHtml = esc(c.comment)
-          .split('\n').join('<br>')
-          .replace(/@([\w\.]+)/g,'<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
+        const commentHtml = formatComment(c.comment);
         return `
           <div class="theme-sidebar border rounded-lg p-3 space-y-1">
             <div class="flex items-center justify-between">
@@ -2973,7 +2995,7 @@
         const date=new Date(c.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
         const init=c.author.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
         const col=colors[c.author.charCodeAt(0)%colors.length];
-        const html=esc(c.comment).split('\n').join('<br>').replace(/@(\w+)/g,'<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
+        const html=formatComment(c.comment);
         return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
           +'<div class="user-av" style="background:'+col+';font-size:10px;flex-shrink:0;margin-top:1px">'+init+'</div>'
           +'<div style="flex:1;min-width:0">'
