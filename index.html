@@ -703,13 +703,10 @@
             <!-- Filter indicator -->
             <div id="budget-filter-indicator" style="display:none;align-items:center;gap:6px;padding:8px 12px;margin-bottom:12px;background:rgba(69,115,210,.07);border:1px solid rgba(69,115,210,.2);border-radius:8px;font-size:12px;color:#4573d2"></div>
             <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
-              <div style="display:grid;grid-template-columns:2fr 100px 110px 110px 110px 90px 80px 36px;background:var(--bg-main);border-bottom:1px solid var(--border-color);padding:0 16px">
+              <div style="display:grid;grid-template-columns:1fr 120px 120px 100px 36px;background:var(--bg-main);border-bottom:1px solid var(--border-color);padding:0 16px">
                 <div style="padding:10px 8px 10px 0;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Proyecto</div>
                 <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Aprobado</div>
                 <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Comprometido</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Ejecutado</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:right">Disponible</div>
-                <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:center">Desviación</div>
                 <div style="padding:10px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);text-align:center">Estado</div>
                 <div style="padding:10px 4px"></div>
               </div>
@@ -2381,13 +2378,16 @@
       }
       container.innerHTML = data.map(c => {
         const date = new Date(c.created_at).toLocaleString('es-ES');
+        const commentHtml = esc(c.comment)
+          .split('\n').join('<br>')
+          .replace(/@([\w\.]+)/g,'<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
         return `
           <div class="theme-sidebar border rounded-lg p-3 space-y-1">
             <div class="flex items-center justify-between">
               <span class="text-[11px] font-bold theme-text">${esc(c.author)}</span>
               <span class="text-[10px] theme-text-muted font-mono">${date}</span>
             </div>
-            <div class="text-xs theme-text whitespace-pre-wrap leading-relaxed">${esc(c.comment)}</div>
+            <div style="font-size:12px;color:var(--text-main);line-height:1.6;word-break:break-word">${commentHtml}</div>
           </div>`;
       }).join('');
     }
@@ -2973,7 +2973,7 @@
         const date=new Date(c.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
         const init=c.author.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
         const col=colors[c.author.charCodeAt(0)%colors.length];
-        const html=esc(c.comment).replace(/@(\w+)/g,'<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
+        const html=esc(c.comment).split('\n').join('<br>').replace(/@(\w+)/g,'<span style="color:#4573d2;font-weight:600;background:rgba(69,115,210,0.08);padding:1px 4px;border-radius:3px">@$1</span>');
         return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
           +'<div class="user-av" style="background:'+col+';font-size:10px;flex-shrink:0;margin-top:1px">'+init+'</div>'
           +'<div style="flex:1;min-width:0">'
@@ -3103,7 +3103,7 @@
       const gdS=gd===null?'—':(gd>0?'+':'')+gd+'%';
       const gdC=gd===null?'var(--text-muted)':Math.abs(gd)<=5?'#059669':Math.abs(gd)<=15?'#b45309':'#ef4444';
       const ks=document.getElementById('budget-kpi-strip');
-      if(ks)ks.innerHTML=[{l:'Aprobado total',v:fmtEurK(ta),c:'#059669'},{l:'Comprometido',v:fmtEurK(tc),c:'#4573d2'},{l:'Ejecutado',v:fmtEurK(te),c:'#f59e0b'},{l:'Disponible',v:fmtEurK(av),c:av<0?'#ef4444':'#64748b'},{l:'Desviación global',v:gdS,c:gdC}]
+      if(ks)ks.innerHTML=[{l:'Aprobado total',v:fmtEurK(ta),c:'#059669'},{l:'Comprometido',v:fmtEurK(tc),c:'#4573d2'},{l:'% comprometido',v:ta?Math.round(tc/ta*100)+'%':'—',c:ta&&tc/ta>1?'#ef4444':'#4573d2'},{l:'Sin presupuesto',v:String(ps.filter(p=>!PROJECT_BUDGETS.find(b=>b.proj===p)).length),c:'#64748b'}]
         .map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:8px;padding:12px 14px"><div style="font-size:18px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:3px">${k.v}</div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">${k.l}</div></div>`).join('');
       const tb=document.getElementById('budget-table-body');if(!tb)return;
       if(!ps.length){tb.innerHTML=`<div style="padding:32px;text-align:center;font-size:13px;color:var(--text-muted)">${hasFilter?'Ningún proyecto coincide con los filtros activos. <button onclick="clearFilters()" style="color:#4573d2;background:none;border:none;cursor:pointer;font-size:13px;text-decoration:underline">Limpiar filtros</button>':'No hay proyectos todavía.'}</div>`;return;}
@@ -3114,23 +3114,17 @@
         const done=tasks.filter(t=>t.status==='Completado').length;
         const pct=tasks.length?Math.round(done/tasks.length*100):0;
         const taskInfo=tasks.length?`${cat} · ${pct}% completado · ${tasks.length} tareas`:`<em style="color:var(--text-muted)">Sin tareas en el planificador</em>`;
-        const ap=bud?.approved||0,cm=bud?.committed||0,ex=bud?.executed||0,av2=ap-ex;
-        const dev=devPct(ap,ex);const devS=dev===null?'—':(dev>0?'+':'')+dev+'%';
-        const devC=dev===null?'var(--text-muted)':Math.abs(dev)<=5?'#059669':Math.abs(dev)<=15?'#b45309':'#ef4444';
+        const ap=bud?.approved||0,cm=bud?.committed||0;
         // Estado administrativo (elegido manualmente)
         const adminSt=bud?.financial_status||'En preparación';
         const adminSty=FIN_STATUS_STYLE[adminSt]||FIN_STATUS_STYLE['En preparación'];
-        const bar=ap>0?`<div style="margin-top:4px;height:3px;background:var(--border-color);border-radius:999px;overflow:hidden"><div style="height:100%;width:${Math.min(100,Math.round(ex/ap*100))}%;background:${devC};border-radius:999px"></div></div>`:'';
-        return`<div style="display:grid;grid-template-columns:2fr 100px 110px 110px 110px 90px 80px 36px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border-color);transition:background .1s" onmouseover="this.style.background='rgba(0,0,0,.02)'" onmouseout="this.style.background='transparent'">
+        return`<div style="display:grid;grid-template-columns:1fr 120px 120px 100px 36px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border-color);transition:background .1s" onmouseover="this.style.background='rgba(0,0,0,.02)'" onmouseout="this.style.background='transparent'">
           <div style="padding-right:12px;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px"><span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span><span style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(proj)}</span></div>
-            <div style="font-size:10px;color:var(--text-muted)">${taskInfo}</div>${bar}
+            <div style="font-size:10px;color:var(--text-muted)">${taskInfo}</div>
           </div>
           <div style="text-align:right;font-size:13px;font-family:monospace;color:${ap?'#059669':'var(--text-muted)'}">${fmtEurK(ap)}</div>
           <div style="text-align:right;font-size:13px;font-family:monospace;color:${cm?'#4573d2':'var(--text-muted)'}">${fmtEurK(cm)}</div>
-          <div style="text-align:right;font-size:13px;font-family:monospace;color:${ex?'#f59e0b':'var(--text-muted)'}">${fmtEurK(ex)}</div>
-          <div style="text-align:right;font-size:13px;font-family:monospace;color:${av2<0?'#ef4444':'var(--text-muted)'}">${ap?fmtEurK(av2):'—'}</div>
-          <div style="text-align:center"><span style="font-size:12px;font-weight:700;color:${devC};font-family:monospace">${devS}</span></div>
           <div style="display:flex;justify-content:center"><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:999px;background:${adminSty.bg};color:${adminSty.color};border:1px solid ${adminSty.border};white-space:nowrap">${adminSt}</span></div>
           <div style="display:flex;justify-content:center"><button onclick="openBudgetModal('${esc(proj).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}',${bud?.id||'null'})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:4px" title="Editar"><i data-lucide="pencil" style="width:13px;height:13px"></i></button></div>
         </div>`;
@@ -3219,9 +3213,7 @@
         <th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);position:sticky;left:0;z-index:2;min-width:150px">Categoría</th>`;
       for(let m=1;m<=12;m++){const t=mt[m];const pct=tp?Math.round(t/tp*100):0;const h=pct>20;html+=`<th style="text-align:center;padding:8px 4px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:76px"><div style="color:${h?'#ef4444':'var(--text-muted)'}">${MONTHS_ES[m-1]}</div><div style="font-size:9px;font-weight:600;color:${h?'#ef4444':'var(--text-muted)'};margin-top:2px">${fmtEurK(t)}</div></th>`;}
       html+=`<th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px">Total</th>
-              <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4573d2;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px;border-left:2px solid var(--border-color)">Comprometido</th>
-              <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#f59e0b;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:80px">Ejecutado</th>
-              <th style="text-align:center;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:90px">Vs maestro</th>
+              <th style="text-align:right;padding:8px 10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#4573d2;background:var(--bg-panel);border-bottom:2px solid var(--border-color);min-width:90px;border-left:2px solid var(--border-color)">Comprometido</th>
               </tr></thead><tbody>`;
 
       BUDGET_CATS.forEach(cat=>{
@@ -3245,29 +3237,15 @@
           html+=`<td style="padding:0;text-align:center;background:${bg};cursor:pointer;transition:background .1s" onclick="openAnnualCellModal('${k.replace(/'/g,"\\'")}','${cat.replace(/'/g,"\\'")}',${m},${year},${pl},${ex2},'${(cell.notes||'').replace(/'/g,"\\'")}')" onmouseover="this.style.outline='2px solid #4573d2'" onmouseout="this.style.outline='none'" title="${esc(cat)} · ${MONTHS_FULL[m-1]} · Previsto: ${fmtEur(pl)}"><div style="padding:6px 4px">${pl?`<div style="font-size:11px;font-weight:600;color:var(--text-main);font-family:monospace">${fmtEurK(pl)}</div>`:'<div style="font-size:11px;color:var(--border-color)">—</div>'}${ex2?`<div style="font-size:9px;color:var(--text-muted);font-family:monospace">${fmtEurK(ex2)}</div>`:''}</div></td>`;
         }
         html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;font-weight:600;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(rt)}</td>`;
-        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;color:${committed?'#4573d2':'var(--text-muted)'};font-family:monospace;border-left:2px solid var(--border-color)">${fmtEurK(committed)||'—'}</td>`;
-        html+=`<td style="text-align:right;padding:6px 10px;font-size:12px;color:${executed?'#f59e0b':'var(--text-muted)'};font-family:monospace">${fmtEurK(executed)||'—'}</td>`;
-        html+=`<td style="text-align:center;padding:6px 10px">`;
-        if(rt>0){
-          html+=`<div style="font-size:11px;font-weight:700;color:${vsColor};font-family:monospace;margin-bottom:3px">${vsLabel}</div>`;
-          html+=`<div style="height:4px;background:var(--bg-main);border-radius:999px;overflow:hidden;width:100%"><div style="height:100%;width:${barPct}%;background:${barColor};border-radius:999px"></div></div>`;
-        } else {
-          html+=`<span style="font-size:11px;color:var(--text-muted)">Sin maestro</span>`;
-        }
-        html+=`</td></tr>`;
+        html+=`<td style="text-align:right;padding:6px 10px;font-size:13px;font-weight:600;color:${committed?'#4573d2':'var(--text-muted)'};font-family:monospace;border-left:2px solid var(--border-color)">${committed?fmtEurK(committed):'—'}</td>`;
+        html+=`</tr>`;
       });
 
       html+=`<tr style="background:var(--bg-main);border-top:2px solid var(--border-color)"><td style="padding:8px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-muted);background:var(--bg-main);position:sticky;left:0;z-index:1;border-right:1px solid var(--border-color)">TOTAL MENSUAL</td>`;
       for(let m=1;m<=12;m++){const t=mt[m];const pct=tp?Math.round(t/tp*100):0;const h=pct>20;html+=`<td style="text-align:center;padding:8px 4px"><div style="font-size:12px;font-weight:700;color:${h?'#ef4444':'var(--text-main)'};font-family:monospace">${t?fmtEurK(t):'—'}</div>${t?`<div style="font-size:9px;color:${h?'#ef4444':'var(--text-muted)'}">${pct}%</div>`:''}</td>`;}
       const totalCommitted=BUDGET_CATS.reduce((a,c)=>a+(projCommitted[c]||0),0);
-      const totalExecuted=BUDGET_CATS.reduce((a,c)=>a+(projExecuted[c]||0),0);
-      const totalUsed=Math.max(totalCommitted,totalExecuted);
-      const totalVsPct=tp>0?Math.round((totalUsed-tp)/tp*100):null;
-      const totalVsColor=totalVsPct===null?'var(--text-muted)':totalVsPct>15?'#ef4444':totalVsPct>0?'#b45309':'#059669';
       html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:var(--text-main);font-family:monospace;border-left:1px solid var(--border-color)">${fmtEurK(tp)}</td>`;
-      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:#4573d2;font-family:monospace;border-left:2px solid var(--border-color)">${fmtEurK(totalCommitted)||'—'}</td>`;
-      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:#f59e0b;font-family:monospace">${fmtEurK(totalExecuted)||'—'}</td>`;
-      html+=`<td style="text-align:center;padding:8px 10px;font-size:13px;font-weight:700;color:${totalVsColor};font-family:monospace">${totalVsPct!==null?(totalVsPct>0?'+':'')+totalVsPct+'%':'—'}</td>`;
+      html+=`<td style="text-align:right;padding:8px 10px;font-size:13px;font-weight:700;color:${totalCommitted?'#4573d2':'var(--text-muted)'};font-family:monospace;border-left:2px solid var(--border-color)">${totalCommitted?fmtEurK(totalCommitted):'—'}</td>`;
       html+=`</tr></tbody></table>`;
       grid.innerHTML=html;
       renderAnnualAlerts(mt,tp,year,projCommitted,projExecuted);
@@ -3359,13 +3337,15 @@
       });
 
       const ek=document.getElementById('exec-kpis');
+      const pctCommitted=totalMaster?Math.round(tc/totalMaster*100):0;
+      const noBudget=[...new Set(TASKS.map(t=>t.proj))].filter(p=>!PROJECT_BUDGETS.find(b=>b.proj===p)).length;
       if(ek)ek.innerHTML=[
-        {l:'Presupuesto maestro anual',v:fmtEur(totalMaster),c:'#059669',s:`Vista anual ${year} — techo por CECO`},
-        {l:'Comprometido en proyectos',v:fmtEur(tc),c:'#4573d2',s:totalMaster?Math.round(tc/totalMaster*100)+'% del presupuesto maestro':''},
-        {l:'Ejecutado en proyectos',v:fmtEur(te),c:'#f59e0b',s:totalMaster?Math.round(te/totalMaster*100)+'% del presupuesto maestro':''},
-        {l:'Presupuesto individual aprobado',v:fmtEur(ta),c:'#6366f1',s:'Suma de proyectos con presupuesto asignado'},
-        {l:'Ferias y Eventos activos',v:String(ae),c:'#f97316',s:'en curso o planificación'},
-        {l:'Proyectos con desviación',v:String(dl2),c:dl2>0?'#ef4444':'#059669',s:dl2>0?'Desviados o en riesgo':'Todo en orden'}
+        {l:'Presupuesto maestro anual',v:fmtEur(totalMaster),c:'#059669',s:`Techo aprobado por CECO · ${year}`},
+        {l:'Comprometido en proyectos',v:fmtEur(tc),c:'#4573d2',s:totalMaster?pctCommitted+'% del presupuesto maestro':'Sin maestro definido'},
+        {l:'Disponible (maestro − comprometido)',v:fmtEur(totalMaster-tc),c:totalMaster-tc<0?'#ef4444':'#64748b',s:totalMaster-tc<0?'⚠️ Comprometido supera el maestro':'Margen disponible'},
+        {l:'Proyectos sin presupuesto',v:String(noBudget),c:noBudget>0?'#f59e0b':'#059669',s:noBudget>0?'Proyectos activos sin importe asignado':'Todos con presupuesto'},
+        {l:'Ferias y Eventos activos',v:String(ae),c:'#f97316',s:'en curso o en planificación'},
+        {l:'Presupuesto individual aprobado',v:fmtEur(ta),c:'#6366f1',s:'Suma de proyectos con presupuesto asignado'}
       ].map(k=>`<div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:16px 18px"><div style="font-size:22px;font-weight:700;color:${k.c};font-family:monospace;margin-bottom:4px">${k.v}</div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-bottom:2px">${k.l}</div><div style="font-size:11px;color:var(--text-muted)">${k.s}</div></div>`).join('');
 
       // CECO tracking: master vs projects
@@ -3448,11 +3428,13 @@
       if(leg)leg.innerHTML=Object.entries(sc2).map(([st,cnt])=>`<div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-main)"><span style="width:10px;height:10px;border-radius:50%;background:${dc[st]};flex-shrink:0"></span><span>${st}</span><span style="font-weight:700;font-family:monospace;margin-left:auto">${cnt}</span></div>`).join('');
       const al=document.getElementById('exec-alerts-list');
       const ac=document.getElementById('exec-alerts-count');
-      const ap2=PROJECT_BUDGETS.filter(b=>{const s=autoFinStatus(b.approved,b.committed,b.executed);return s==='Desviado'||s==='En riesgo';});
-      if(ac)ac.textContent=ap2.length?ap2.length+' alerta'+(ap2.length>1?'s':''):'';
+      // Proyectos sin presupuesto asignado
+      const allProjsExec=[...new Set(TASKS.map(t=>t.proj))];
+      const noBudgetProjs=allProjsExec.filter(p=>!PROJECT_BUDGETS.find(b=>b.proj===p));
+      if(ac)ac.textContent=noBudgetProjs.length?noBudgetProjs.length+' proyecto'+(noBudgetProjs.length>1?'s':''):'';
       if(al){
-        if(!ap2.length){al.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted)">No hay alertas de gasto activas.</div>';}
-        else{al.innerHTML=ap2.map(b=>{const d=devPct(b.approved,b.executed);const devSt=autoFinStatus(b.approved,b.committed,b.executed);const sty=DEV_STATUS_STYLE[devSt]||DEV_STATUS_STYLE['Sin datos'];const adminSt2=b.financial_status||'En preparación';const adminSty2=FIN_STATUS_STYLE[adminSt2]||FIN_STATUS_STYLE['En preparación'];return`<div style="display:grid;grid-template-columns:2fr 90px 90px 70px 90px 80px;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;background:var(--bg-main);border:1px solid var(--border-color)"><div style="font-size:13px;font-weight:500;color:var(--text-main)">${esc(b.proj)}</div><div style="text-align:right;font-size:12px;font-family:monospace;color:#059669">${fmtEurK(b.approved)}</div><div style="text-align:right;font-size:12px;font-family:monospace;color:#f59e0b">${fmtEurK(b.executed)}</div><div style="text-align:center;font-size:12px;font-weight:700;color:${sty.color};font-family:monospace">${d!==null?(d>0?'+':'')+d+'%':'—'}</div><div style="display:flex;justify-content:center"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:${sty.bg};color:${sty.color};border:1px solid ${sty.border}">${devSt}</span></div><div style="display:flex;justify-content:center"><span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:${adminSty2.bg};color:${adminSty2.color};border:1px solid ${adminSty2.border}">${adminSt2}</span></div></div>`;}).join('');}
+        if(!noBudgetProjs.length){al.innerHTML='<div style="padding:16px;text-align:center;font-size:12px;color:var(--text-muted)">✓ Todos los proyectos tienen presupuesto asignado.</div>';}
+        else{al.innerHTML=noBudgetProjs.sort().map(p=>{const tasks=TASKS.filter(t=>t.proj===p);const cat=tasks[0]?.cat||'—';const catC=CAT_COLOR[cat]||CAT_COLOR.default;return`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg-main);border:1px solid var(--border-color)"><span style="width:8px;height:8px;border-radius:50%;background:${catC};flex-shrink:0"></span><div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text-main)">${esc(p)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(cat)} · ${tasks.length} tareas</div></div><span style="font-size:10px;color:#b45309;background:rgba(245,158,11,.1);padding:2px 8px;border-radius:999px;border:1px solid rgba(245,158,11,.25)">Sin presupuesto</span></div>`;}).join('');}
       }
     }
 
@@ -3593,17 +3575,7 @@
             <input id="bm-committed" type="number" min="0" step="100" placeholder="0"
               style="width:100%;background:var(--bg-panel);border:1px solid #bfdbfe;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
           </div>
-          <div>
-            <label style="display:block;font-size:11px;font-weight:600;color:#f59e0b;margin-bottom:5px">Ejecutado / Facturado (€)</label>
-            <input id="bm-executed" type="number" min="0" step="100" placeholder="0"
-              style="width:100%;background:var(--bg-panel);border:1px solid #fde68a;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-          </div>
-          <div style="display:flex;flex-direction:column;justify-content:flex-end">
-            <div style="padding:10px;background:rgba(69,115,210,.05);border:1px solid rgba(69,115,210,.15);border-radius:7px;text-align:center">
-              <div style="font-size:18px;font-weight:700;color:var(--text-main)" id="bm-dev-val">—</div>
-              <div style="font-size:10px;color:var(--text-muted)">Desviación s/ aprobado</div>
-            </div>
-          </div>
+          <input type="hidden" id="bm-executed" value="0">
         </div>
         <div>
           <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Notas</label>
@@ -3636,11 +3608,7 @@
           <input id="acm-planned" type="number" min="0" step="100" placeholder="0"
             style="width:100%;background:var(--bg-main);border:1px solid #a7f3d0;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
         </div>
-        <div>
-          <label style="display:block;font-size:11px;font-weight:600;color:#f59e0b;margin-bottom:4px">Ejecutado (€)</label>
-          <input id="acm-executed" type="number" min="0" step="100" placeholder="0"
-            style="width:100%;background:var(--bg-main);border:1px solid #fde68a;border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-        </div>
+        <input type="hidden" id="acm-executed" value="0">
         <div>
           <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Notas</label>
           <input id="acm-notes" type="text" placeholder="Observación..."
