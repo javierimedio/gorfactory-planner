@@ -2435,7 +2435,11 @@
       if (!file) return;
 
       try {
-        const filePath = `${editId}/${Date.now()}_${file.name}`;
+        // Sanitizar el nombre del archivo: reemplazar espacios y caracteres especiales
+        const safeName = file.name
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quitar tildes
+          .replace(/[^a-zA-Z0-9._-]/g, '_');               // reemplazar todo lo demás por _
+        const filePath = `${editId}/${Date.now()}_${safeName}`;
         const { error: uploadError } = await supabaseClient.storage.from('task-files').upload(filePath, file);
         if (uploadError) { alert('Error al subir: ' + uploadError.message); return; }
 
@@ -3638,12 +3642,4 @@
         </div>
         <input type="hidden" id="acm-key">
         <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
-          <button onclick="closeAnnualCellModal()" style="padding:6px 14px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px;cursor:pointer">Cancelar</button>
-          <button onclick="saveAnnualCell()" style="padding:6px 16px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Guardar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</body>
-</html>
+          <button onclick="closeAnnualCellModal()" style="padding:6px 14px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px
