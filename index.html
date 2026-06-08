@@ -3917,19 +3917,32 @@
       const tlInner = document.getElementById('tl-inner');
       if (!tlInner) return;
 
-      // Build map: task_id → actual DOM element in tlInner (dep-task-row)
+      // Build map: task_id → actual DOM gTask element
       const taskRowEls = {};
       tlInner.querySelectorAll('.dep-task-row').forEach(el => {
         const tid = parseInt(el.dataset.taskId);
         if (tid) taskRowEls[tid] = el;
       });
 
+      if (!Object.keys(taskRowEls).length) return;
+
+      // rowsDiv sits after the 3 sticky header rows (month 32 + week 24 + days 24 = 80px)
+      // Try to find it, fallback to 80px
+      let rowsDivTop = 80;
+      const allDivs = tlInner.querySelectorAll(':scope > div');
+      // The rowsDiv is the last direct child div (after month, week, day header divs)
+      if (allDivs.length >= 4) {
+        rowsDivTop = allDivs[3].offsetTop || 80;
+      } else if (allDivs.length > 0) {
+        rowsDivTop = allDivs[allDivs.length - 1].offsetTop || 80;
+      }
+
       const totalW = CAL.days.length * DAY_W;
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.id = 'dep-arrows-svg';
       svg.setAttribute('width', totalW);
-      svg.setAttribute('height', tlInner.scrollHeight || 2000);
-      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:5;overflow:visible';
+      svg.setAttribute('height', (rowsDivTop + (rowsDiv?.offsetHeight || 2000)));
+      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:20;overflow:visible';
 
       // Arrow markers
       const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -3952,37 +3965,38 @@
       let hasArrows = false;
 
       ALL_DEPENDENCIES.forEach(dep => {
-        const fromEl = taskRowEls[dep.task_id];       // the dependent task row
-        const toEl   = taskRowEls[dep.depends_on_id]; // the predecessor row
+        const fromEl = taskRowEls[dep.task_id];       // dependent task (starts after)
+        const toEl   = taskRowEls[dep.depends_on_id]; // predecessor task (must finish first)
         if (!fromEl || !toEl) return;
 
         const fromTask = TASKS.find(t => t.id === dep.task_id);
         const toTask   = TASKS.find(t => t.id === dep.depends_on_id);
         if (!fromTask || !toTask) return;
+        if (!fromTask.start || !toTask.end) return;
 
-        // Get actual Y positions from DOM
-        const y1 = toEl.offsetTop   + ROW_H / 2;
-        const y2 = fromEl.offsetTop + ROW_H / 2;
+        // Y: offsetTop within rowsDiv + rowsDivTop (header height) + half row height
+        const y1 = rowsDivTop + toEl.offsetTop   + ROW_H / 2; // predecessor center
+        const y2 = rowsDivTop + fromEl.offsetTop + ROW_H / 2; // dependent center
 
-        // X: end of predecessor bar → start of dependent bar
-        const toEndIdx   = toTask.end   ? Math.min(CAL.days.findIndex(d => d.getTime() >= toTask.end.getTime()),   CAL.days.length - 1) : -1;
-        const fromStIdx  = fromTask.start ? Math.min(CAL.days.findIndex(d => d.getTime() >= fromTask.start.getTime()), CAL.days.length - 1) : -1;
+        // X: right edge of predecessor bar → left edge of dependent bar
+        const toEndIdx  = CAL.days.findIndex(d => d.getTime() >= toTask.end.getTime());
+        const fromStIdx = CAL.days.findIndex(d => d.getTime() >= fromTask.start.getTime());
         if (toEndIdx < 0 || fromStIdx < 0) return;
 
-        const x1 = (toEndIdx + 1) * DAY_W;        // right edge of predecessor bar
-        const x2 = Math.max(2, fromStIdx * DAY_W); // left edge of dependent bar
+        const x1 = Math.min(toEndIdx + 1, CAL.days.length - 1) * DAY_W; // end of predecessor
+        const x2 = Math.max(2, fromStIdx * DAY_W);                        // start of dependent
 
         const isBlocks = dep.type === 'blocks';
         const color = isBlocks ? '#ef4444' : '#f59e0b';
 
-        // Elbow path: right → vertical → left with arrow
-        const elbowX = x1 + Math.max(8, Math.abs(x2 - x1) * 0.4);
+        // Elbow: right → down/up → left with arrow tip
+        const elbowX = x1 + 12;
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', `M${x1},${y1} L${elbowX},${y1} L${elbowX},${y2} L${x2},${y2}`);
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke', color);
         path.setAttribute('stroke-width', '1.5');
-        path.setAttribute('stroke-opacity', isBlocks ? '0.75' : '0.55');
+        path.setAttribute('stroke-opacity', isBlocks ? '0.8' : '0.6');
         if (!isBlocks) path.setAttribute('stroke-dasharray', '5 3');
         path.setAttribute('marker-end', `url(#arrow-${isBlocks ? 'blocks' : 'related'})`);
         svg.appendChild(path);
