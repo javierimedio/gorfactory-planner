@@ -598,6 +598,7 @@
                 <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase flex-1">Tarea</span>
                 <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[90px] text-center shrink-0">Responsable</span>
                 <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[110px] text-center shrink-0">Estado</span>
+                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[70px] text-center shrink-0">Prioridad</span>
                 <button onclick="toggleSort('start')" class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0 hover:text-blue-500 transition-all">
                   Inicio <span id="sort-start">↕</span>
                 </button>
@@ -1900,7 +1901,7 @@
         const sbProj = document.createElement('div');
         sbProj.className = 'flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
         sbProj.style.backgroundColor = 'var(--bg-main)';
-        sbProj.innerHTML = `<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
+        sbProj.innerHTML = `<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[70px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
         sbProj.onclick = () => { expanded[proj.name] = !isOpen; render(); };
         sbRows.appendChild(sbProj);
 
@@ -1930,6 +1931,9 @@
               <span class="w-[90px] text-center shrink-0 text-[9px] theme-text-muted opacity-80 truncate font-mono px-1">${esc(task.resp)}</span>
               <div class="w-[110px] flex justify-center shrink-0 px-1">
                 <span class="text-[9px] px-1.5 py-0.5 rounded font-medium shadow-sm truncate max-w-full" style="color:${sc};background:${sb};border:0.5px solid ${sc}44">${esc(task.status)}</span>
+              </div>
+              <div class="w-[70px] flex justify-center shrink-0 px-1">
+                <span class="text-[9px] px-1.5 py-0.5 rounded font-medium" style="color:${PRIO_COLOR[task.prio]||'#64748b'};background:${PRIO_COLOR[task.prio]||'#64748b'}18;border:0.5px solid ${PRIO_COLOR[task.prio]||'#64748b'}44">${esc(task.prio)}</span>
               </div>
               <span class="w-[72px] text-center shrink-0 font-mono text-[9px] ${isOv?'text-red-500':'theme-text-muted'}">${fmtShort(task.start)}</span>
               <span class="w-[72px] text-center shrink-0 font-mono text-[9px] ${isOv?'text-red-500 font-bold':'theme-text-muted'}">${fmtShort(task.end)}</span>
