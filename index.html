@@ -886,8 +886,13 @@
           </div>
         </div>
 
-        <!-- Notas ocultas -->
-        <textarea id="m-notes" oninput="queueAutosave()" style="display:none"></textarea>
+        <!-- Notas / Descripción -->
+        <div>
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Descripción / Notas</label>
+          <textarea id="m-notes" rows="3" oninput="queueAutosave()" placeholder="Añade una descripción o contexto de la tarea..."
+            style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;transition:border-color .15s;line-height:1.5"
+            onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+        </div>
 
         <!-- Adjuntos -->
         <div style="padding-top:12px;border-top:1px solid var(--border-color)">
