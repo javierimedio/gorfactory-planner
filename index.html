@@ -106,8 +106,8 @@
       width: 6px; height: 6px; border-radius: 50%;
       background: #10b981; animation: pulse-dot 1.8s infinite;
     }
-    @keyframes pulse-dot {
-      0%,100%{ opacity:1; transform:scale(1); }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    @keyframes pulse-dot {      0%,100%{ opacity:1; transform:scale(1); }
       50%{ opacity:0.5; transform:scale(0.7); }
     }
     .ftype-excel { color: #16a34a; }
@@ -799,7 +799,7 @@
         <div>
           <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Nombre del Proyecto</label>
           <input id="m-proj" type="text" list="project-list" placeholder="Selecciona o escribe un proyecto"
-            oninput="autocompleteProjCategory(this.value)"
+            oninput="autocompleteProjCategory(this.value); queueAutosave()"
             style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
             onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           <datalist id="project-list"></datalist>
@@ -809,6 +809,7 @@
         <div>
           <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Nombre de la Tarea u Operación</label>
           <input id="m-task" type="text" placeholder="Ej: Maquetación preliminar"
+            oninput="queueAutosave()"
             style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
             onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
         </div>
@@ -818,12 +819,13 @@
           <div>
             <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Responsable</label>
             <input id="m-resp" type="text" placeholder="Ej: Lorenzo G."
+              oninput="queueAutosave()"
               style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
               onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
           <div>
             <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Categoría</label>
-            <select id="m-cat" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
+            <select id="m-cat" onchange="queueAutosaveImmediate()" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
               <option value="Catálogos">Catálogos</option>
               <option value="Ferias">Ferias</option>
               <option value="Web/Digital">Web/Digital</option>
@@ -840,13 +842,13 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
             <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Fecha Inicio</label>
-            <input id="m-start" type="date"
+            <input id="m-start" type="date" onchange="queueAutosaveImmediate()"
               style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
               onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
           <div>
             <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Fecha Fin</label>
-            <input id="m-end" type="date"
+            <input id="m-end" type="date" onchange="queueAutosaveImmediate()"
               style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s"
               onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
           </div>
@@ -856,7 +858,7 @@
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
             <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Estado Actual</label>
-            <select id="m-status" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
+            <select id="m-status" onchange="queueAutosaveImmediate()" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
               <option value="Sin comenzar">Sin comenzar</option>
               <option value="En planificación">En planificación</option>
               <option value="En curso">En curso</option>
@@ -868,7 +870,7 @@
           </div>
           <div>
             <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:5px">Prioridad</label>
-            <select id="m-prio" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
+            <select id="m-prio" onchange="queueAutosaveImmediate()" style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit;transition:border-color .15s" onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
               <option value="Baja">Baja</option>
               <option value="Media">Media</option>
               <option value="Alta">Alta</option>
@@ -878,7 +880,7 @@
         </div>
 
         <!-- Notas ocultas -->
-        <textarea id="m-notes" style="display:none"></textarea>
+        <textarea id="m-notes" oninput="queueAutosave()" style="display:none"></textarea>
 
         <!-- Adjuntos -->
         <div style="padding-top:12px;border-top:1px solid var(--border-color)">
@@ -931,22 +933,19 @@
       </div><!-- /body -->
 
       <!-- Footer -->
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px 16px;border-top:1px solid var(--border-color)">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px 14px;border-top:1px solid var(--border-color)">
         <button id="btn-delete" onclick="deleteTask()"
           style="display:none;padding:6px 14px;border-radius:7px;background:rgba(239,68,68,.08);color:#ef4444;border:1px solid rgba(239,68,68,.2);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s"
           onmouseover="this.style.background='#ef4444';this.style.color='white'" onmouseout="this.style.background='rgba(239,68,68,.08)';this.style.color='#ef4444'">
           Eliminar
         </button>
+        <!-- Autosave status -->
+        <div id="autosave-status" style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);opacity:0;transition:opacity .3s"></div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
           <button id="btn-modal-cancel" onclick="closeModal()"
             style="padding:6px 16px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s"
             onmouseover="this.style.borderColor='#4573d2';this.style.color='#4573d2'" onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-main)'">
-            Cancelar
-          </button>
-          <button id="btn-modal-save" onclick="saveModal()"
-            style="padding:6px 18px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s"
-            onmouseover="this.style.background='#3a64c3'" onmouseout="this.style.background='#4573d2'">
-            Guardar
+            Cerrar
           </button>
         </div>
       </div>
@@ -2238,7 +2237,7 @@
       document.getElementById('m-cat').value    = 'Catálogos';
       document.getElementById('m-notes').value  = '';
       document.getElementById('btn-delete').style.display = 'none';
-      document.getElementById('btn-modal-save').style.display = 'block';
+      document.getElementById('autosave-status').style.opacity = '0';
       document.getElementById('task-files').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin adjuntos todavía</div>';
       document.getElementById('task-comments').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin comentarios todavía</div>';
       toggleModalInputs(false);
@@ -2264,14 +2263,14 @@
       if (isEditModeActive) {
         document.getElementById('modal-title').textContent = 'Modificar Planificación';
         document.getElementById('btn-delete').style.display = 'block';
-        document.getElementById('btn-modal-save').style.display = 'block';
-        document.getElementById('btn-modal-cancel').textContent = 'Cancelar';
+        document.getElementById('btn-modal-cancel').textContent = 'Cerrar';
+        document.getElementById('autosave-status').style.opacity = '0';
         toggleModalInputs(false);
       } else {
         document.getElementById('modal-title').textContent = 'Detalles de la Tarea (Solo Lectura)';
         document.getElementById('btn-delete').style.display = 'none';
-        document.getElementById('btn-modal-save').style.display = 'none';
         document.getElementById('btn-modal-cancel').textContent = 'Cerrar';
+        document.getElementById('autosave-status').style.opacity = '0';
         toggleModalInputs(true);
       }
       _openModalOverlay();
@@ -2303,40 +2302,111 @@
       });
     }
 
-    async function saveModal() {
-      if (!isEditModeActive) return;
+    // ── AUTOGUARDADO ──────────────────────────────────────────
+    let _autoSaveTimer = null;
+
+    function showAutosaveStatus(state) {
+      const el = document.getElementById('autosave-status');
+      if (!el) return;
+      if (state === 'saving') {
+        el.innerHTML = '<i data-lucide="loader-2" style="width:12px;height:12px;animation:spin 1s linear infinite"></i> Guardando...';
+        el.style.color = 'var(--text-muted)';
+        el.style.opacity = '1';
+      } else if (state === 'saved') {
+        const now = new Date();
+        const time = now.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+        const author = _currentDisplayName || 'tú';
+        el.innerHTML = `<i data-lucide="check" style="width:12px;height:12px;color:#059669"></i> <span style="color:#059669">Guardado</span> · ${time} · ${esc(author)}`;
+        el.style.opacity = '1';
+        lucide.createIcons();
+        setTimeout(() => { el.style.opacity = '0.5'; }, 3000);
+      } else if (state === 'error') {
+        el.innerHTML = '<i data-lucide="alert-circle" style="width:12px;height:12px;color:#ef4444"></i> <span style="color:#ef4444">Error al guardar</span>';
+        el.style.opacity = '1';
+        lucide.createIcons();
+      } else {
+        el.style.opacity = '0';
+      }
+    }
+
+    async function autoSaveTask() {
+      if (!isEditModeActive || !editId) return;
       const proj = document.getElementById('m-proj').value.trim();
       const task = document.getElementById('m-task').value.trim();
-      if (!proj || !task) { alert('El nombre del proyecto y la tarea son obligatorios.'); return; }
+      if (!proj || !task) return; // no guardar si faltan campos obligatorios
+
+      // Validación de fechas
+      const start = document.getElementById('m-start').value;
+      const end   = document.getElementById('m-end').value;
+      if (start && end && start > end) return;
 
       const payload = {
         proj, task,
-        resp:       document.getElementById('m-resp').value.trim()   || '—',
-        start_date: document.getElementById('m-start').value         || null,
-        end_date:   document.getElementById('m-end').value           || null,
+        resp:       document.getElementById('m-resp').value.trim()  || '—',
+        start_date: start || null,
+        end_date:   end   || null,
         status:     document.getElementById('m-status').value,
         prio:       document.getElementById('m-prio').value,
         cat:        document.getElementById('m-cat').value,
-        notes:      document.getElementById('m-notes').value.trim()  || null
+        notes:      document.getElementById('m-notes').value.trim() || null,
+        updated_at: new Date().toISOString(),
+        updated_by: _currentDisplayName || null
       };
 
-      // Validación de fechas
-      if (payload.start_date && payload.end_date && payload.start_date > payload.end_date) {
-        alert('La fecha de inicio no puede ser posterior a la fecha de fin.');
-        return;
-      }
-
+      showAutosaveStatus('saving');
       try {
-        if (editId) {
-          const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
-          if (error) throw error;
-        } else {
-          const { error } = await supabaseClient.from('tareas').insert([payload]);
-          if (error) throw error;
-        }
+        const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
+        if (error) throw error;
+        showAutosaveStatus('saved');
+        // Refresh visual sin cerrar modal
+        await loadTasksFromCloud();
+        refreshProjectList();
       } catch(e) {
-        alert('Error al guardar en la base de datos. Comprueba tu conexión e inténtalo de nuevo.');
-        return;
+        showAutosaveStatus('error');
+        console.error('Autosave error:', e);
+      }
+    }
+
+    function queueAutosave() {
+      if (!isEditModeActive || !editId) return;
+      clearTimeout(_autoSaveTimer);
+      showAutosaveStatus('saving');
+      _autoSaveTimer = setTimeout(autoSaveTask, 800); // 800ms de debounce para campos de texto
+    }
+
+    function queueAutosaveImmediate() {
+      if (!isEditModeActive || !editId) return;
+      clearTimeout(_autoSaveTimer);
+      _autoSaveTimer = setTimeout(autoSaveTask, 200); // 200ms para selects (casi inmediato)
+    }
+
+    async function saveModal() {
+      // Kept for compatibility with new task creation (editId = null)
+      if (!isEditModeActive) return;
+      if (editId) { await autoSaveTask(); return; }
+
+      // Nueva tarea
+      const proj = document.getElementById('m-proj').value.trim();
+      const task = document.getElementById('m-task').value.trim();
+      if (!proj || !task) { alert('El nombre del proyecto y la tarea son obligatorios.'); return; }
+      const payload = {
+        proj, task,
+        resp:       document.getElementById('m-resp').value.trim()  || '—',
+        start_date: document.getElementById('m-start').value        || null,
+        end_date:   document.getElementById('m-end').value          || null,
+        status:     document.getElementById('m-status').value,
+        prio:       document.getElementById('m-prio').value,
+        cat:        document.getElementById('m-cat').value,
+        notes:      document.getElementById('m-notes').value.trim() || null
+      };
+      if (payload.start_date && payload.end_date && payload.start_date > payload.end_date) {
+        alert('La fecha de inicio no puede ser posterior a la fecha de fin.'); return;
+      }
+      try {
+        const { error } = await supabaseClient.from('tareas').insert([payload]);
+        if (error) throw error;
+      } catch(e) {
+        alert('Error al guardar. Comprueba tu conexión e inténtalo de nuevo.'); return;
       }
       closeModal();
       await loadTasksFromCloud();
@@ -3642,4 +3712,12 @@
         </div>
         <input type="hidden" id="acm-key">
         <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px">
-          <button onclick="closeAnnualCellModal()" style="padding:6px 14px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px
+          <button onclick="closeAnnualCellModal()" style="padding:6px 14px;border-radius:7px;background:var(--bg-main);color:var(--text-main);border:1px solid var(--border-color);font-size:12px;cursor:pointer">Cancelar</button>
+          <button onclick="saveAnnualCell()" style="padding:6px 16px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
