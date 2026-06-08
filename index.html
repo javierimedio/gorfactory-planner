@@ -2371,6 +2371,8 @@
       editId = id;
       loadComments(id);
       loadFiles(id);
+      TASK_DEPENDENCIES = [];
+      hideAddDepUI();
       loadDependencies(id);
       document.getElementById('m-proj').value   = t.proj;
       document.getElementById('m-task').value   = t.task;
@@ -3888,6 +3890,8 @@
     let TASK_DEPENDENCIES = [];
 
     async function loadDependencies(taskId) {
+      TASK_DEPENDENCIES = []; // limpiar antes de cargar
+      renderDependencies();   // mostrar vacío mientras carga
       try {
         const { data } = await supabaseClient.from('task_dependencies')
           .select('*, dep_task:depends_on_id(id,task,proj,status,end_date)').eq('task_id', taskId);
