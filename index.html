@@ -2045,7 +2045,8 @@
             sbRows.appendChild(sbTask);
 
             const gTask = document.createElement('div');
-            gTask.className = 'flex h-11 border-b theme-border opacity-80 relative';
+            gTask.className = 'flex h-11 border-b theme-border opacity-80 relative dep-task-row';
+            gTask.dataset.taskId = task.id;
             gTask.style.width = totalW + 'px';
             CAL.days.forEach(d => {
               const cell = document.createElement('div');
@@ -2080,6 +2081,8 @@
       if (ss) ss.textContent = getSortIcon('start');
       if (se) se.textContent = getSortIcon('end');
       lucide.createIcons();
+      // Draw dependency arrows after DOM is ready
+      requestAnimationFrame(drawDependencyArrows);
     }
 
     // ── KANBAN ─────────────────────────────────────────────────
@@ -3758,8 +3761,9 @@
     const _origUnlockBudget = unlockDashboard;
     unlockDashboard = async function(){
       await _origUnlockBudget();
-      const cy = populateYearSelects(); // returns current year and sets selects
-      await loadBudgetData(cy);         // pre-load with explicit year
+      const cy = populateYearSelects();
+      await loadBudgetData(cy);
+      await loadAllDependencies();
 
       // Show Vista anual y Dashboard ejecutivo solo para javierimedio@gorfactory.es
       try {
@@ -3892,6 +3896,111 @@
     // ══════════════════════════════════════════════════════════
     let TASK_DEPENDENCIES = [];
 
+    // ── GLOBAL DEPENDENCIES (for Gantt arrows) ───────────────
+    let ALL_DEPENDENCIES = []; // all deps for current visible tasks
+
+    async function loadAllDependencies() {
+      try {
+        const { data } = await supabaseClient.from('task_dependencies').select('*');
+        ALL_DEPENDENCIES = data || [];
+      } catch(e) { console.warn('loadAllDependencies:', e); }
+    }
+
+    const ROW_H = 44; // h-11 = 44px
+    const GANTT_HEADER_H = 80; // 32+24+24px headers
+
+    function drawDependencyArrows() {
+      // Remove existing overlay
+      const existing = document.getElementById('dep-arrows-svg');
+      if (existing) existing.remove();
+
+      if (!ALL_DEPENDENCIES.length) return;
+
+      const tlInner = document.getElementById('tl-inner');
+      const sbRows  = document.getElementById('sb-rows');
+      if (!tlInner || !sbRows) return;
+
+      // Build map: task_id → row index in sb-rows
+      const rowEls = sbRows.querySelectorAll('.dep-task-row');
+      const taskRowIndex = {};
+      rowEls.forEach((el, i) => {
+        const tid = parseInt(el.dataset.taskId);
+        if (tid) taskRowIndex[tid] = i;
+      });
+
+      // SVG overlay on tl-inner
+      const totalW = CAL.days.length * DAY_W;
+      const totalH = tlInner.scrollHeight || tlInner.offsetHeight;
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.id = 'dep-arrows-svg';
+      svg.setAttribute('width', totalW);
+      svg.setAttribute('height', totalH);
+      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:5;overflow:visible';
+
+      let hasArrows = false;
+
+      ALL_DEPENDENCIES.forEach(dep => {
+        const fromTask = TASKS.find(t => t.id === dep.task_id);       // the task that depends
+        const toTask   = TASKS.find(t => t.id === dep.depends_on_id); // the predecessor
+        if (!fromTask || !toTask) return;
+
+        const fromRowIdx = taskRowIndex[dep.task_id];
+        const toRowIdx   = taskRowIndex[dep.depends_on_id];
+        if (fromRowIdx === undefined || toRowIdx === undefined) return;
+
+        // X positions: end of predecessor bar → start of dependent bar
+        const toEndDay   = toTask.end   ? CAL.days.findIndex(d => d >= toTask.end)   : -1;
+        const fromStartDay = fromTask.start ? CAL.days.findIndex(d => d >= fromTask.start) : -1;
+        if (toEndDay < 0 || fromStartDay < 0) return;
+
+        const x1 = Math.min(toEndDay + 1, CAL.days.length - 1) * DAY_W; // end of predecessor
+        const x2 = Math.max(0, fromStartDay) * DAY_W + 2;               // start of dependent
+
+        // Y: center of each task row (header offset + row index * row height + half row)
+        const y1 = GANTT_HEADER_H + toRowIdx   * ROW_H + ROW_H / 2;
+        const y2 = GANTT_HEADER_H + fromRowIdx * ROW_H + ROW_H / 2;
+
+        const isBlocks = dep.type === 'blocks';
+        const color = isBlocks ? '#ef4444' : '#f59e0b';
+        const opacity = isBlocks ? '0.7' : '0.5';
+
+        // Draw path: right from x1,y1 → elbow → down/up → left to x2,y2
+        const midX = x1 + Math.max(10, (x2 - x1) / 2);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const d = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('stroke-opacity', opacity);
+        path.setAttribute('stroke-dasharray', isBlocks ? 'none' : '4 3');
+        path.setAttribute('marker-end', `url(#arrow-${isBlocks?'blocks':'related'})`);
+        svg.appendChild(path);
+        hasArrows = true;
+      });
+
+      if (!hasArrows) return;
+
+      // Arrow markers
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      ['blocks', 'related'].forEach(type => {
+        const color = type === 'blocks' ? '#ef4444' : '#f59e0b';
+        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+        marker.setAttribute('id', `arrow-${type}`);
+        marker.setAttribute('viewBox', '0 0 8 8');
+        marker.setAttribute('refX', '7'); marker.setAttribute('refY', '4');
+        marker.setAttribute('markerWidth', '6'); marker.setAttribute('markerHeight', '6');
+        marker.setAttribute('orient', 'auto-start-reverse');
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('d', 'M0,0 L8,4 L0,8 Z');
+        p.setAttribute('fill', color);
+        marker.appendChild(p);
+        defs.appendChild(marker);
+      });
+      svg.insertBefore(defs, svg.firstChild);
+      tlInner.appendChild(svg);
+    }
+
     async function loadDependencies(taskId) {
       TASK_DEPENDENCIES = [];
       renderDependencies();
@@ -3977,7 +4086,9 @@
           .insert([{ task_id: parseInt(editId), depends_on_id: parseInt(dependsOnId), type }]);
         if (error) throw error;
         hideAddDepUI();
+        await loadAllDependencies(); // refresh global for Gantt arrows
         await loadDependencies(editId);
+        requestAnimationFrame(drawDependencyArrows);
         showToast('Dependencia añadida', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -3986,7 +4097,9 @@
       try {
         const { error } = await supabaseClient.from('task_dependencies').delete().eq('id', depId);
         if (error) throw error;
+        await loadAllDependencies();
         await loadDependencies(editId);
+        requestAnimationFrame(drawDependencyArrows);
         showToast('Dependencia eliminada', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
