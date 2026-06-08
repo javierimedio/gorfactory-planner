@@ -2889,15 +2889,54 @@
     };
 
     // NOTIFICATIONS
-    let NOTIFICATIONS = [];
+    let NOTIFICATIONS = [];    // todas las notificaciones cargadas
+    let _notifTab = 'unread';  // pestaña activa: 'unread' | 'all'
     let _notifOpen = false;
+
+    // IDs de notificaciones leídas — persiste en localStorage por usuario
+    function _getReadIds() {
+      try { return new Set(JSON.parse(localStorage.getItem('gf_notif_read_' + (_currentDisplayName||'')) || '[]')); }
+      catch(e) { return new Set(); }
+    }
+    function _saveReadIds(ids) {
+      try { localStorage.setItem('gf_notif_read_' + (_currentDisplayName||''), JSON.stringify([...ids].slice(-200))); }
+      catch(e) {}
+    }
+    function _markRead(ids) {
+      const read = _getReadIds();
+      ids.forEach(id => read.add(id));
+      _saveReadIds(read);
+    }
+
+    function switchNotifTab(tab) {
+      _notifTab = tab;
+      const tabUnread = document.getElementById('notif-tab-unread');
+      const tabAll    = document.getElementById('notif-tab-all');
+      const actions   = document.getElementById('notif-actions');
+      if (tabUnread) {
+        tabUnread.style.borderBottomColor = tab === 'unread' ? '#4573d2' : 'transparent';
+        tabUnread.style.color = tab === 'unread' ? '#4573d2' : 'var(--text-muted)';
+      }
+      if (tabAll) {
+        tabAll.style.borderBottomColor = tab === 'all' ? '#4573d2' : 'transparent';
+        tabAll.style.color = tab === 'all' ? '#4573d2' : 'var(--text-muted)';
+      }
+      if (actions) actions.style.display = tab === 'unread' ? 'flex' : 'none';
+      // If switching to All and we have no data, reload first
+      if (tab === 'all' && NOTIFICATIONS.length === 0) {
+        loadNotifications();
+      } else {
+        renderNotifications();
+      }
+    }
+
     function toggleNotifPanel() {
       _notifOpen = !_notifOpen;
       const panel    = document.getElementById('notif-panel');
       const backdrop = document.getElementById('notif-backdrop');
       if (panel)    panel.classList.toggle('notif-open', _notifOpen);
       if (backdrop) backdrop.style.display = _notifOpen ? 'block' : 'none';
-      if (_notifOpen) renderNotifications();
+      if (_notifOpen) { _notifTab = 'unread'; switchNotifTab('unread'); loadNotifications(); }
     }
     function closeNotifPanel() {
       _notifOpen = false;
@@ -2906,6 +2945,7 @@
       if (panel)    panel.classList.remove('notif-open');
       if (backdrop) backdrop.style.display = 'none';
     }
+
     async function loadNotifications() {
       try {
         const me = await getCurrentDisplayName();
@@ -2922,43 +2962,78 @@
         const seen = new Set();
         NOTIFICATIONS = [...data,...actData]
           .filter(function(n){if(seen.has(n.id))return false;seen.add(n.id);return true;})
-          .sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);}).slice(0,25);
+          .sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);}).slice(0,50);
+
+        // Update badge — count unread only
+        const readIds = _getReadIds();
+        const unreadCount = NOTIFICATIONS.filter(n => !readIds.has(n.id)).length;
         const badge = document.getElementById('notif-badge');
-        if (badge) badge.style.display = NOTIFICATIONS.length ? 'block' : 'none';
+        if (badge) badge.style.display = unreadCount > 0 ? 'block' : 'none';
+        const countEl = document.getElementById('notif-unread-count');
+        if (countEl) countEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
+
         if (_notifOpen) renderNotifications();
       } catch(e) {}
     }
+
     function renderNotifications() {
       const list = document.getElementById('notif-list');
       if (!list) return;
-      if (!NOTIFICATIONS.length) {
-        list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px"><i data-lucide="bell-off" style="width:30px;height:30px;margin:0 auto 10px;display:block;opacity:0.35"></i>Sin notificaciones nuevas</div>';
+      const me = _currentDisplayName || '';
+      const readIds = _getReadIds();
+
+      const filtered = _notifTab === 'unread'
+        ? NOTIFICATIONS.filter(n => !readIds.has(n.id))
+        : NOTIFICATIONS;
+
+      if (!filtered.length) {
+        const msg = _notifTab === 'unread' ? 'No tienes notificaciones sin leer' : 'No hay notificaciones';
+        list.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px"><i data-lucide="bell-off" style="width:30px;height:30px;margin:0 auto 10px;display:block;opacity:0.35"></i>' + msg + '</div>';
         lucide.createIcons(); return;
       }
-      const me = _currentDisplayName || '';
-      list.innerHTML = NOTIFICATIONS.map(function(n) {
+
+      list.innerHTML = filtered.map(function(n) {
+        const isRead = readIds.has(n.id);
         const date = new Date(n.created_at).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
         const taskName = (n.tareas && n.tareas.task) ? n.tareas.task : 'Tarea';
         const projName = (n.tareas && n.tareas.proj) ? n.tareas.proj : '';
         const isMention = n.comment && n.comment.indexOf('@'+me) >= 0;
         const preview = n.comment.length > 80 ? n.comment.slice(0,80)+'...' : n.comment;
         const highlighted = esc(preview).replace(/@(\w+)/g,'<span style="color:#4573d2;font-weight:600">@$1</span>');
-        return '<div class="notif-item" onclick="openEdit('+n.task_id+');closeNotifPanel()">'
+        return '<div class="notif-item" style="' + (isRead ? 'opacity:0.6' : '') + '" onclick="openNotif(' + n.id + ',' + n.task_id + ')">'
           + '<div style="display:flex;gap:10px;align-items:flex-start">'
-          + '<div class="notif-dot" style="' + (!isMention?'background:#94a3b8':'') + ';margin-top:4px"></div>'
+          + '<div class="notif-dot" style="' + (isRead ? 'background:#e2e8f0;' : (!isMention?'background:#94a3b8':'')) + ';margin-top:4px;flex-shrink:0"></div>'
           + '<div style="flex:1;min-width:0">'
-          + '<div style="font-size:12.5px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(taskName) + '</div>'
-          + '<div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px">' + esc(n.author) + (isMention?' <strong>te menciono</strong>':' comento') + ' &middot; ' + esc(projName) + '</div>'
+          + '<div style="font-size:12.5px;font-weight:' + (isRead?'500':'600') + ';color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(taskName) + '</div>'
+          + '<div style="font-size:11px;color:var(--text-muted);margin:2px 0 4px">' + esc(n.author) + (isMention?' <strong>te mencionó</strong>':' comentó') + ' · ' + esc(projName) + '</div>'
           + '<div style="font-size:12px;color:var(--text-muted);font-style:italic">' + highlighted + '</div>'
           + '<div style="font-size:10px;color:var(--text-muted);margin-top:4px;opacity:0.65">' + date + '</div>'
           + '</div></div></div>';
       }).join('');
       lucide.createIcons();
     }
+
+    function openNotif(notifId, taskId) {
+      // Mark this notification as read
+      _markRead([notifId]);
+      // Refresh badge
+      const readIds = _getReadIds();
+      const unreadCount = NOTIFICATIONS.filter(n => !readIds.has(n.id)).length;
+      const badge = document.getElementById('notif-badge');
+      if (badge) badge.style.display = unreadCount > 0 ? 'block' : 'none';
+      const countEl = document.getElementById('notif-unread-count');
+      if (countEl) countEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
+      // Open task and close panel
+      openEdit(taskId);
+      closeNotifPanel();
+    }
+
     function markAllNotifsRead() {
-      NOTIFICATIONS = [];
+      _markRead(NOTIFICATIONS.map(n => n.id));
       const badge = document.getElementById('notif-badge');
       if (badge) badge.style.display = 'none';
+      const countEl = document.getElementById('notif-unread-count');
+      if (countEl) countEl.textContent = '';
       renderNotifications();
     }
     // ── BROWSER PUSH NOTIFICATIONS ────────────────────────────
@@ -3645,15 +3720,31 @@
 
   <!-- ══ NOTIFICATION PANEL ══ -->
   <div id="notif-panel">
-    <div style="padding:14px 18px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
-      <h3 style="font-size:14px;font-weight:700;color:var(--text-main);margin:0">Notificaciones</h3>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button onclick="markAllNotifsRead()" style="font-size:11.5px;color:#4573d2;background:none;border:none;cursor:pointer;font-weight:500">Marcar leídas</button>
+    <!-- Header -->
+    <div style="padding:14px 18px 0;border-bottom:1px solid var(--border-color);flex-shrink:0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 style="font-size:14px;font-weight:700;color:var(--text-main);margin:0">Notificaciones</h3>
         <button onclick="closeNotifPanel()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px">
           <i data-lucide="x" style="width:16px;height:16px"></i>
         </button>
       </div>
+      <!-- Tabs -->
+      <div style="display:flex;gap:0">
+        <button id="notif-tab-unread" onclick="switchNotifTab('unread')"
+          style="flex:1;padding:6px 0;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid #4573d2;color:#4573d2;transition:all .15s">
+          Sin leer <span id="notif-unread-count" style="display:inline-block;background:#ef4444;color:white;font-size:10px;font-weight:700;border-radius:999px;padding:0 5px;margin-left:4px;min-width:16px;text-align:center"></span>
+        </button>
+        <button id="notif-tab-all" onclick="switchNotifTab('all')"
+          style="flex:1;padding:6px 0;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-muted);transition:all .15s">
+          Todas
+        </button>
+      </div>
     </div>
+    <!-- Actions bar -->
+    <div id="notif-actions" style="padding:8px 18px;display:flex;justify-content:flex-end;border-bottom:1px solid var(--border-color);flex-shrink:0">
+      <button onclick="markAllNotifsRead()" style="font-size:11px;color:#4573d2;background:none;border:none;cursor:pointer;font-weight:500">Marcar todas como leídas</button>
+    </div>
+    <!-- List -->
     <div id="notif-list" style="flex:1;overflow-y:auto" class="no-scrollbar">
       <div style="padding:40px 20px;text-align:center;color:var(--text-muted);font-size:13px">
         <i data-lucide="bell-off" style="width:30px;height:30px;margin:0 auto 10px;display:block;opacity:0.35"></i>
