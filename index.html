@@ -980,17 +980,19 @@
             + Añadir dependencia
           </button>
           <div id="add-dep-ui" style="display:none;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:10px;margin-top:6px">
-            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
-              <input id="dep-search" type="text" list="dep-task-list" placeholder="Buscar tarea..." oninput="filterDepTasks(this.value)"
-                style="width:100%;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
-              <datalist id="dep-task-list"></datalist>
-              <select id="dep-type" style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:8px">
+              <select id="dep-task-select" style="width:100%;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit">
+                <option value="">— Selecciona una tarea —</option>
+              </select>
+              <select id="dep-type" style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit;white-space:nowrap">
                 <option value="blocks">🔒 Bloqueante</option>
                 <option value="related">🔗 Relacionada</option>
               </select>
             </div>
-            <div id="dep-search-results" style="max-height:140px;overflow-y:auto;margin-top:6px;display:flex;flex-direction:column;gap:3px" class="no-scrollbar"></div>
-            <button onclick="hideAddDepUI()" style="margin-top:8px;font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer">Cancelar</button>
+            <div style="display:flex;gap:8px">
+              <button onclick="confirmAddDependency()" style="flex:1;padding:6px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Añadir</button>
+              <button onclick="hideAddDepUI()" style="padding:6px 12px;border-radius:6px;background:var(--bg-panel);color:var(--text-muted);border:1px solid var(--border-color);font-size:12px;cursor:pointer">Cancelar</button>
+            </div>
           </div>
         </div>
 
@@ -3936,35 +3938,57 @@
     }
 
     function showAddDepUI() {
-      document.getElementById('add-dep-ui').style.display='block';
-      document.getElementById('btn-add-dep').style.display='none';
-      const dl=document.getElementById('dep-task-list');
-      if(dl) dl.innerHTML=TASKS.filter(t=>t.id!==editId).map(t=>`<option value="${esc(t.task)} — ${esc(t.proj)}" data-id="${t.id}">`).join('');
-      filterDepTasks('');
-      document.getElementById('dep-search').focus();
+      // Populate select with all tasks except current and already linked
+      const existing = new Set(TASK_DEPENDENCIES.map(d => d.depends_on_id));
+      const sel = document.getElementById('dep-task-select');
+      if (sel) {
+        sel.innerHTML = '<option value="">— Selecciona una tarea —</option>'
+          + TASKS
+            .filter(t => t.id !== editId && !existing.has(t.id))
+            .sort((a,b) => a.proj.localeCompare(b.proj) || a.task.localeCompare(b.task))
+            .map(t => `<option value="${t.id}">[${esc(t.proj)}] ${esc(t.task)}</option>`)
+            .join('');
+      }
+      document.getElementById('add-dep-ui').style.display = 'block';
+      document.getElementById('btn-add-dep').style.display = 'none';
     }
+
     function hideAddDepUI() {
-      document.getElementById('add-dep-ui').style.display='none';
-      document.getElementById('btn-add-dep').style.display=isEditModeActive?'block':'none';
-      document.getElementById('dep-search').value='';
-      document.getElementById('dep-search-results').innerHTML='';
+      document.getElementById('add-dep-ui').style.display = 'none';
+      document.getElementById('btn-add-dep').style.display = isEditModeActive ? 'block' : 'none';
+      const sel = document.getElementById('dep-task-select');
+      if (sel) sel.value = '';
     }
-    function filterDepTasks(query) {
-      const results=document.getElementById('dep-search-results'); if(!results) return;
-      const q=query.toLowerCase().trim();
-      const existing=new Set(TASK_DEPENDENCIES.map(d=>d.depends_on_id));
-      const filtered=TASKS.filter(t=>t.id!==editId&&!existing.has(t.id)&&(!q||t.task.toLowerCase().includes(q)||t.proj.toLowerCase().includes(q))).slice(0,8);
-      if(!filtered.length){results.innerHTML='<div style="font-size:11px;color:var(--text-muted);padding:6px 8px">Sin resultados</div>';return;}
-      results.innerHTML=filtered.map(t=>{const catC=CAT_COLOR[t.cat]||CAT_COLOR.default;return`<div onclick="addDependency(${t.id})" style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:background .1s" onmouseover="this.style.background='rgba(69,115,210,.07)'" onmouseout="this.style.background='transparent'"><span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:10px;color:var(--text-muted)">${esc(t.proj)}</div></div></div>`;}).join('');
+
+    async function confirmAddDependency() {
+      const sel = document.getElementById('dep-task-select');
+      const dependsOnId = parseInt(sel?.value);
+      if (!dependsOnId) { showToast('Selecciona una tarea', 'error'); return; }
+      await addDependency(dependsOnId);
     }
+
+    // Keep filterDepTasks as no-op for compatibility
+    function filterDepTasks() {}
+
     async function addDependency(dependsOnId) {
-      const type=document.getElementById('dep-type').value;
-      try{const{error}=await supabaseClient.from('task_dependencies').insert([{task_id:editId,depends_on_id:dependsOnId,type}]);if(error)throw error;hideAddDepUI();await loadDependencies(editId);showToast('Dependencia añadida','success');}
-      catch(e){showToast('Error: '+e.message,'error');}
+      const type = document.getElementById('dep-type').value;
+      try {
+        const { error } = await supabaseClient.from('task_dependencies')
+          .insert([{ task_id: parseInt(editId), depends_on_id: parseInt(dependsOnId), type }]);
+        if (error) throw error;
+        hideAddDepUI();
+        await loadDependencies(editId);
+        showToast('Dependencia añadida', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
+
     async function removeDependency(depId) {
-      try{const{error}=await supabaseClient.from('task_dependencies').delete().eq('id',depId);if(error)throw error;await loadDependencies(editId);showToast('Dependencia eliminada','success');}
-      catch(e){showToast('Error: '+e.message,'error');}
+      try {
+        const { error } = await supabaseClient.from('task_dependencies').delete().eq('id', depId);
+        if (error) throw error;
+        await loadDependencies(editId);
+        showToast('Dependencia eliminada', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
 
         // ── ATAJO DE TECLADO ─────────────────────────────────────
