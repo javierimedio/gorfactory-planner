@@ -333,7 +333,10 @@
       <!-- Views nav -->
       <div style="padding:8px">
         <div class="sb-section">Vistas</div>
-        <button id="sb-nav-gantt"     class="sb-nav-btn active" onclick="switchView('gantt')">
+        <button id="sb-nav-home" class="sb-nav-btn" onclick="switchView('home')">
+          <i data-lucide="home" class="sb-icon" style="color:#f472b6"></i><span class="sb-lbl">Inicio</span>
+        </button>
+        <button id="sb-nav-gantt"     class="sb-nav-btn" onclick="switchView('gantt')">
           <i data-lucide="gantt-chart"      class="sb-icon" style="color:#60a5fa"></i><span class="sb-lbl">Diagrama de Gantt</span>
         </button>
         <button id="sb-nav-kanban"    class="sb-nav-btn" onclick="switchView('kanban')">
@@ -773,7 +776,79 @@
           </div>
         </div>
 
-      </div><!-- /PANEL VISTAS -->
+
+        <!-- ── VISTA INICIO ── -->
+        <div id="view-home-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:24px">
+          <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+            <!-- Greeting -->
+            <div>
+              <h1 id="home-greeting" style="font-size:22px;font-weight:700;color:var(--text-main);margin:0 0 4px"></h1>
+              <p id="home-date" style="font-size:13px;color:var(--text-muted);margin:0"></p>
+            </div>
+
+            <!-- KPI strip -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #4573d2">
+                <div id="home-kpi-active" style="font-size:26px;font-weight:700;color:#4573d2;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Mis tareas activas</div>
+              </div>
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #ef4444">
+                <div id="home-kpi-overdue" style="font-size:26px;font-weight:700;color:#ef4444;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Vencidas</div>
+              </div>
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #f59e0b">
+                <div id="home-kpi-upcoming" style="font-size:26px;font-weight:700;color:#f59e0b;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Vencen esta semana</div>
+              </div>
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #059669">
+                <div id="home-kpi-done" style="font-size:26px;font-weight:700;color:#059669;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Completadas</div>
+              </div>
+            </div>
+
+            <!-- Main grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+              <!-- Mis tareas activas -->
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between">
+                  <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Mis tareas activas</h3>
+                  <button onclick="switchView('gantt')" style="font-size:11px;color:#4573d2;background:none;border:none;cursor:pointer">Ver todas →</button>
+                </div>
+                <div id="home-my-tasks" style="max-height:320px;overflow-y:auto" class="no-scrollbar"></div>
+              </div>
+
+              <!-- Próximos vencimientos -->
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
+                  <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Próximos vencimientos</h3>
+                </div>
+                <div id="home-upcoming" style="max-height:320px;overflow-y:auto" class="no-scrollbar"></div>
+              </div>
+
+            </div>
+
+            <!-- Estado general de proyectos -->
+            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+              <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
+                <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Estado general de proyectos</h3>
+              </div>
+              <div id="home-projects" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+            </div>
+
+            <!-- Estado general de tareas por categoría -->
+            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+              <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
+                <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Progreso por categoría</h3>
+              </div>
+              <div id="home-categories" style="padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+            </div>
+
+          </div>
+        </div>
+
+
     </div><!-- /LAYOUT PRINCIPAL -->
   </div><!-- /APP CONTENT -->
 
@@ -893,6 +968,30 @@
           <textarea id="m-notes" rows="3" oninput="queueAutosave()" placeholder="Añade una descripción o contexto de la tarea..."
             style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;transition:border-color .15s;line-height:1.5"
             onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+        </div>
+
+        <!-- Dependencias -->
+        <div id="deps-section">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <i data-lucide="git-merge" style="width:12px;height:12px"></i> DEPENDENCIAS
+          </label>
+          <div id="deps-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+          <button id="btn-add-dep" onclick="showAddDepUI()" style="display:none;font-size:11px;color:#4573d2;background:rgba(69,115,210,0.06);border:1px dashed rgba(69,115,210,0.3);border-radius:6px;padding:5px 12px;cursor:pointer;width:100%;text-align:center">
+            + Añadir dependencia
+          </button>
+          <div id="add-dep-ui" style="display:none;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:10px;margin-top:6px">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center">
+              <input id="dep-search" type="text" list="dep-task-list" placeholder="Buscar tarea..." oninput="filterDepTasks(this.value)"
+                style="width:100%;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text-main);outline:none;box-sizing:border-box;font-family:inherit">
+              <datalist id="dep-task-list"></datalist>
+              <select id="dep-type" style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit">
+                <option value="blocks">🔒 Bloqueante</option>
+                <option value="related">🔗 Relacionada</option>
+              </select>
+            </div>
+            <div id="dep-search-results" style="max-height:140px;overflow-y:auto;margin-top:6px;display:flex;flex-direction:column;gap:3px" class="no-scrollbar"></div>
+            <button onclick="hideAddDepUI()" style="margin-top:8px;font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer">Cancelar</button>
+          </div>
         </div>
 
         <!-- Adjuntos -->
@@ -1072,7 +1171,7 @@
 
     // ── CONSTANTES Y ESTADO ────────────────────────────────────
     let isEditModeActive = false;
-    let currentActiveView = 'gantt';
+    let currentActiveView = 'home';
     let TASKS = [];
     let expanded = {};
     let editId = null;
@@ -1187,7 +1286,7 @@
       setupRealtime();
       applyGanttHeight();
       initResizeHandle();
-      setTimeout(() => { goToday(); }, 350);
+      // goToday called by switchView('gantt') when user navigates there
     }
 
     async function logout() {
@@ -1729,6 +1828,7 @@
       currentActiveView = viewName;
       // ALL views — original + budget layer
       const allViews = {
+        home:      'view-home-container',
         gantt:     'view-gantt-container',
         kanban:    'view-kanban-container',
         calendar:  'view-calendar-container',
@@ -1737,7 +1837,7 @@
         annual:    'view-annual-container',
         exec:      'view-exec-container'
       };
-      const sbNavs = ['sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
+      const sbNavs = ['sb-nav-home','sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
 
       // Show active, hide all others
       Object.entries(allViews).forEach(([v, id]) => {
@@ -1752,7 +1852,8 @@
       });
 
       // Render the right content
-      if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
+      if      (viewName === 'home')     renderHome();
+      else if (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
       else if (viewName === 'kanban')    renderKanban();
       else if (viewName === 'calendar')  renderCalendar();
       else if (viewName === 'dashboard') renderDashboard();
@@ -2270,6 +2371,7 @@
       editId = id;
       loadComments(id);
       loadFiles(id);
+      loadDependencies(id);
       document.getElementById('m-proj').value   = t.proj;
       document.getElementById('m-task').value   = t.task;
       document.getElementById('m-resp').value   = t.resp;
@@ -3675,6 +3777,187 @@
 
 
 
+    // ══════════════════════════════════════════════════════════
+    // DASHBOARD DE INICIO
+    // ══════════════════════════════════════════════════════════
+    async function renderHome() {
+      const me = _currentDisplayName || '';
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+
+      const hour = now.getHours();
+      const greeting = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+      const dayStr = now.toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      const greetEl = document.getElementById('home-greeting');
+      const dateEl  = document.getElementById('home-date');
+      if (greetEl) greetEl.textContent = greeting + (me ? ', ' + me.split(' ')[0] : '') + ' 👋';
+      if (dateEl)  dateEl.textContent  = dayStr.charAt(0).toUpperCase() + dayStr.slice(1);
+
+      const myTasks = TASKS.filter(t => t.resp && t.resp.toLowerCase().includes(me.toLowerCase()) && t.status !== 'Completado' && t.status !== 'Cancelado');
+      const overdue  = myTasks.filter(t => t.end && t.end < today);
+      const upcoming = myTasks.filter(t => t.end && t.end >= today && t.end <= weekEnd);
+      const completed = TASKS.filter(t => t.resp && t.resp.toLowerCase().includes(me.toLowerCase()) && t.status === 'Completado');
+
+      const setKpi = (id, val, warn) => { const el = document.getElementById(id); if (el) { el.textContent = String(val); if (warn && val > 0) el.style.color = '#ef4444'; } };
+      setKpi('home-kpi-active',   myTasks.length);
+      setKpi('home-kpi-overdue',  overdue.length, true);
+      setKpi('home-kpi-upcoming', upcoming.length);
+      setKpi('home-kpi-done',     completed.length);
+
+      const myTasksEl = document.getElementById('home-my-tasks');
+      if (myTasksEl) {
+        if (!myTasks.length) { myTasksEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin tareas activas asignadas</div>'; }
+        else {
+          const sorted = [...myTasks].sort((a,b) => { if (!a.end&&!b.end) return 0; if (!a.end) return 1; if (!b.end) return -1; return a.end-b.end; });
+          const STATUS_CM = {'En curso':'#059669','En planificación':'#4573d2','Bloqueado':'#ef4444','Pendiente revisión':'#f59e0b','Sin comenzar':'#64748b'};
+          myTasksEl.innerHTML = sorted.map(t => {
+            const isOv = t.end && t.end < today;
+            const catC = CAT_COLOR[t.cat]||CAT_COLOR.default;
+            const sc = STATUS_CM[t.status]||'#64748b';
+            const endStr = t.end ? t.end.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}) : '—';
+            return `<div onclick="openEdit(${t.id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(t.proj)}</div></div>
+              <div style="text-align:right;flex-shrink:0"><div style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:${sc}18;color:${sc};margin-bottom:3px">${esc(t.status)}</div><div style="font-size:10px;color:${isOv?'#ef4444':'var(--text-muted)'};font-weight:${isOv?'700':'400'}">${isOv?'⚠ ':''}${endStr}</div></div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const upcomingEl = document.getElementById('home-upcoming');
+      if (upcomingEl) {
+        const upAll = TASKS.filter(t => t.end && t.end >= today && t.end <= weekEnd && t.status !== 'Completado' && t.status !== 'Cancelado').sort((a,b)=>a.end-b.end).slice(0,20);
+        if (!upAll.length) { upcomingEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin vencimientos próximos</div>'; }
+        else {
+          upcomingEl.innerHTML = upAll.map(t => {
+            const daysLeft = Math.ceil((t.end-today)/86400000);
+            const dLabel = daysLeft===0?'Hoy':daysLeft===1?'Mañana':'En '+daysLeft+' días';
+            const dColor = daysLeft<=1?'#ef4444':daysLeft<=3?'#f59e0b':'var(--text-muted)';
+            const catC = CAT_COLOR[t.cat]||CAT_COLOR.default;
+            return `<div onclick="openEdit(${t.id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(t.resp)} · ${esc(t.proj)}</div></div>
+              <div style="font-size:11px;font-weight:600;color:${dColor};flex-shrink:0">${dLabel}</div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const projsEl = document.getElementById('home-projects');
+      if (projsEl) {
+        const projNames = [...new Set(TASKS.map(t=>t.proj))].sort();
+        projsEl.innerHTML = projNames.map(proj => {
+          const tasks = TASKS.filter(t=>t.proj===proj);
+          const done  = tasks.filter(t=>t.status==='Completado').length;
+          const pct   = tasks.length ? Math.round(done/tasks.length*100) : 0;
+          const blocked = tasks.some(t=>t.status==='Bloqueado');
+          const ovTasks = tasks.filter(t=>t.end&&t.end<today&&t.status!=='Completado'&&t.status!=='Cancelado');
+          const catC = CAT_COLOR[tasks[0]?.cat]||CAT_COLOR.default;
+          const barC = pct===100?'#059669':blocked?'#ef4444':ovTasks.length?'#f59e0b':'#4573d2';
+          return `<div onclick="switchView('gantt')" style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:12px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#4573d2'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:50%;background:${catC};flex-shrink:0"></span><span style="font-size:12px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${esc(proj)}</span><span style="font-size:11px;font-weight:700;color:${barC}">${pct}%</span></div>
+            <div style="height:5px;background:var(--border-color);border-radius:999px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${barC};border-radius:999px"></div></div>
+            <div style="display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--text-muted)">${done}/${tasks.length} tareas${blocked?' · <span style="color:#ef4444">🔒 Bloqueado</span>':''}${ovTasks.length?' · <span style="color:#f59e0b">⚠ '+ovTasks.length+' vencida'+(ovTasks.length>1?'s':'')+'</span>':''}</div>
+          </div>`;
+        }).join('');
+      }
+
+      const catEl = document.getElementById('home-categories');
+      if (catEl) {
+        const cats = ['Catálogos','Ferias','Web/Digital','Shootings','Eventos','Branding','Marketing Digital','Comunicación'];
+        catEl.innerHTML = cats.map(cat => {
+          const tasks = TASKS.filter(t=>t.cat===cat&&t.status!=='Cancelado');
+          if (!tasks.length) return '';
+          const done = tasks.filter(t=>t.status==='Completado').length;
+          const pct  = Math.round(done/tasks.length*100);
+          const catC = CAT_COLOR[cat]||CAT_COLOR.default;
+          return `<div style="display:grid;grid-template-columns:150px 1fr 50px;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-main)"><span style="width:8px;height:8px;border-radius:50%;background:${catC};flex-shrink:0"></span>${esc(cat)}</div>
+            <div style="height:8px;background:var(--border-color);border-radius:999px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${catC};border-radius:999px"></div></div>
+            <div style="font-size:11px;color:var(--text-muted);text-align:right">${done}/${tasks.length}</div>
+          </div>`;
+        }).filter(Boolean).join('');
+      }
+      lucide.createIcons();
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // DEPENDENCIAS ENTRE TAREAS
+    // ══════════════════════════════════════════════════════════
+    let TASK_DEPENDENCIES = [];
+
+    async function loadDependencies(taskId) {
+      try {
+        const { data } = await supabaseClient.from('task_dependencies')
+          .select('*, dep_task:depends_on_id(id,task,proj,status,end_date)').eq('task_id', taskId);
+        TASK_DEPENDENCIES = data || [];
+        renderDependencies();
+      } catch(e) { console.warn('loadDependencies:', e); }
+    }
+
+    function renderDependencies() {
+      const list = document.getElementById('deps-list');
+      if (!list) return;
+      const today = new Date(); today.setHours(0,0,0,0);
+      if (!TASK_DEPENDENCIES.length) {
+        list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-style:italic">Sin dependencias</div>';
+      } else {
+        list.innerHTML = TASK_DEPENDENCIES.map(d => {
+          const t = d.dep_task; if (!t) return '';
+          const isBlocks = d.type==='blocks';
+          const isDone   = t.status==='Completado';
+          const endDate  = t.end_date ? new Date(t.end_date) : null;
+          const isLate   = endDate && endDate < today && !isDone;
+          const typeIcon = isBlocks ? '🔒' : '🔗';
+          const typeLabel = isBlocks ? 'Bloqueante' : 'Relacionada';
+          const sColor = isDone?'#059669':isLate?'#ef4444':'#f59e0b';
+          const alert = isLate&&!isDone ? `<span style="font-size:10px;color:#ef4444;font-weight:600;margin-left:4px">⚠ Retrasada</span>` : isDone ? `<span style="font-size:10px;color:#059669;margin-left:4px">✓</span>` : '';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-main);border:1px solid ${isLate&&!isDone?'rgba(239,68,68,.3)':'var(--border-color)'};border-radius:7px">
+            <span>${typeIcon}</span>
+            <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:10px;color:var(--text-muted)">${typeLabel} · ${esc(t.proj||'')}</div></div>
+            <span style="font-size:10px;font-weight:600;color:${sColor};white-space:nowrap">${esc(t.status||'')}</span>${alert}
+            ${isEditModeActive?`<button onclick="removeDependency(${d.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px;margin-left:2px"><i data-lucide="x" style="width:12px;height:12px"></i></button>`:''}
+          </div>`;
+        }).join('');
+      }
+      const btn = document.getElementById('btn-add-dep');
+      if (btn) btn.style.display = isEditModeActive ? 'block' : 'none';
+      lucide.createIcons();
+    }
+
+    function showAddDepUI() {
+      document.getElementById('add-dep-ui').style.display='block';
+      document.getElementById('btn-add-dep').style.display='none';
+      const dl=document.getElementById('dep-task-list');
+      if(dl) dl.innerHTML=TASKS.filter(t=>t.id!==editId).map(t=>`<option value="${esc(t.task)} — ${esc(t.proj)}" data-id="${t.id}">`).join('');
+      filterDepTasks('');
+      document.getElementById('dep-search').focus();
+    }
+    function hideAddDepUI() {
+      document.getElementById('add-dep-ui').style.display='none';
+      document.getElementById('btn-add-dep').style.display=isEditModeActive?'block':'none';
+      document.getElementById('dep-search').value='';
+      document.getElementById('dep-search-results').innerHTML='';
+    }
+    function filterDepTasks(query) {
+      const results=document.getElementById('dep-search-results'); if(!results) return;
+      const q=query.toLowerCase().trim();
+      const existing=new Set(TASK_DEPENDENCIES.map(d=>d.depends_on_id));
+      const filtered=TASKS.filter(t=>t.id!==editId&&!existing.has(t.id)&&(!q||t.task.toLowerCase().includes(q)||t.proj.toLowerCase().includes(q))).slice(0,8);
+      if(!filtered.length){results.innerHTML='<div style="font-size:11px;color:var(--text-muted);padding:6px 8px">Sin resultados</div>';return;}
+      results.innerHTML=filtered.map(t=>{const catC=CAT_COLOR[t.cat]||CAT_COLOR.default;return`<div onclick="addDependency(${t.id})" style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;transition:background .1s" onmouseover="this.style.background='rgba(69,115,210,.07)'" onmouseout="this.style.background='transparent'"><span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:10px;color:var(--text-muted)">${esc(t.proj)}</div></div></div>`;}).join('');
+    }
+    async function addDependency(dependsOnId) {
+      const type=document.getElementById('dep-type').value;
+      try{const{error}=await supabaseClient.from('task_dependencies').insert([{task_id:editId,depends_on_id:dependsOnId,type}]);if(error)throw error;hideAddDepUI();await loadDependencies(editId);showToast('Dependencia añadida','success');}
+      catch(e){showToast('Error: '+e.message,'error');}
+    }
+    async function removeDependency(depId) {
+      try{const{error}=await supabaseClient.from('task_dependencies').delete().eq('id',depId);if(error)throw error;await loadDependencies(editId);showToast('Dependencia eliminada','success');}
+      catch(e){showToast('Error: '+e.message,'error');}
+    }
+
         // ── ATAJO DE TECLADO ─────────────────────────────────────
     document.addEventListener('keydown', function(e) {
       if (e.key === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey
@@ -3710,6 +3993,8 @@
             document.getElementById('current-user').textContent = resolvedName;
           }
         } catch(ex) { console.warn('init sidebar sync error:', ex); }
+        // Open home dashboard by default
+        switchView('home');
       } else {
         document.getElementById('gatekeeper-screen').classList.remove('hidden');
         document.getElementById('gatekeeper-email').focus();
