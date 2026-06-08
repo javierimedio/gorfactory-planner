@@ -787,9 +787,16 @@
       <!-- Header -->
       <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 14px;border-bottom:1px solid var(--border-color)">
         <h2 id="modal-title" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin:0">Gestión de Tarea</h2>
-        <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='none'">
-          <i data-lucide="x" style="width:16px;height:16px"></i>
-        </button>
+        <div style="display:flex;align-items:center;gap:10px">
+          <!-- Última modificación -->
+          <div id="modal-last-modified" style="display:none;align-items:center;gap:4px;font-size:10px;color:var(--text-muted);background:var(--bg-main);padding:3px 8px;border-radius:999px;border:1px solid var(--border-color)">
+            <i data-lucide="clock" style="width:10px;height:10px;flex-shrink:0"></i>
+            <span id="modal-last-modified-text"></span>
+          </div>
+          <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.background='rgba(0,0,0,0.06)'" onmouseout="this.style.background='none'">
+            <i data-lucide="x" style="width:16px;height:16px"></i>
+          </button>
+        </div>
       </div>
 
       <!-- Body -->
@@ -1219,7 +1226,9 @@
             start: t.start_date ? new Date(t.start_date) : null,
             end:   t.end_date   ? new Date(t.end_date)   : null,
             status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
-            cat: t.cat || 'Catálogos', notes: t.notes || ''
+            cat: t.cat || 'Catálogos', notes: t.notes || '',
+            updated_at: t.updated_at || null,
+            updated_by: t.updated_by || null
           }));
         }
       } catch (err) {
@@ -2238,6 +2247,8 @@
       document.getElementById('m-notes').value  = '';
       document.getElementById('btn-delete').style.display = 'none';
       document.getElementById('autosave-status').style.opacity = '0';
+      const badge = document.getElementById('modal-last-modified');
+      if (badge) badge.style.display = 'none';
       document.getElementById('task-files').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin adjuntos todavía</div>';
       document.getElementById('task-comments').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin comentarios todavía</div>';
       toggleModalInputs(false);
@@ -2273,6 +2284,8 @@
         document.getElementById('autosave-status').style.opacity = '0';
         toggleModalInputs(true);
       }
+      // Show last modified badge if available
+      setLastModifiedBadge(t.updated_by, t.updated_at);
       _openModalOverlay();
     }
 
@@ -2302,6 +2315,18 @@
       });
     }
 
+    function setLastModifiedBadge(author, isoDate) {
+      const badge = document.getElementById('modal-last-modified');
+      const text  = document.getElementById('modal-last-modified-text');
+      if (!badge || !text || !author) { if(badge) badge.style.display='none'; return; }
+      const d = new Date(isoDate);
+      const dateStr = d.toLocaleDateString('es-ES', {day:'2-digit',month:'2-digit',year:'2-digit'});
+      const timeStr = d.toLocaleTimeString('es-ES', {hour:'2-digit',minute:'2-digit'});
+      text.textContent = `${esc(author)} · ${dateStr} ${timeStr}`;
+      badge.style.display = 'flex';
+      lucide.createIcons();
+    }
+
     // ── AUTOGUARDADO ──────────────────────────────────────────
     let _autoSaveTimer = null;
 
@@ -2318,6 +2343,8 @@
         const author = _currentDisplayName || 'tú';
         el.innerHTML = `<i data-lucide="check" style="width:12px;height:12px;color:#059669"></i> <span style="color:#059669">Guardado</span> · ${time} · ${esc(author)}`;
         el.style.opacity = '1';
+        // Update header badge too
+        setLastModifiedBadge(author, now.toISOString());
         lucide.createIcons();
         setTimeout(() => { el.style.opacity = '0.5'; }, 3000);
       } else if (state === 'error') {
@@ -2348,7 +2375,9 @@
         status:     document.getElementById('m-status').value,
         prio:       document.getElementById('m-prio').value,
         cat:        document.getElementById('m-cat').value,
-        notes:      document.getElementById('m-notes').value.trim() || null
+        notes:      document.getElementById('m-notes').value.trim() || null,
+        updated_at: new Date().toISOString(),
+        updated_by: _currentDisplayName || null
       };
 
       showAutosaveStatus('saving');
