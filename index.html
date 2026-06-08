@@ -2045,8 +2045,7 @@
             sbRows.appendChild(sbTask);
 
             const gTask = document.createElement('div');
-            gTask.className = 'flex h-11 border-b theme-border opacity-80 relative dep-task-row';
-            gTask.dataset.taskId = task.id;
+            gTask.className = 'flex h-11 border-b theme-border opacity-80 relative';
             gTask.style.width = totalW + 'px';
             CAL.days.forEach(d => {
               const cell = document.createElement('div');
@@ -2081,8 +2080,6 @@
       if (ss) ss.textContent = getSortIcon('start');
       if (se) se.textContent = getSortIcon('end');
       lucide.createIcons();
-      // Draw dependency arrows after DOM is ready
-      requestAnimationFrame(drawDependencyArrows);
     }
 
     // ── KANBAN ─────────────────────────────────────────────────
@@ -3763,7 +3760,6 @@
       await _origUnlockBudget();
       const cy = populateYearSelects();
       await loadBudgetData(cy);
-      await loadAllDependencies();
 
       // Show Vista anual y Dashboard ejecutivo solo para javierimedio@gorfactory.es
       try {
@@ -3896,116 +3892,6 @@
     // ══════════════════════════════════════════════════════════
     let TASK_DEPENDENCIES = [];
 
-    // ── GLOBAL DEPENDENCIES (for Gantt arrows) ───────────────
-    let ALL_DEPENDENCIES = []; // all deps for current visible tasks
-
-    async function loadAllDependencies() {
-      try {
-        const { data } = await supabaseClient.from('task_dependencies').select('*');
-        ALL_DEPENDENCIES = data || [];
-      } catch(e) { console.warn('loadAllDependencies:', e); }
-    }
-
-    const ROW_H = 44; // h-11 = 44px
-    const GANTT_HEADER_H = 80; // 32+24+24px headers
-
-    function drawDependencyArrows() {
-      const existing = document.getElementById('dep-arrows-svg');
-      if (existing) existing.remove();
-      if (!ALL_DEPENDENCIES.length) return;
-
-      const tlInner = document.getElementById('tl-inner');
-      if (!tlInner) return;
-
-      // Build map: task_id → actual DOM gTask element
-      const taskRowEls = {};
-      tlInner.querySelectorAll('.dep-task-row').forEach(el => {
-        const tid = parseInt(el.dataset.taskId);
-        if (tid) taskRowEls[tid] = el;
-      });
-
-      if (!Object.keys(taskRowEls).length) return;
-
-      // rowsDiv sits after the 3 sticky header rows (month 32 + week 24 + days 24 = 80px)
-      // Try to find it, fallback to 80px
-      let rowsDivTop = 80;
-      const allDivs = tlInner.querySelectorAll(':scope > div');
-      // The rowsDiv is the last direct child div (after month, week, day header divs)
-      if (allDivs.length >= 4) {
-        rowsDivTop = allDivs[3].offsetTop || 80;
-      } else if (allDivs.length > 0) {
-        rowsDivTop = allDivs[allDivs.length - 1].offsetTop || 80;
-      }
-
-      const totalW = CAL.days.length * DAY_W;
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.id = 'dep-arrows-svg';
-      svg.setAttribute('width', totalW);
-      svg.setAttribute('height', (rowsDivTop + (rowsDiv?.offsetHeight || 2000)));
-      svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:20;overflow:visible';
-
-      // Arrow markers
-      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      ['blocks','related'].forEach(type => {
-        const color = type === 'blocks' ? '#ef4444' : '#f59e0b';
-        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
-        marker.setAttribute('id', `arrow-${type}`);
-        marker.setAttribute('viewBox', '0 0 8 8');
-        marker.setAttribute('refX', '7'); marker.setAttribute('refY', '4');
-        marker.setAttribute('markerWidth', '5'); marker.setAttribute('markerHeight', '5');
-        marker.setAttribute('orient', 'auto-start-reverse');
-        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        p.setAttribute('d', 'M0,0 L8,4 L0,8 Z');
-        p.setAttribute('fill', color);
-        marker.appendChild(p);
-        defs.appendChild(marker);
-      });
-      svg.appendChild(defs);
-
-      let hasArrows = false;
-
-      ALL_DEPENDENCIES.forEach(dep => {
-        const fromEl = taskRowEls[dep.task_id];       // dependent task (starts after)
-        const toEl   = taskRowEls[dep.depends_on_id]; // predecessor task (must finish first)
-        if (!fromEl || !toEl) return;
-
-        const fromTask = TASKS.find(t => t.id === dep.task_id);
-        const toTask   = TASKS.find(t => t.id === dep.depends_on_id);
-        if (!fromTask || !toTask) return;
-        if (!fromTask.start || !toTask.end) return;
-
-        // Y: offsetTop within rowsDiv + rowsDivTop (header height) + half row height
-        const y1 = rowsDivTop + toEl.offsetTop   + ROW_H / 2; // predecessor center
-        const y2 = rowsDivTop + fromEl.offsetTop + ROW_H / 2; // dependent center
-
-        // X: right edge of predecessor bar → left edge of dependent bar
-        const toEndIdx  = CAL.days.findIndex(d => d.getTime() >= toTask.end.getTime());
-        const fromStIdx = CAL.days.findIndex(d => d.getTime() >= fromTask.start.getTime());
-        if (toEndIdx < 0 || fromStIdx < 0) return;
-
-        const x1 = Math.min(toEndIdx + 1, CAL.days.length - 1) * DAY_W; // end of predecessor
-        const x2 = Math.max(2, fromStIdx * DAY_W);                        // start of dependent
-
-        const isBlocks = dep.type === 'blocks';
-        const color = isBlocks ? '#ef4444' : '#f59e0b';
-
-        // Elbow: right → down/up → left with arrow tip
-        const elbowX = x1 + 12;
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', `M${x1},${y1} L${elbowX},${y1} L${elbowX},${y2} L${x2},${y2}`);
-        path.setAttribute('fill', 'none');
-        path.setAttribute('stroke', color);
-        path.setAttribute('stroke-width', '1.5');
-        path.setAttribute('stroke-opacity', isBlocks ? '0.8' : '0.6');
-        if (!isBlocks) path.setAttribute('stroke-dasharray', '5 3');
-        path.setAttribute('marker-end', `url(#arrow-${isBlocks ? 'blocks' : 'related'})`);
-        svg.appendChild(path);
-        hasArrows = true;
-      });
-
-      if (hasArrows) tlInner.appendChild(svg);
-    }
-
     async function loadDependencies(taskId) {
       TASK_DEPENDENCIES = [];
       renderDependencies();
@@ -4091,9 +3977,7 @@
           .insert([{ task_id: parseInt(editId), depends_on_id: parseInt(dependsOnId), type }]);
         if (error) throw error;
         hideAddDepUI();
-        await loadAllDependencies(); // refresh global for Gantt arrows
         await loadDependencies(editId);
-        requestAnimationFrame(drawDependencyArrows);
         showToast('Dependencia añadida', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -4102,9 +3986,7 @@
       try {
         const { error } = await supabaseClient.from('task_dependencies').delete().eq('id', depId);
         if (error) throw error;
-        await loadAllDependencies();
         await loadDependencies(editId);
-        requestAnimationFrame(drawDependencyArrows);
         showToast('Dependencia eliminada', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
