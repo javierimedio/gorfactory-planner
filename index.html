@@ -2372,6 +2372,7 @@
       loadComments(id);
       loadFiles(id);
       TASK_DEPENDENCIES = [];
+      renderDependencies(); // show empty immediately while loading
       hideAddDepUI();
       loadDependencies(id);
       document.getElementById('m-proj').value   = t.proj;
@@ -3890,14 +3891,18 @@
     let TASK_DEPENDENCIES = [];
 
     async function loadDependencies(taskId) {
-      TASK_DEPENDENCIES = []; // limpiar antes de cargar
-      renderDependencies();   // mostrar vacío mientras carga
+      TASK_DEPENDENCIES = [];
+      renderDependencies();
       try {
-        const { data } = await supabaseClient.from('task_dependencies')
-          .select('*, dep_task:depends_on_id(id,task,proj,status,end_date)').eq('task_id', taskId);
-        TASK_DEPENDENCIES = data || [];
+        const tid = parseInt(taskId);
+        const { data, error } = await supabaseClient.from('task_dependencies')
+          .select('*, dep_task:depends_on_id(id,task,proj,status,end_date)')
+          .eq('task_id', tid);
+        if (error) throw error;
+        // Safety: only keep deps that actually belong to this task
+        TASK_DEPENDENCIES = (data || []).filter(d => d.task_id === tid);
         renderDependencies();
-      } catch(e) { console.warn('loadDependencies:', e); }
+      } catch(e) { console.warn('loadDependencies error:', e); }
     }
 
     function renderDependencies() {
