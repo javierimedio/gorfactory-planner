@@ -1281,10 +1281,14 @@
     async function unlockDashboard() {
       document.getElementById('gatekeeper-screen').classList.add('hidden');
       document.getElementById('app-content').classList.remove('hidden');
-      const userName = await getCurrentDisplayName();
+
+      // Parallelize: user name + tasks at the same time
+      const [userName] = await Promise.all([
+        getCurrentDisplayName(),
+        loadTasksFromCloud()        // served from cache if fresh
+      ]);
       document.getElementById('current-user').textContent = userName;
       lucide.createIcons();
-      await loadTasksFromCloud();
       setupRealtime();
       applyGanttHeight();
       initResizeHandle();
@@ -1321,8 +1325,68 @@
       lucide.createIcons();
     }
 
+    // ── CACHE DE SESIÓN ────────────────────────────────────────
+    const CACHE_KEY   = 'gf_tasks_cache';
+    const CACHE_TTL   = 5 * 60 * 1000; // 5 minutos
+
+    function saveTasksToCache(tasks) {
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          ts: Date.now(),
+          data: tasks.map(t => ({
+            id: t.id, proj: t.proj, task: t.task, resp: t.resp,
+            proj_resp: t.proj_resp,
+            start_date: t.start ? t.start.toISOString() : null,
+            end_date:   t.end   ? t.end.toISOString()   : null,
+            status: t.status, prio: t.prio, cat: t.cat, notes: t.notes,
+            updated_at: t.updated_at, updated_by: t.updated_by
+          }))
+        }));
+      } catch(e) {} // quota exceeded — ignore silently
+    }
+
+    function loadTasksFromCache() {
+      try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts > CACHE_TTL) return null; // stale
+        return data.map(t => ({
+          id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
+          proj_resp: t.proj_resp || '',
+          start: t.start_date ? new Date(t.start_date) : null,
+          end:   t.end_date   ? new Date(t.end_date)   : null,
+          status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
+          cat: t.cat || 'Catálogos', notes: t.notes || '',
+          updated_at: t.updated_at || null,
+          updated_by: t.updated_by || null
+        }));
+      } catch(e) { return null; }
+    }
+
+    function invalidateTasksCache() {
+      try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
+    }
+
     // ── CARGA DE DATOS ─────────────────────────────────────────
     async function loadTasksFromCloud() {
+      // 1. Serve from cache immediately if fresh
+      const cached = loadTasksFromCache();
+      if (cached) {
+        TASKS = cached;
+        TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
+        refreshProjectList();
+        populateDynamicFilters();
+        applyFilters();
+        // 2. Refresh from Supabase in background (silent update)
+        _refreshTasksBackground();
+        return;
+      }
+      // No cache — fetch normally
+      await _fetchTasksFromSupabase();
+    }
+
+    async function _fetchTasksFromSupabase() {
       try {
         const { data, error } = await supabaseClient.from('tareas').select('*').order('proj', { ascending: true });
         if (error) throw error;
@@ -1337,6 +1401,7 @@
             updated_at: t.updated_at || null,
             updated_by: t.updated_by || null
           }));
+          saveTasksToCache(TASKS);
         }
       } catch (err) {
         console.warn("Error de conexión con Supabase:", err?.message || err);
@@ -1349,6 +1414,36 @@
       refreshProjectList();
       populateDynamicFilters();
       applyFilters();
+    }
+
+    async function _refreshTasksBackground() {
+      try {
+        const { data, error } = await supabaseClient.from('tareas').select('*').order('proj', { ascending: true });
+        if (error) return;
+        if (data) {
+          const fresh = data.map(t => ({
+            id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
+            proj_resp: t.proj_resp || '',
+            start: t.start_date ? new Date(t.start_date) : null,
+            end:   t.end_date   ? new Date(t.end_date)   : null,
+            status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
+            cat: t.cat || 'Catálogos', notes: t.notes || '',
+            updated_at: t.updated_at || null,
+            updated_by: t.updated_by || null
+          }));
+          // Only re-render if data actually changed
+          const changed = JSON.stringify(fresh.map(t=>t.id+t.status+t.updated_at)) !==
+                          JSON.stringify(TASKS.map(t=>t.id+t.status+t.updated_at));
+          if (changed) {
+            TASKS = fresh;
+            saveTasksToCache(TASKS);
+            TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
+            refreshProjectList();
+            populateDynamicFilters();
+            applyFilters();
+          }
+        }
+      } catch(e) {} // background — fail silently
     }
 
     let _realtimeChannel = null;
@@ -2501,6 +2596,7 @@
         const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
         if (error) throw error;
         showAutosaveStatus('saved');
+        invalidateTasksCache(); // force fresh load next time
         // Refresh visual sin cerrar modal
         await loadTasksFromCloud();
         refreshProjectList();
@@ -2852,7 +2948,7 @@
     unlockDashboard = async function() {
       await _origUnlock2();
       setTimeout(applyHeaderMargin, 100);
-      setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 1200);
+      setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 300);
     };
 
     // switchView already syncs both top tabs and sidebar nav (patched inline above)
@@ -3758,18 +3854,19 @@
     const _origUnlockBudget = unlockDashboard;
     unlockDashboard = async function(){
       await _origUnlockBudget();
-      const cy = populateYearSelects();
-      await loadBudgetData(cy);
 
-      // Show Vista anual y Dashboard ejecutivo solo para javierimedio@gorfactory.es
-      try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const isJavier = user?.email === 'javierimedio@gorfactory.es';
-        const annualBtn = document.getElementById('sb-nav-annual');
-        const execBtn   = document.getElementById('sb-nav-exec');
-        if (annualBtn) annualBtn.style.display = isJavier ? 'flex' : 'none';
-        if (execBtn)   execBtn.style.display   = isJavier ? 'flex' : 'none';
-      } catch(e) {}
+      // Parallelize budget load + user role check
+      const cy = populateYearSelects();
+      const [,{ data: { user } }] = await Promise.all([
+        loadBudgetData(cy),
+        supabaseClient.auth.getUser()
+      ]);
+
+      const isJavier = user?.email === 'javierimedio@gorfactory.es';
+      const annualBtn = document.getElementById('sb-nav-annual');
+      const execBtn   = document.getElementById('sb-nav-exec');
+      if (annualBtn) annualBtn.style.display = isJavier ? 'flex' : 'none';
+      if (execBtn)   execBtn.style.display   = isJavier ? 'flex' : 'none';
     };
 
     // Patch toggleEditMode to show/hide add budget button
