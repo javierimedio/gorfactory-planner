@@ -563,8 +563,13 @@
         <div class="filter-chip"><i data-lucide="folder" style="width:11px;height:11px"></i>
           <select id="filter-proj" onchange="queueFilters()"><option value="">Proyecto</option></select>
         </div>
-        <div class="filter-chip"><i data-lucide="user" style="width:11px;height:11px"></i>
-          <select id="filter-resp" onchange="queueFilters()"><option value="">Responsable</option></select>
+        <div class="filter-chip" style="position:relative">
+          <i data-lucide="user" style="width:11px;height:11px"></i>
+          <button id="filter-resp-btn" onclick="toggleRespDropdown(event)"
+            style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--text-muted);padding:0;font-family:inherit;display:flex;align-items:center;gap:3px">
+            <span id="filter-resp-label">Responsable</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:.6"></i>
+          </button>
         </div>
         <div class="filter-chip"><i data-lucide="list" style="width:11px;height:11px"></i>
           <select id="filter-task" onchange="queueFilters()"><option value="">Tarea</option></select>
@@ -607,9 +612,11 @@
                 <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;flex:1">Tarea</span>
                 <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:90px;flex-shrink:0;text-align:center">Responsable</span>
                 <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:110px;flex-shrink:0;text-align:center">Estado</span>
-                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:70px;flex-shrink:0;text-align:center">Prioridad</span>
+                <button onclick="toggleSort('prio')" style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:70px;flex-shrink:0;text-align:center;background:none;border:none;cursor:pointer">
+                  Prioridad <span id="sort-prio">↕</span>
+                </button>
                 <button onclick="toggleSort('start')" style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:72px;flex-shrink:0;text-align:center;background:none;border:none;cursor:pointer">
-                  Inicio <span id="sort-start">↕</span>
+                  Inicio <span id="sort-start">↑</span>
                 </button>
                 <button onclick="toggleSort('end')" style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:72px;flex-shrink:0;text-align:center;background:none;border:none;cursor:pointer">
                   Fin <span id="sort-end">↕</span>
@@ -1222,7 +1229,7 @@
     let showOnlyCompletedProjects = false;
     let showAllTasks = false;
     let showOnlyBlocked = false;
-    let currentSort = { field: null, direction: 'asc' };
+    let currentSort = { field: 'start', direction: 'asc' };
     let ganttHeight = parseInt(localStorage.getItem('ganttHeight')) || 532;
     let showOnlyMyTasks = false;
     let calendarYear = new Date().getFullYear();
@@ -1527,16 +1534,7 @@
         selProj.appendChild(opt);
       });
 
-      const resps = [...new Set(TASKS.map(t => t.resp).filter(r => r && r !== '—'))].sort((a,b) => a.localeCompare(b));
-      const selResp = document.getElementById('filter-resp');
-      const currentResp = selResp.value;
-      selResp.innerHTML = '<option value="">Todos los responsables</option>';
-      resps.forEach(r => {
-        const opt = document.createElement('option');
-        opt.value = r; opt.textContent = r;
-        if (r === currentResp) opt.selected = true;
-        selResp.appendChild(opt);
-      });
+      populateRespList();
 
       const taskNames = [...new Set(TASKS.map(t => t.task).filter(Boolean))].sort((a,b) => a.localeCompare(b));
       const selTask = document.getElementById('filter-task');
@@ -1550,14 +1548,81 @@
       });
     }
 
-    // ── FILTROS ────────────────────────────────────────────────
+    // ── MULTI-SELECT RESPONSABLE FILTER ───────────────────────
+    let selectedResps = new Set();
+
+    function toggleRespDropdown(e) {
+      e.stopPropagation();
+      const dd  = document.getElementById('filter-resp-dropdown');
+      const btn = document.getElementById('filter-resp-btn');
+      if (!dd || !btn) return;
+      const isOpen = dd.style.display !== 'none';
+      if (isOpen) { dd.style.display = 'none'; return; }
+      // Position below the button
+      const rect = btn.getBoundingClientRect();
+      dd.style.top  = (rect.bottom + 6) + 'px';
+      dd.style.left = rect.left + 'px';
+      dd.style.display = 'block';
+      populateRespList();
+      setTimeout(() => {
+        document.addEventListener('click', closeRespDropdown, { once: true });
+      }, 0);
+    }
+
+    function closeRespDropdown() {
+      const dd = document.getElementById('filter-resp-dropdown');
+      if (dd) dd.style.display = 'none';
+    }
+
+    function toggleRespSelection(resp) {
+      if (selectedResps.has(resp)) selectedResps.delete(resp);
+      else selectedResps.add(resp);
+      updateRespLabel();
+      applyFilters();
+    }
+
+    function clearRespFilter() {
+      selectedResps.clear();
+      updateRespLabel();
+      // Uncheck all checkboxes
+      document.querySelectorAll('#filter-resp-list input[type=checkbox]').forEach(cb => cb.checked = false);
+      applyFilters();
+    }
+
+    function updateRespLabel() {
+      const label = document.getElementById('filter-resp-label');
+      if (!label) return;
+      if (selectedResps.size === 0) {
+        label.textContent = 'Responsable';
+        label.style.color = 'var(--text-muted)';
+      } else if (selectedResps.size === 1) {
+        label.textContent = [...selectedResps][0].split(' ')[0]; // First name only
+        label.style.color = '#4573d2';
+      } else {
+        label.textContent = selectedResps.size + ' seleccionados';
+        label.style.color = '#4573d2';
+      }
+    }
+
+    function populateRespList() {
+      const list = document.getElementById('filter-resp-list');
+      if (!list) return;
+      const resps = [...new Set(TASKS.map(t => t.resp).filter(r => r && r !== '—'))].sort((a,b) => a.localeCompare(b));
+      list.innerHTML = resps.map(r => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text-main);transition:background .1s"
+          onmouseover="this.style.background='rgba(69,115,210,.07)'" onmouseout="this.style.background='transparent'">
+          <input type="checkbox" ${selectedResps.has(r)?'checked':''} onchange="toggleRespSelection('${esc(r)}')"
+            style="width:13px;height:13px;accent-color:#4573d2;cursor:pointer;flex-shrink:0">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r)}</span>
+        </label>`).join('');
+    }
     function queueFilters() { applyFilters(); }
 
     function clearFilters() {
       document.getElementById('filter-cat').value    = '';
       document.getElementById('filter-status').value = '';
       document.getElementById('filter-proj').value   = '';
-      document.getElementById('filter-resp').value   = '';
+      clearRespFilter();
       document.getElementById('filter-task').value   = '';
       const fs = document.getElementById('filter-search'); if (fs) fs.value = '';
       showOnlyOverdue = false; showOnlyCompleted = false;
@@ -1579,7 +1644,6 @@
       const cat    = document.getElementById('filter-cat').value;
       const st     = document.getElementById('filter-status').value;
       const proj   = document.getElementById('filter-proj').value;
-      const resp   = document.getElementById('filter-resp').value;
       const task   = document.getElementById('filter-task').value;
       const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
 
@@ -1587,7 +1651,7 @@
         if (cat  && t.cat    !== cat)  return false;
         if (st   && t.status !== st)   return false;
         if (proj && t.proj   !== proj) return false;
-        if (resp && t.resp   !== resp) return false;
+        if (selectedResps.size > 0 && !selectedResps.has(t.resp)) return false;
         if (task && t.task   !== task) return false;
         if (search) {
           const hay = `${t.task} ${t.proj} ${t.resp}`.toLowerCase();
@@ -2064,13 +2128,21 @@
       render();
     }
 
+    const PRIO_ORDER = { 'Crítica': 0, 'Alta': 1, 'Media': 2, 'Baja': 3 };
+
     function sortTasks(tasks) {
       if (!currentSort.field) return tasks;
       return [...tasks].sort((a, b) => {
         let av = a[currentSort.field], bv = b[currentSort.field];
         if (!av && !bv) return 0; if (!av) return 1; if (!bv) return -1;
-        av = av instanceof Date ? av.getTime() : av;
-        bv = bv instanceof Date ? bv.getTime() : bv;
+        // Special order for priority
+        if (currentSort.field === 'prio') {
+          av = PRIO_ORDER[av] ?? 99;
+          bv = PRIO_ORDER[bv] ?? 99;
+        } else {
+          av = av instanceof Date ? av.getTime() : av;
+          bv = bv instanceof Date ? bv.getTime() : bv;
+        }
         return currentSort.direction === 'asc' ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
       });
     }
@@ -2290,8 +2362,10 @@
       // Sync sort icons
       const ss = document.getElementById('sort-start');
       const se = document.getElementById('sort-end');
+      const sp = document.getElementById('sort-prio');
       if (ss) ss.textContent = getSortIcon('start');
       if (se) se.textContent = getSortIcon('end');
+      if (sp) sp.textContent = getSortIcon('prio');
 
       // Draw dependency arrows
       drawDependencyArrows();
@@ -4452,6 +4526,14 @@
         </div>
       </div>
     </div>
+  </div>
+  <!-- Responsable filter dropdown (body-level to avoid overflow clipping) -->
+  <div id="filter-resp-dropdown" style="display:none;position:fixed;z-index:9999;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-width:200px;max-height:280px;overflow-y:auto;padding:6px 0" class="no-scrollbar">
+    <div style="padding:4px 10px 6px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg-panel);z-index:1">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Responsables</span>
+      <button onclick="clearRespFilter()" style="font-size:10px;color:#4573d2;background:none;border:none;cursor:pointer;font-family:inherit">Limpiar</button>
+    </div>
+    <div id="filter-resp-list" style="padding:4px 0"></div>
   </div>
 
 </body>
