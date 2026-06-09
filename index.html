@@ -333,7 +333,10 @@
       <!-- Views nav -->
       <div style="padding:8px">
         <div class="sb-section">Vistas</div>
-        <button id="sb-nav-gantt"     class="sb-nav-btn active" onclick="switchView('gantt')">
+        <button id="sb-nav-home" class="sb-nav-btn" onclick="switchView('home')">
+          <i data-lucide="home" class="sb-icon" style="color:#f472b6"></i><span class="sb-lbl">Inicio</span>
+        </button>
+        <button id="sb-nav-gantt"     class="sb-nav-btn" onclick="switchView('gantt')">
           <i data-lucide="gantt-chart"      class="sb-icon" style="color:#60a5fa"></i><span class="sb-lbl">Diagrama de Gantt</span>
         </button>
         <button id="sb-nav-kanban"    class="sb-nav-btn" onclick="switchView('kanban')">
@@ -580,36 +583,61 @@
       <div class="theme-panel rounded-xl border overflow-hidden relative">
 
         <!-- ── VISTA GANTT ── -->
-        <div id="view-gantt-container" class="flex divide-x theme-border">
-          <div class="w-[620px] shrink-0 flex flex-col bg-opacity-60 z-30">
-            <div class="border-b theme-border flex flex-col shrink-0" style="height:80px; background-color: var(--bg-header)">
-              <div class="flex items-center px-4 gap-2" style="height:32px; border-bottom:1px solid var(--border-color)">
-                <span class="text-[11px] font-bold tracking-wider theme-text-muted uppercase flex-1">Nombre del Proyecto</span>
-                <span class="w-[90px] shrink-0"></span>
-                <span class="w-[110px] shrink-0"></span>
-                <span class="w-[72px] shrink-0"></span>
-                <span class="w-[72px] shrink-0"></span>
-                <button onclick="toggleAllExpanded()" title="Contraer / Expandir todos los proyectos"
-                  class="p-1.5 rounded-lg theme-text-muted hover:bg-gray-200 dark:hover:bg-slate-700 transition-all shrink-0">
-                  <i data-lucide="chevrons-up-down" class="w-3.5 h-3.5"></i>
+        <div id="view-gantt-container" class="hidden" style="flex-direction:column;height:100%;overflow:hidden">
+
+          <!-- Gantt wrapper: left panel + right panel side by side -->
+          <div id="gantt-wrapper" style="display:flex;flex:1;overflow:hidden;position:relative">
+
+            <!-- LEFT PANEL: sticky headers + scrollable task rows -->
+            <div id="gantt-left" style="width:620px;flex-shrink:0;display:flex;flex-direction:column;z-index:10;background:var(--bg-main);border-right:1px solid var(--border-color)">
+              <!-- Header row 1: project name + controls (32px) -->
+              <div style="height:32px;flex-shrink:0;display:flex;align-items:center;padding:0 16px;gap:8px;border-bottom:1px solid var(--border-color);background:var(--bg-header)">
+                <span style="font-size:11px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;flex:1">Nombre del Proyecto</span>
+                <span style="width:90px;flex-shrink:0"></span>
+                <span style="width:110px;flex-shrink:0"></span>
+                <span style="width:70px;flex-shrink:0"></span>
+                <span style="width:72px;flex-shrink:0"></span>
+                <span style="width:72px;flex-shrink:0"></span>
+                <button onclick="toggleAllExpanded()" title="Contraer / Expandir" style="width:28px;flex-shrink:0;background:none;border:none;cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;padding:0">
+                  <i data-lucide="chevrons-up-down" style="width:14px;height:14px"></i>
                 </button>
               </div>
-              <div class="flex items-center px-4 gap-2" style="height:24px; border-bottom:1px solid var(--border-color)">
-                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase flex-1">Tarea</span>
-                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[90px] text-center shrink-0">Responsable</span>
-                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[110px] text-center shrink-0">Estado</span>
-                <span class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[70px] text-center shrink-0">Prioridad</span>
-                <button onclick="toggleSort('start')" class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0 hover:text-blue-500 transition-all">
+              <!-- Header row 2: column labels (24px) -->
+              <div style="height:24px;flex-shrink:0;display:flex;align-items:center;padding:0 16px;gap:0;border-bottom:1px solid var(--border-color);background:var(--bg-header)">
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;flex:1">Tarea</span>
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:90px;flex-shrink:0;text-align:center">Responsable</span>
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:110px;flex-shrink:0;text-align:center">Estado</span>
+                <span style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:70px;flex-shrink:0;text-align:center">Prioridad</span>
+                <button onclick="toggleSort('start')" style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:72px;flex-shrink:0;text-align:center;background:none;border:none;cursor:pointer">
                   Inicio <span id="sort-start">↕</span>
                 </button>
-                <button onclick="toggleSort('end')" class="text-[10px] font-bold tracking-wider theme-text-muted uppercase w-[72px] text-center shrink-0 hover:text-blue-500 transition-all">
+                <button onclick="toggleSort('end')" style="font-size:10px;font-weight:700;letter-spacing:.06em;color:var(--text-muted);text-transform:uppercase;width:72px;flex-shrink:0;text-align:center;background:none;border:none;cursor:pointer">
                   Fin <span id="sort-end">↕</span>
                 </button>
-                <span class="w-[28px] shrink-0"></span>
+                <span style="width:28px;flex-shrink:0"></span>
               </div>
-              <div style="height:24px"></div>
+              <!-- Header row 3: spacer to align with calendar header (24px) -->
+              <div style="height:24px;flex-shrink:0;border-bottom:1px solid var(--border-color);background:var(--bg-header)"></div>
+              <!-- Scrollable task list -->
+              <div id="gantt-rows" style="flex:1;overflow-y:auto;overflow-x:hidden" class="no-scrollbar"></div>
             </div>
-            <div id="sb-rows" class="overflow-y-auto no-scrollbar divide-y theme-border select-none"></div>
+
+            <!-- RIGHT PANEL: calendar headers + canvas bars, single unified scroll -->
+            <div id="gantt-right-scroll" onscroll="ganttSyncScroll(this)" style="flex:1;overflow:auto;position:relative" class="no-scrollbar">
+              <!-- This inner div sets the total dimensions -->
+              <div id="gantt-right-inner" style="position:relative">
+                <!-- Sticky calendar headers -->
+                <div id="gantt-cal-header" style="position:sticky;top:0;z-index:10;background:var(--bg-header)">
+                  <div id="gantt-months-row" style="display:flex;height:32px;border-bottom:1px solid var(--border-color)"></div>
+                  <div id="gantt-weeks-row"  style="display:flex;height:24px;border-bottom:1px solid var(--border-color)"></div>
+                  <div id="gantt-days-row"   style="display:flex;height:24px;border-bottom:1px solid var(--border-color)"></div>
+                </div>
+                <!-- Canvas for bars + grid lines -->
+                <canvas id="gantt-canvas" style="display:block;cursor:pointer"></canvas>
+              </div>
+            </div>
+
+            <!-- Resize handle -->
             <div id="gantt-resizer" class="absolute bottom-3 right-3 w-4 h-4 cursor-nwse-resize opacity-40 hover:opacity-100 transition-all z-50 text-slate-400">
               <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 16L16 6" stroke="currentColor" stroke-width="2"/>
@@ -617,9 +645,6 @@
                 <path d="M14 16L16 14" stroke="currentColor" stroke-width="2"/>
               </svg>
             </div>
-          </div>
-          <div id="tl-scroll" onscroll="syncScroll(this)" class="overflow-x-auto overflow-y-auto shrink-0 flex-1 relative">
-            <div id="tl-inner" class="relative"></div>
           </div>
         </div>
 
@@ -773,7 +798,79 @@
           </div>
         </div>
 
-      </div><!-- /PANEL VISTAS -->
+
+        <!-- ── VISTA INICIO ── -->
+        <div id="view-home-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:24px">
+          <div style="max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px">
+
+            <!-- Greeting -->
+            <div>
+              <h1 id="home-greeting" style="font-size:22px;font-weight:700;color:var(--text-main);margin:0 0 4px"></h1>
+              <p id="home-date" style="font-size:13px;color:var(--text-muted);margin:0"></p>
+            </div>
+
+            <!-- KPI strip -->
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #4573d2">
+                <div id="home-kpi-active" style="font-size:26px;font-weight:700;color:#4573d2;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Mis tareas activas</div>
+              </div>
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #ef4444">
+                <div id="home-kpi-overdue" style="font-size:26px;font-weight:700;color:#ef4444;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Vencidas</div>
+              </div>
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #f59e0b">
+                <div id="home-kpi-upcoming" style="font-size:26px;font-weight:700;color:#f59e0b;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Vencen esta semana</div>
+              </div>
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;padding:14px 16px;border-left:3px solid #059669">
+                <div id="home-kpi-done" style="font-size:26px;font-weight:700;color:#059669;font-family:monospace">—</div>
+                <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin-top:3px">Completadas</div>
+              </div>
+            </div>
+
+            <!-- Main grid -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+
+              <!-- Mis tareas activas -->
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between">
+                  <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Mis tareas activas</h3>
+                  <button onclick="switchView('gantt')" style="font-size:11px;color:#4573d2;background:none;border:none;cursor:pointer">Ver todas →</button>
+                </div>
+                <div id="home-my-tasks" style="max-height:320px;overflow-y:auto" class="no-scrollbar"></div>
+              </div>
+
+              <!-- Próximos vencimientos -->
+              <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+                <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
+                  <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Próximos vencimientos</h3>
+                </div>
+                <div id="home-upcoming" style="max-height:320px;overflow-y:auto" class="no-scrollbar"></div>
+              </div>
+
+            </div>
+
+            <!-- Estado general de proyectos -->
+            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+              <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
+                <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Estado general de proyectos</h3>
+              </div>
+              <div id="home-projects" style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px"></div>
+            </div>
+
+            <!-- Estado general de tareas por categoría -->
+            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+              <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
+                <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">Progreso por categoría</h3>
+              </div>
+              <div id="home-categories" style="padding:16px;display:flex;flex-direction:column;gap:10px"></div>
+            </div>
+
+          </div>
+        </div>
+
+
     </div><!-- /LAYOUT PRINCIPAL -->
   </div><!-- /APP CONTENT -->
 
@@ -893,6 +990,32 @@
           <textarea id="m-notes" rows="3" oninput="queueAutosave()" placeholder="Añade una descripción o contexto de la tarea..."
             style="width:100%;background:var(--bg-main);border:1px solid var(--border-color);border-radius:7px;padding:7px 11px;font-size:13px;color:var(--text-main);outline:none;resize:vertical;box-sizing:border-box;font-family:inherit;transition:border-color .15s;line-height:1.5"
             onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'"></textarea>
+        </div>
+
+        <!-- Dependencias -->
+        <div id="deps-section">
+          <label style="display:block;font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+            <i data-lucide="git-merge" style="width:12px;height:12px"></i> DEPENDENCIAS
+          </label>
+          <div id="deps-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+          <button id="btn-add-dep" onclick="showAddDepUI()" style="display:none;font-size:11px;color:#4573d2;background:rgba(69,115,210,0.06);border:1px dashed rgba(69,115,210,0.3);border-radius:6px;padding:5px 12px;cursor:pointer;width:100%;text-align:center">
+            + Añadir dependencia
+          </button>
+          <div id="add-dep-ui" style="display:none;background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:10px;margin-top:6px">
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin-bottom:8px">
+              <select id="dep-task-select" style="width:100%;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit">
+                <option value="">— Selecciona una tarea —</option>
+              </select>
+              <select id="dep-type" style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit;white-space:nowrap">
+                <option value="blocks">🔒 Bloqueante</option>
+                <option value="related">🔗 Relacionada</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button onclick="confirmAddDependency()" style="flex:1;padding:6px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Añadir</button>
+              <button onclick="hideAddDepUI()" style="padding:6px 12px;border-radius:6px;background:var(--bg-panel);color:var(--text-muted);border:1px solid var(--border-color);font-size:12px;cursor:pointer">Cancelar</button>
+            </div>
+          </div>
         </div>
 
         <!-- Adjuntos -->
@@ -1072,7 +1195,7 @@
 
     // ── CONSTANTES Y ESTADO ────────────────────────────────────
     let isEditModeActive = false;
-    let currentActiveView = 'gantt';
+    let currentActiveView = 'home';
     let TASKS = [];
     let expanded = {};
     let editId = null;
@@ -1180,14 +1303,18 @@
     async function unlockDashboard() {
       document.getElementById('gatekeeper-screen').classList.add('hidden');
       document.getElementById('app-content').classList.remove('hidden');
-      const userName = await getCurrentDisplayName();
+
+      // Parallelize: user name + tasks at the same time
+      const [userName] = await Promise.all([
+        getCurrentDisplayName(),
+        loadTasksFromCloud()        // served from cache if fresh
+      ]);
       document.getElementById('current-user').textContent = userName;
       lucide.createIcons();
-      await loadTasksFromCloud();
       setupRealtime();
       applyGanttHeight();
       initResizeHandle();
-      setTimeout(() => { goToday(); }, 350);
+      // goToday called by switchView('gantt') when user navigates there
     }
 
     async function logout() {
@@ -1220,8 +1347,68 @@
       lucide.createIcons();
     }
 
+    // ── CACHE DE SESIÓN ────────────────────────────────────────
+    const CACHE_KEY   = 'gf_tasks_cache';
+    const CACHE_TTL   = 5 * 60 * 1000; // 5 minutos
+
+    function saveTasksToCache(tasks) {
+      try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+          ts: Date.now(),
+          data: tasks.map(t => ({
+            id: t.id, proj: t.proj, task: t.task, resp: t.resp,
+            proj_resp: t.proj_resp,
+            start_date: t.start ? t.start.toISOString() : null,
+            end_date:   t.end   ? t.end.toISOString()   : null,
+            status: t.status, prio: t.prio, cat: t.cat, notes: t.notes,
+            updated_at: t.updated_at, updated_by: t.updated_by
+          }))
+        }));
+      } catch(e) {} // quota exceeded — ignore silently
+    }
+
+    function loadTasksFromCache() {
+      try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const { ts, data } = JSON.parse(raw);
+        if (Date.now() - ts > CACHE_TTL) return null; // stale
+        return data.map(t => ({
+          id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
+          proj_resp: t.proj_resp || '',
+          start: t.start_date ? new Date(t.start_date) : null,
+          end:   t.end_date   ? new Date(t.end_date)   : null,
+          status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
+          cat: t.cat || 'Catálogos', notes: t.notes || '',
+          updated_at: t.updated_at || null,
+          updated_by: t.updated_by || null
+        }));
+      } catch(e) { return null; }
+    }
+
+    function invalidateTasksCache() {
+      try { sessionStorage.removeItem(CACHE_KEY); } catch(e) {}
+    }
+
     // ── CARGA DE DATOS ─────────────────────────────────────────
     async function loadTasksFromCloud() {
+      // 1. Serve from cache immediately if fresh
+      const cached = loadTasksFromCache();
+      if (cached) {
+        TASKS = cached;
+        TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
+        refreshProjectList();
+        populateDynamicFilters();
+        applyFilters();
+        // 2. Refresh from Supabase in background (silent update)
+        _refreshTasksBackground();
+        return;
+      }
+      // No cache — fetch normally
+      await _fetchTasksFromSupabase();
+    }
+
+    async function _fetchTasksFromSupabase() {
       try {
         const { data, error } = await supabaseClient.from('tareas').select('*').order('proj', { ascending: true });
         if (error) throw error;
@@ -1236,10 +1423,11 @@
             updated_at: t.updated_at || null,
             updated_by: t.updated_by || null
           }));
+          saveTasksToCache(TASKS);
         }
       } catch (err) {
         console.warn("Error de conexión con Supabase:", err?.message || err);
-        const sbRows = document.getElementById('sb-rows');
+        const sbRows = document.getElementById('gantt-rows');
         if (sbRows && TASKS.length === 0) {
           sbRows.innerHTML = '<div class="p-4 text-xs text-red-500 text-center">No se pudieron cargar las tareas. Comprueba la conexión.</div>';
         }
@@ -1248,6 +1436,36 @@
       refreshProjectList();
       populateDynamicFilters();
       applyFilters();
+    }
+
+    async function _refreshTasksBackground() {
+      try {
+        const { data, error } = await supabaseClient.from('tareas').select('*').order('proj', { ascending: true });
+        if (error) return;
+        if (data) {
+          const fresh = data.map(t => ({
+            id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
+            proj_resp: t.proj_resp || '',
+            start: t.start_date ? new Date(t.start_date) : null,
+            end:   t.end_date   ? new Date(t.end_date)   : null,
+            status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
+            cat: t.cat || 'Catálogos', notes: t.notes || '',
+            updated_at: t.updated_at || null,
+            updated_by: t.updated_by || null
+          }));
+          // Only re-render if data actually changed
+          const changed = JSON.stringify(fresh.map(t=>t.id+t.status+t.updated_at)) !==
+                          JSON.stringify(TASKS.map(t=>t.id+t.status+t.updated_at));
+          if (changed) {
+            TASKS = fresh;
+            saveTasksToCache(TASKS);
+            TASKS.forEach(t => { if(expanded[t.proj] === undefined) expanded[t.proj] = true; });
+            refreshProjectList();
+            populateDynamicFilters();
+            applyFilters();
+          }
+        }
+      } catch(e) {} // background — fail silently
     }
 
     let _realtimeChannel = null;
@@ -1729,6 +1947,7 @@
       currentActiveView = viewName;
       // ALL views — original + budget layer
       const allViews = {
+        home:      'view-home-container',
         gantt:     'view-gantt-container',
         kanban:    'view-kanban-container',
         calendar:  'view-calendar-container',
@@ -1737,12 +1956,20 @@
         annual:    'view-annual-container',
         exec:      'view-exec-container'
       };
-      const sbNavs = ['sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
+      const sbNavs = ['sb-nav-home','sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
 
       // Show active, hide all others
       Object.entries(allViews).forEach(([v, id]) => {
         const el = document.getElementById(id);
-        if (el) v === viewName ? el.classList.remove('hidden') : el.classList.add('hidden');
+        if (!el) return;
+        if (v === viewName) {
+          el.classList.remove('hidden');
+          // Gantt needs display:flex not display:block
+          if (v === 'gantt') el.style.display = 'flex';
+        } else {
+          el.classList.add('hidden');
+          if (v === 'gantt') el.style.display = '';
+        }
       });
 
       // Update sidebar nav buttons
@@ -1752,7 +1979,8 @@
       });
 
       // Render the right content
-      if      (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
+      if      (viewName === 'home')     renderHome();
+      else if (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
       else if (viewName === 'kanban')    renderKanban();
       else if (viewName === 'calendar')  renderCalendar();
       else if (viewName === 'dashboard') renderDashboard();
@@ -1797,10 +2025,13 @@
       return 1 + Math.round(((tmp - w1) / 86400000 - 3 + (w1.getDay() + 6) % 7) / 7);
     }
 
-    function syncScroll(el) {
-      const sbRows = document.getElementById('sb-rows');
-      if (sbRows) sbRows.scrollTop = el.scrollTop;
+    // ── GANTT SYNC SCROLL ──────────────────────────────────────
+    function ganttSyncScroll(el) {
+      const rows = document.getElementById('gantt-rows');
+      if (rows) rows.scrollTop = el.scrollTop;
     }
+    // Keep old syncScroll for compatibility
+    function syncScroll(el) { ganttSyncScroll(el); }
 
     let allExpanded = true;
     function toggleAllExpanded() {
@@ -1813,9 +2044,7 @@
       if (!currentSort.field) return tasks;
       return [...tasks].sort((a, b) => {
         let av = a[currentSort.field], bv = b[currentSort.field];
-        if (!av && !bv) return 0;
-        if (!av) return 1;
-        if (!bv) return -1;
+        if (!av && !bv) return 0; if (!av) return 1; if (!bv) return -1;
         av = av instanceof Date ? av.getTime() : av;
         bv = bv instanceof Date ? bv.getTime() : bv;
         return currentSort.direction === 'asc' ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
@@ -1824,12 +2053,8 @@
 
     function toggleSort(field) {
       if (currentSort.field !== field) { currentSort.field = field; currentSort.direction = 'asc'; }
-      else if (currentSort.direction === 'asc') { currentSort.direction = 'desc'; }
+      else if (currentSort.direction === 'asc') currentSort.direction = 'desc';
       else { currentSort.field = null; currentSort.direction = 'asc'; }
-      const ss = document.getElementById('sort-start');
-      const se = document.getElementById('sort-end');
-      if (ss) ss.textContent = getSortIcon('start');
-      if (se) se.textContent = getSortIcon('end');
       render();
     }
 
@@ -1838,145 +2063,260 @@
       return currentSort.direction === 'asc' ? '↑' : '↓';
     }
 
+    // ── GANTT CANVAS RENDERING ─────────────────────────────────
+    const ROW_H  = 44;
+    const BAR_H  = 16;
+    const BAR_Y  = (ROW_H - BAR_H) / 2; // vertical center in row
+
+    // Store clickable bar regions for canvas click handling
+    let _canvasBars = []; // [{x,y,w,taskId}]
+
     function render() {
       CAL = buildCalendar();
-      const projs   = buildProjects(filteredTasks);
-      const sbRows  = document.getElementById('sb-rows');
-      const tlInner = document.getElementById('tl-inner');
-      if (!sbRows || !tlInner) return;
-      sbRows.innerHTML = ''; tlInner.innerHTML = '';
-      const totalW = CAL.days.length * DAY_W;
+      const projs    = buildProjects(filteredTasks);
+      const ganttRows = document.getElementById('gantt-rows');
+      const canvas    = document.getElementById('gantt-canvas');
+      const rightScroll = document.getElementById('gantt-right-scroll');
+      if (!ganttRows || !canvas || !rightScroll) return;
 
-      // Cabecera meses
-      let monthHtml = `<div class="flex h-8 border-b theme-border sticky top-0 z-10" style="width:${totalW}px; background-color: var(--bg-header);">`;
-      let currentMonth = -1, currentYear = -1, monthCount = 0;
-      CAL.days.forEach(d => {
-        const m = d.getMonth(), y = d.getFullYear();
-        if (m !== currentMonth || y !== currentYear) {
-          if (currentMonth !== -1) monthHtml += `<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${monthCount*DAY_W}px">${MONTHS_ES[currentMonth]} ${currentYear}</div>`;
-          currentMonth = m; currentYear = y; monthCount = 1;
-        } else { monthCount++; }
-      });
-      monthHtml += `<div class="border-r theme-border flex items-center px-3 text-[10px] font-bold tracking-wider theme-text-muted uppercase shrink-0" style="width:${monthCount*DAY_W}px">${MONTHS_ES[currentMonth]} ${currentYear}</div></div>`;
+      const totalW  = CAL.days.length * DAY_W;
+      const isDark  = document.documentElement.classList.contains('dark');
 
-      // Cabecera semanas
-      let wkHtml = `<div class="flex h-6 border-b theme-border sticky top-8 z-10" style="width:${totalW}px; background-color: var(--bg-header);">`;
-      let wk = -1, wkCount = 0;
-      CAL.days.forEach(d => {
-        const w = getISOWeek(d);
-        if (w !== wk) {
-          if (wk >= 0) wkHtml += `<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div>`;
-          wk = w; wkCount = 1;
-        } else { wkCount++; }
-      });
-      wkHtml += `<div class="border-r theme-border flex items-center justify-center text-[9px] theme-text-muted opacity-80 font-medium shrink-0" style="width:${wkCount*DAY_W}px">S${wk}</div></div>`;
-
-      // Cabecera días
-      let dayHtml = `<div class="flex h-6 border-b theme-border sticky z-10" style="top:56px;width:${totalW}px; background-color: var(--bg-header);">`;
-      CAL.days.forEach(d => {
-        const isWE = d.getDay() === 0 || d.getDay() === 6;
-        const isTd = d.toDateString() === TODAY.toDateString();
-        const dayNum = d.getDate();
-        const txtStyle = isTd ? 'color:#3b82f6;font-weight:700;' : isWE ? 'opacity:0.35;' : (dayNum === 1 ? 'font-weight:700;' : '');
-        const bgStyle  = isTd ? 'background:rgba(59,130,246,0.08);' : isWE ? 'background:rgba(0,0,0,0.015);' : '';
-        dayHtml += `<div class="shrink-0 h-full border-r theme-border flex items-center justify-center" style="width:${DAY_W}px;${bgStyle}${txtStyle}"><span style="font-size:9px;line-height:1;font-family:monospace">${dayNum}</span></div>`;
-      });
-      dayHtml += '</div>';
-
-      const rowsDiv = document.createElement('div');
-      rowsDiv.style.cssText = `position:relative;width:${totalW}px;`;
-
-      const todayOff = dayOffset(TODAY);
-      if (todayOff !== null && todayOff < CAL.days.length) {
-        const line = document.createElement('div'); line.className = 'absolute top-0 w-[1.5px] z-20 pointer-events-none opacity-50';
-        const totalRows = projs.reduce((a, p) => a + 1 + (expanded[p.name] ? p.tasks.length : 0), 0);
-        line.style.cssText = `left:${todayOff*DAY_W+15}px;height:${totalRows*44}px;background:#3b82f6`;
-        rowsDiv.appendChild(line);
-      }
-
+      // ── Build flat row list ──────────────────────────────────
+      const rows = []; // {type:'proj'|'task', data, proj}
       projs.forEach(proj => {
-        const isOpen    = expanded[proj.name] !== false;
-        const catColor  = CAT_COLOR[proj.cat] || CAT_COLOR.default;
-
-        const sbProj = document.createElement('div');
-        sbProj.className = 'flex items-center px-4 h-11 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 border-b theme-border transition font-medium theme-text text-xs';
-        sbProj.style.backgroundColor = 'var(--bg-main)';
-        sbProj.innerHTML = `<i data-lucide="chevron-right" class="w-3.5 h-3.5 mr-2 theme-text-muted transition-transform ${isOpen?'transform rotate-90':''}"></i><span class="w-2 h-2 rounded-full mr-2 shrink-0" style="background:${catColor}"></span><span class="truncate pr-2 flex-1">${esc(proj.name)}</span>${proj.proj_resp?`<span class="text-[9px] theme-text-muted font-mono shrink-0 ml-1 opacity-70">${esc(proj.proj_resp)}</span>`:''}<span class="w-[90px] shrink-0"></span><span class="w-[110px] shrink-0"></span><span class="w-[70px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[72px] shrink-0"></span><span class="w-[28px] shrink-0"></span>`;
-        sbProj.onclick = () => { expanded[proj.name] = !isOpen; render(); };
-        sbRows.appendChild(sbProj);
-
-        const gProj = document.createElement('div');
-        gProj.className = 'flex h-11 border-b theme-border';
-        gProj.style.width = totalW + 'px';
-        gProj.style.backgroundColor = 'var(--bg-main)';
-        CAL.days.forEach(d => {
-          const cell = document.createElement('div');
-          cell.className = 'shrink-0 h-full border-r theme-border opacity-30' + (d.getDay()===0||d.getDay()===6?' bg-gray-200 dark:bg-slate-900':'');
-          cell.style.width = DAY_W + 'px';
-          gProj.appendChild(cell);
-        });
-        rowsDiv.appendChild(gProj);
-
-        if (isOpen) {
+        rows.push({ type:'proj', data: proj });
+        if (expanded[proj.name] !== false) {
           sortTasks(proj.tasks).forEach(task => {
-            const sbTask = document.createElement('div');
-            sbTask.className = 'flex items-center pl-8 pr-2 h-11 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/40 border-b theme-border transition theme-text-muted text-xs';
-            const sc   = STATUS_COLOR[task.status] || '#9ca3af';
-            const sb   = STATUS_BG[task.status]    || 'rgba(0,0,0,0.1)';
-            const isOv = task.end && task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
-            const fmtShort = d => d ? (d.getDate().toString().padStart(2,'0') + '/' + (d.getMonth()+1).toString().padStart(2,'0')) : '—';
-
-            sbTask.innerHTML = `
-              <span class="truncate pr-2 theme-text font-medium flex-1" title="${esc(task.task)}">${esc(task.task)}</span>
-              <span class="w-[90px] text-center shrink-0 text-[9px] theme-text-muted opacity-80 truncate font-mono px-1">${esc(task.resp)}</span>
-              <div class="w-[110px] flex justify-center shrink-0 px-1">
-                <span class="text-[9px] px-1.5 py-0.5 rounded font-medium shadow-sm truncate max-w-full" style="color:${sc};background:${sb};border:0.5px solid ${sc}44">${esc(task.status)}</span>
-              </div>
-              <div class="w-[70px] flex justify-center shrink-0 px-1">
-                <span class="text-[9px] px-1.5 py-0.5 rounded font-medium" style="color:${PRIO_COLOR[task.prio]||'#64748b'};background:${PRIO_COLOR[task.prio]||'#64748b'}18;border:0.5px solid ${PRIO_COLOR[task.prio]||'#64748b'}44">${esc(task.prio)}</span>
-              </div>
-              <span class="w-[72px] text-center shrink-0 font-mono text-[9px] ${isOv?'text-red-500':'theme-text-muted'}">${fmtShort(task.start)}</span>
-              <span class="w-[72px] text-center shrink-0 font-mono text-[9px] ${isOv?'text-red-500 font-bold':'theme-text-muted'}">${fmtShort(task.end)}</span>
-              <span class="w-[28px] shrink-0"></span>`;
-            sbTask.onclick = () => openEdit(task.id);
-            sbRows.appendChild(sbTask);
-
-            const gTask = document.createElement('div');
-            gTask.className = 'flex h-11 border-b theme-border opacity-80 relative';
-            gTask.style.width = totalW + 'px';
-            CAL.days.forEach(d => {
-              const cell = document.createElement('div');
-              cell.className = 'shrink-0 h-full border-r theme-border opacity-20' + (d.getDay()===0||d.getDay()===6?' bg-gray-100 dark:bg-slate-900/40':'');
-              cell.style.width = DAY_W + 'px';
-              gTask.appendChild(cell);
-            });
-
-            if (task.start && task.end) {
-              const s = dayOffset(task.start), e = dayOffset(task.end);
-              if (s !== null && e !== null && s < CAL.days.length && e >= 0) {
-                const cs = Math.max(0, s), ce = Math.min(CAL.days.length-1, e);
-                const bar = document.createElement('div');
-                bar.className = 'absolute h-4 rounded cursor-pointer transition-all hover:brightness-110 z-10 flex items-center px-2 shadow-sm border border-black/10';
-                const barColor = isOv ? '#ef4444' : sc;
-                bar.style.cssText = `left:${cs*DAY_W+2}px;width:${(ce-cs+1)*DAY_W-4}px;background:${barColor};top:13px`;
-                bar.innerHTML = `<span class="text-[9px] font-bold text-white uppercase truncate">${esc(task.task)}</span>`;
-                bar.title = `${esc(task.task)} [${esc(task.resp)}]`;
-                bar.onclick = () => openEdit(task.id);
-                gTask.appendChild(bar);
-              }
-            }
-            rowsDiv.appendChild(gTask);
+            rows.push({ type:'task', data: task, proj });
           });
         }
       });
+      const totalH = rows.length * ROW_H;
 
-      tlInner.innerHTML = monthHtml + wkHtml + dayHtml;
-      tlInner.appendChild(rowsDiv);
+      // ── Left panel: task list ──────────────────────────────
+      ganttRows.innerHTML = '';
+      rows.forEach(row => {
+        const el = document.createElement('div');
+        if (row.type === 'proj') {
+          const proj   = row.data;
+          const isOpen = expanded[proj.name] !== false;
+          const cc     = CAT_COLOR[proj.cat] || CAT_COLOR.default;
+          el.style.cssText = 'display:flex;align-items:center;padding:0 16px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--text-main);background:var(--bg-main);gap:6px;flex-shrink:0';
+          el.innerHTML = `<i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-muted);transition:transform .15s;transform:rotate(${isOpen?90:0}deg);flex-shrink:0"></i>
+            <span style="width:8px;height:8px;border-radius:50%;background:${cc};flex-shrink:0"></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(proj.name)}</span>
+            ${proj.proj_resp?`<span style="font-size:9px;color:var(--text-muted);font-family:monospace;opacity:.7;flex-shrink:0">${esc(proj.proj_resp)}</span>`:''}
+            <span style="width:90px;flex-shrink:0"></span>
+            <span style="width:110px;flex-shrink:0"></span>
+            <span style="width:70px;flex-shrink:0"></span>
+            <span style="width:72px;flex-shrink:0"></span>
+            <span style="width:72px;flex-shrink:0"></span>
+            <span style="width:28px;flex-shrink:0"></span>`;
+          el.onclick = () => { expanded[proj.name] = !isOpen; render(); };
+        } else {
+          const task = row.data;
+          const sc   = STATUS_COLOR[task.status] || '#9ca3af';
+          const sb   = STATUS_BG[task.status]    || 'rgba(0,0,0,0.1)';
+          const pc   = PRIO_COLOR[task.prio]     || '#64748b';
+          const isOv = task.end && task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
+          const fmt  = d => d ? d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0') : '—';
+          el.style.cssText = 'display:flex;align-items:center;padding-left:32px;padding-right:8px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;color:var(--text-muted);background:transparent;transition:background .1s;flex-shrink:0';
+          el.innerHTML = `
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--text-main)" title="${esc(task.task)}">${esc(task.task)}</span>
+            <span style="width:90px;flex-shrink:0;text-align:center;font-size:9px;opacity:.8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px">${esc(task.resp)}</span>
+            <div style="width:110px;flex-shrink:0;display:flex;justify-content:center;padding:0 4px">
+              <span style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:500;color:${sc};background:${sb};border:0.5px solid ${sc}44;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%">${esc(task.status)}</span>
+            </div>
+            <div style="width:70px;flex-shrink:0;display:flex;justify-content:center;padding:0 4px">
+              <span style="font-size:9px;padding:1px 5px;border-radius:3px;font-weight:500;color:${pc};background:${pc}18;border:0.5px solid ${pc}44">${esc(task.prio)}</span>
+            </div>
+            <span style="width:72px;flex-shrink:0;text-align:center;font-size:9px;font-family:monospace;color:${isOv?'#ef4444':'var(--text-muted)'}">${fmt(task.start)}</span>
+            <span style="width:72px;flex-shrink:0;text-align:center;font-size:9px;font-family:monospace;font-weight:${isOv?700:400};color:${isOv?'#ef4444':'var(--text-muted)'}">${fmt(task.end)}</span>
+            <span style="width:28px;flex-shrink:0"></span>`;
+          el.onmouseover = () => el.style.background = isDark ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.025)';
+          el.onmouseout  = () => el.style.background = 'transparent';
+          el.onclick = () => openEdit(task.id);
+        }
+        ganttRows.appendChild(el);
+      });
+      lucide.createIcons();
+
+      // ── Calendar header ──────────────────────────────────────
+      const monthsRow = document.getElementById('gantt-months-row');
+      const weeksRow  = document.getElementById('gantt-weeks-row');
+      const daysRow   = document.getElementById('gantt-days-row');
+      if (monthsRow) {
+        monthsRow.innerHTML = '';
+        let cm = -1, cy2 = -1, mc = 0;
+        CAL.days.forEach((d,i) => {
+          const m = d.getMonth(), y = d.getFullYear();
+          if (m !== cm || y !== cy2) {
+            if (cm !== -1) { const el = document.createElement('div'); el.style.cssText=`width:${mc*DAY_W}px;flex-shrink:0;border-right:1px solid var(--border-color);display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);overflow:hidden`; el.textContent=MONTHS_ES[cm]+' '+cy2; monthsRow.appendChild(el); }
+            cm=m; cy2=y; mc=1;
+          } else mc++;
+          if (i===CAL.days.length-1) { const el = document.createElement('div'); el.style.cssText=`width:${mc*DAY_W}px;flex-shrink:0;border-right:1px solid var(--border-color);display:flex;align-items:center;padding:0 10px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);overflow:hidden`; el.textContent=MONTHS_ES[cm]+' '+cy2; monthsRow.appendChild(el); }
+        });
+      }
+      if (weeksRow) {
+        weeksRow.innerHTML = '';
+        let cw = -1, wc = 0;
+        CAL.days.forEach((d,i) => {
+          const w = getISOWeek(d);
+          if (w !== cw) {
+            if (cw >= 0) { const el = document.createElement('div'); el.style.cssText=`width:${wc*DAY_W}px;flex-shrink:0;border-right:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);opacity:.8`; el.textContent='S'+cw; weeksRow.appendChild(el); }
+            cw=w; wc=1;
+          } else wc++;
+          if (i===CAL.days.length-1) { const el = document.createElement('div'); el.style.cssText=`width:${wc*DAY_W}px;flex-shrink:0;border-right:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:9px;color:var(--text-muted);opacity:.8`; el.textContent='S'+cw; weeksRow.appendChild(el); }
+        });
+      }
+      if (daysRow) {
+        daysRow.innerHTML = '';
+        CAL.days.forEach(d => {
+          const isWE = d.getDay()===0||d.getDay()===6;
+          const isTd = d.toDateString()===TODAY.toDateString();
+          const el = document.createElement('div');
+          el.style.cssText = `width:${DAY_W}px;flex-shrink:0;height:100%;border-right:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:monospace;`
+            + (isTd?'color:#3b82f6;font-weight:700;background:rgba(59,130,246,.08);':isWE?'opacity:.35;background:rgba(0,0,0,.015);':(d.getDate()===1?'font-weight:700;':''));
+          el.textContent = d.getDate();
+          daysRow.appendChild(el);
+        });
+      }
+
+      // ── Canvas ───────────────────────────────────────────────
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width  = totalW * dpr;
+      canvas.height = totalH * dpr;
+      canvas.style.width  = totalW + 'px';
+      canvas.style.height = totalH + 'px';
+
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, totalW, totalH);
+
+      // Grid background
+      const borderCol = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
+      const wkndCol   = isDark ? 'rgba(0,0,0,.25)' : 'rgba(0,0,0,.025)';
+
+      rows.forEach((row, ri) => {
+        const y = ri * ROW_H;
+        // Row background + border
+        ctx.strokeStyle = borderCol;
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(totalW, y + ROW_H - 0.5); ctx.stroke();
+
+        CAL.days.forEach((d, di) => {
+          const x = di * DAY_W;
+          const isWE = d.getDay()===0||d.getDay()===6;
+          const isTd = d.toDateString()===TODAY.toDateString();
+          if (isWE) { ctx.fillStyle = wkndCol; ctx.fillRect(x, y, DAY_W, ROW_H); }
+          if (isTd) { ctx.fillStyle = 'rgba(59,130,246,.06)'; ctx.fillRect(x, y, DAY_W, ROW_H); }
+          // vertical grid line
+          ctx.strokeStyle = borderCol;
+          ctx.lineWidth = 0.5;
+          ctx.beginPath(); ctx.moveTo(x + DAY_W - 0.5, y); ctx.lineTo(x + DAY_W - 0.5, y + ROW_H); ctx.stroke();
+        });
+      });
+
+      // Today vertical line
+      const todayOff = dayOffset(TODAY);
+      if (todayOff !== null && todayOff < CAL.days.length) {
+        ctx.strokeStyle = 'rgba(59,130,246,.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(todayOff * DAY_W + DAY_W/2, 0);
+        ctx.lineTo(todayOff * DAY_W + DAY_W/2, totalH);
+        ctx.stroke();
+      }
+
+      // Bars
+      _canvasBars = [];
+      rows.forEach((row, ri) => {
+        if (row.type !== 'task') return;
+        const task = row.data;
+        if (!task.start || !task.end) return;
+        const s = dayOffset(task.start), e = dayOffset(task.end);
+        if (s === null || e === null || s >= CAL.days.length || e < 0) return;
+        const cs = Math.max(0, s), ce = Math.min(CAL.days.length - 1, e);
+        const bx = cs * DAY_W + 2;
+        const bw = (ce - cs + 1) * DAY_W - 4;
+        const by = ri * ROW_H + BAR_Y;
+        const isOv = task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
+        const barColor = isOv ? '#ef4444' : (STATUS_COLOR[task.status] || '#4573d2');
+
+        // Bar fill with rounded corners
+        const r2 = 3;
+        ctx.fillStyle = barColor;
+        ctx.beginPath();
+        ctx.moveTo(bx + r2, by);
+        ctx.lineTo(bx + bw - r2, by);
+        ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r2);
+        ctx.lineTo(bx + bw, by + BAR_H - r2);
+        ctx.quadraticCurveTo(bx + bw, by + BAR_H, bx + bw - r2, by + BAR_H);
+        ctx.lineTo(bx + r2, by + BAR_H);
+        ctx.quadraticCurveTo(bx, by + BAR_H, bx, by + BAR_H - r2);
+        ctx.lineTo(bx, by + r2);
+        ctx.quadraticCurveTo(bx, by, bx + r2, by);
+        ctx.closePath();
+        ctx.fill();
+
+        // Subtle overlay for depth
+        ctx.fillStyle = 'rgba(255,255,255,.15)';
+        ctx.fillRect(bx + r2, by, bw - r2*2, BAR_H / 2);
+
+        // Label
+        if (bw > 20) {
+          ctx.fillStyle = '#fff';
+          ctx.font = `bold ${Math.min(10,bw/8+7)}px system-ui,sans-serif`;
+          ctx.textBaseline = 'middle';
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(bx + 4, by, bw - 8, BAR_H);
+          ctx.clip();
+          ctx.fillText(task.task, bx + 5, by + BAR_H / 2);
+          ctx.restore();
+        }
+
+        _canvasBars.push({ x: bx, y: by, w: bw, h: BAR_H, taskId: task.id });
+      });
+
+      // Right scroll container dimensions
+      document.getElementById('gantt-right-inner').style.height = (totalH + 80) + 'px';
+      document.getElementById('gantt-right-inner').style.width  = totalW + 'px';
+
+      // Sync sort icons
       const ss = document.getElementById('sort-start');
       const se = document.getElementById('sort-end');
       if (ss) ss.textContent = getSortIcon('start');
       if (se) se.textContent = getSortIcon('end');
-      lucide.createIcons();
+
+      // Attach canvas event listeners (once)
+      attachCanvasListeners();
+    }
+
+    // Canvas click/hover — attached once after first render
+    let _canvasListenersAttached = false;
+    function attachCanvasListeners() {
+      if (_canvasListenersAttached) return;
+      const canvas = document.getElementById('gantt-canvas');
+      if (!canvas) return;
+      _canvasListenersAttached = true;
+      canvas.addEventListener('click', e => {
+        const rect = canvas.getBoundingClientRect();
+        const scr  = document.getElementById('gantt-right-scroll');
+        const mx = e.clientX - rect.left + (scr ? scr.scrollLeft : 0);
+        const my = e.clientY - rect.top  + (scr ? scr.scrollTop - 80 : 0);
+        const hit = _canvasBars.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
+        if (hit) openEdit(hit.taskId);
+      });
+      canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        const scr  = document.getElementById('gantt-right-scroll');
+        const mx = e.clientX - rect.left + (scr ? scr.scrollLeft : 0);
+        const my = e.clientY - rect.top  + (scr ? scr.scrollTop - 80 : 0);
+        const hit = _canvasBars.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
+        canvas.style.cursor = hit ? 'pointer' : 'default';
+      });
     }
 
     // ── KANBAN ─────────────────────────────────────────────────
@@ -2185,16 +2525,13 @@
 
     // ── GANTT RESIZE ───────────────────────────────────────────
     function applyGanttHeight() {
-      const sbRows   = document.getElementById('sb-rows');
-      const tlScroll = document.getElementById('tl-scroll');
+      const wrapper  = document.getElementById('gantt-wrapper');
       const hdr      = document.getElementById('desktop-header');
-      if (!sbRows || !tlScroll) return;
-      // Calculate available height: viewport minus fixed header
-      const hdrH = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 96;
+      if (!wrapper) return;
+      const hdrH  = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 96;
       const availH = Math.max(400, window.innerHeight - hdrH - 32);
       const h = Math.min(ganttHeight, availH);
-      sbRows.style.maxHeight  = (h - 80) + 'px';
-      tlScroll.style.maxHeight = h + 'px';
+      wrapper.style.height = h + 'px';
     }
 
     function initResizeHandle() {
@@ -2216,7 +2553,7 @@
 
     function goToday() {
       const off = dayOffset(TODAY); if (off === null) return;
-      const scrollEl = document.getElementById('tl-scroll');
+      const scrollEl = document.getElementById('gantt-right-scroll');
       if (scrollEl) scrollEl.scrollLeft = Math.max(0, off * DAY_W - 120);
     }
 
@@ -2270,6 +2607,10 @@
       editId = id;
       loadComments(id);
       loadFiles(id);
+      TASK_DEPENDENCIES = [];
+      renderDependencies(); // show empty immediately while loading
+      hideAddDepUI();
+      loadDependencies(id);
       document.getElementById('m-proj').value   = t.proj;
       document.getElementById('m-task').value   = t.task;
       document.getElementById('m-resp').value   = t.resp;
@@ -2394,6 +2735,7 @@
         const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
         if (error) throw error;
         showAutosaveStatus('saved');
+        invalidateTasksCache(); // force fresh load next time
         // Refresh visual sin cerrar modal
         await loadTasksFromCloud();
         refreshProjectList();
@@ -2745,7 +3087,7 @@
     unlockDashboard = async function() {
       await _origUnlock2();
       setTimeout(applyHeaderMargin, 100);
-      setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 1200);
+      setTimeout(function() { loadNotifications(); setupNotifRealtime(); }, 300);
     };
 
     // switchView already syncs both top tabs and sidebar nav (patched inline above)
@@ -3651,18 +3993,19 @@
     const _origUnlockBudget = unlockDashboard;
     unlockDashboard = async function(){
       await _origUnlockBudget();
-      const cy = populateYearSelects(); // returns current year and sets selects
-      await loadBudgetData(cy);         // pre-load with explicit year
 
-      // Show Vista anual y Dashboard ejecutivo solo para javierimedio@gorfactory.es
-      try {
-        const { data: { user } } = await supabaseClient.auth.getUser();
-        const isJavier = user?.email === 'javierimedio@gorfactory.es';
-        const annualBtn = document.getElementById('sb-nav-annual');
-        const execBtn   = document.getElementById('sb-nav-exec');
-        if (annualBtn) annualBtn.style.display = isJavier ? 'flex' : 'none';
-        if (execBtn)   execBtn.style.display   = isJavier ? 'flex' : 'none';
-      } catch(e) {}
+      // Parallelize budget load + user role check
+      const cy = populateYearSelects();
+      const [,{ data: { user } }] = await Promise.all([
+        loadBudgetData(cy),
+        supabaseClient.auth.getUser()
+      ]);
+
+      const isJavier = user?.email === 'javierimedio@gorfactory.es';
+      const annualBtn = document.getElementById('sb-nav-annual');
+      const execBtn   = document.getElementById('sb-nav-exec');
+      if (annualBtn) annualBtn.style.display = isJavier ? 'flex' : 'none';
+      if (execBtn)   execBtn.style.display   = isJavier ? 'flex' : 'none';
     };
 
     // Patch toggleEditMode to show/hide add budget button
@@ -3674,6 +4017,215 @@
     };
 
 
+
+    // ══════════════════════════════════════════════════════════
+    // DASHBOARD DE INICIO
+    // ══════════════════════════════════════════════════════════
+    async function renderHome() {
+      const me = _currentDisplayName || '';
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+
+      const hour = now.getHours();
+      const greeting = hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+      const dayStr = now.toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+      const greetEl = document.getElementById('home-greeting');
+      const dateEl  = document.getElementById('home-date');
+      if (greetEl) greetEl.textContent = greeting + (me ? ', ' + me.split(' ')[0] : '') + ' 👋';
+      if (dateEl)  dateEl.textContent  = dayStr.charAt(0).toUpperCase() + dayStr.slice(1);
+
+      const myTasks = TASKS.filter(t => t.resp && t.resp.toLowerCase().includes(me.toLowerCase()) && t.status !== 'Completado' && t.status !== 'Cancelado');
+      const overdue  = myTasks.filter(t => t.end && t.end < today);
+      const upcoming = myTasks.filter(t => t.end && t.end >= today && t.end <= weekEnd);
+      const completed = TASKS.filter(t => t.resp && t.resp.toLowerCase().includes(me.toLowerCase()) && t.status === 'Completado');
+
+      const setKpi = (id, val, warn) => { const el = document.getElementById(id); if (el) { el.textContent = String(val); if (warn && val > 0) el.style.color = '#ef4444'; } };
+      setKpi('home-kpi-active',   myTasks.length);
+      setKpi('home-kpi-overdue',  overdue.length, true);
+      setKpi('home-kpi-upcoming', upcoming.length);
+      setKpi('home-kpi-done',     completed.length);
+
+      const myTasksEl = document.getElementById('home-my-tasks');
+      if (myTasksEl) {
+        if (!myTasks.length) { myTasksEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin tareas activas asignadas</div>'; }
+        else {
+          const sorted = [...myTasks].sort((a,b) => { if (!a.end&&!b.end) return 0; if (!a.end) return 1; if (!b.end) return -1; return a.end-b.end; });
+          const STATUS_CM = {'En curso':'#059669','En planificación':'#4573d2','Bloqueado':'#ef4444','Pendiente revisión':'#f59e0b','Sin comenzar':'#64748b'};
+          myTasksEl.innerHTML = sorted.map(t => {
+            const isOv = t.end && t.end < today;
+            const catC = CAT_COLOR[t.cat]||CAT_COLOR.default;
+            const sc = STATUS_CM[t.status]||'#64748b';
+            const endStr = t.end ? t.end.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'}) : '—';
+            return `<div onclick="openEdit(${t.id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(t.proj)}</div></div>
+              <div style="text-align:right;flex-shrink:0"><div style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:999px;background:${sc}18;color:${sc};margin-bottom:3px">${esc(t.status)}</div><div style="font-size:10px;color:${isOv?'#ef4444':'var(--text-muted)'};font-weight:${isOv?'700':'400'}">${isOv?'⚠ ':''}${endStr}</div></div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const upcomingEl = document.getElementById('home-upcoming');
+      if (upcomingEl) {
+        const upAll = TASKS.filter(t => t.end && t.end >= today && t.end <= weekEnd && t.status !== 'Completado' && t.status !== 'Cancelado').sort((a,b)=>a.end-b.end).slice(0,20);
+        if (!upAll.length) { upcomingEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin vencimientos próximos</div>'; }
+        else {
+          upcomingEl.innerHTML = upAll.map(t => {
+            const daysLeft = Math.ceil((t.end-today)/86400000);
+            const dLabel = daysLeft===0?'Hoy':daysLeft===1?'Mañana':'En '+daysLeft+' días';
+            const dColor = daysLeft<=1?'#ef4444':daysLeft<=3?'#f59e0b':'var(--text-muted)';
+            const catC = CAT_COLOR[t.cat]||CAT_COLOR.default;
+            return `<div onclick="openEdit(${t.id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+              <span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span>
+              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(t.resp)} · ${esc(t.proj)}</div></div>
+              <div style="font-size:11px;font-weight:600;color:${dColor};flex-shrink:0">${dLabel}</div>
+            </div>`;
+          }).join('');
+        }
+      }
+
+      const projsEl = document.getElementById('home-projects');
+      if (projsEl) {
+        const projNames = [...new Set(TASKS.map(t=>t.proj))].sort();
+        projsEl.innerHTML = projNames.map(proj => {
+          const tasks = TASKS.filter(t=>t.proj===proj);
+          const done  = tasks.filter(t=>t.status==='Completado').length;
+          const pct   = tasks.length ? Math.round(done/tasks.length*100) : 0;
+          const blocked = tasks.some(t=>t.status==='Bloqueado');
+          const ovTasks = tasks.filter(t=>t.end&&t.end<today&&t.status!=='Completado'&&t.status!=='Cancelado');
+          const catC = CAT_COLOR[tasks[0]?.cat]||CAT_COLOR.default;
+          const barC = pct===100?'#059669':blocked?'#ef4444':ovTasks.length?'#f59e0b':'#4573d2';
+          return `<div onclick="switchView('gantt')" style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:8px;padding:12px;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='#4573d2'" onmouseout="this.style.borderColor='var(--border-color)'">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:50%;background:${catC};flex-shrink:0"></span><span style="font-size:12px;font-weight:600;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">${esc(proj)}</span><span style="font-size:11px;font-weight:700;color:${barC}">${pct}%</span></div>
+            <div style="height:5px;background:var(--border-color);border-radius:999px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${barC};border-radius:999px"></div></div>
+            <div style="display:flex;gap:8px;margin-top:6px;font-size:10px;color:var(--text-muted)">${done}/${tasks.length} tareas${blocked?' · <span style="color:#ef4444">🔒 Bloqueado</span>':''}${ovTasks.length?' · <span style="color:#f59e0b">⚠ '+ovTasks.length+' vencida'+(ovTasks.length>1?'s':'')+'</span>':''}</div>
+          </div>`;
+        }).join('');
+      }
+
+      const catEl = document.getElementById('home-categories');
+      if (catEl) {
+        const cats = ['Catálogos','Ferias','Web/Digital','Shootings','Eventos','Branding','Marketing Digital','Comunicación'];
+        catEl.innerHTML = cats.map(cat => {
+          const tasks = TASKS.filter(t=>t.cat===cat&&t.status!=='Cancelado');
+          if (!tasks.length) return '';
+          const done = tasks.filter(t=>t.status==='Completado').length;
+          const pct  = Math.round(done/tasks.length*100);
+          const catC = CAT_COLOR[cat]||CAT_COLOR.default;
+          return `<div style="display:grid;grid-template-columns:150px 1fr 50px;align-items:center;gap:10px">
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-main)"><span style="width:8px;height:8px;border-radius:50%;background:${catC};flex-shrink:0"></span>${esc(cat)}</div>
+            <div style="height:8px;background:var(--border-color);border-radius:999px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${catC};border-radius:999px"></div></div>
+            <div style="font-size:11px;color:var(--text-muted);text-align:right">${done}/${tasks.length}</div>
+          </div>`;
+        }).filter(Boolean).join('');
+      }
+      lucide.createIcons();
+    }
+
+    // ══════════════════════════════════════════════════════════
+    // DEPENDENCIAS ENTRE TAREAS
+    // ══════════════════════════════════════════════════════════
+    let TASK_DEPENDENCIES = [];
+
+    async function loadDependencies(taskId) {
+      TASK_DEPENDENCIES = [];
+      renderDependencies();
+      try {
+        const tid = parseInt(taskId);
+        const { data, error } = await supabaseClient.from('task_dependencies')
+          .select('*, dep_task:depends_on_id(id,task,proj,status,end_date)')
+          .eq('task_id', tid);
+        if (error) throw error;
+        // Safety: only keep deps that actually belong to this task
+        TASK_DEPENDENCIES = (data || []).filter(d => d.task_id === tid);
+        renderDependencies();
+      } catch(e) { console.warn('loadDependencies error:', e); }
+    }
+
+    function renderDependencies() {
+      const list = document.getElementById('deps-list');
+      if (!list) return;
+      const today = new Date(); today.setHours(0,0,0,0);
+      if (!TASK_DEPENDENCIES.length) {
+        list.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-style:italic">Sin dependencias</div>';
+      } else {
+        list.innerHTML = TASK_DEPENDENCIES.map(d => {
+          const t = d.dep_task; if (!t) return '';
+          const isBlocks = d.type==='blocks';
+          const isDone   = t.status==='Completado';
+          const endDate  = t.end_date ? new Date(t.end_date) : null;
+          const isLate   = endDate && endDate < today && !isDone;
+          const typeIcon = isBlocks ? '🔒' : '🔗';
+          const typeLabel = isBlocks ? 'Bloqueante' : 'Relacionada';
+          const sColor = isDone?'#059669':isLate?'#ef4444':'#f59e0b';
+          const alert = isLate&&!isDone ? `<span style="font-size:10px;color:#ef4444;font-weight:600;margin-left:4px">⚠ Retrasada</span>` : isDone ? `<span style="font-size:10px;color:#059669;margin-left:4px">✓</span>` : '';
+          return `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-main);border:1px solid ${isLate&&!isDone?'rgba(239,68,68,.3)':'var(--border-color)'};border-radius:7px">
+            <span>${typeIcon}</span>
+            <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:10px;color:var(--text-muted)">${typeLabel} · ${esc(t.proj||'')}</div></div>
+            <span style="font-size:10px;font-weight:600;color:${sColor};white-space:nowrap">${esc(t.status||'')}</span>${alert}
+            ${isEditModeActive?`<button onclick="removeDependency(${d.id})" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:2px;margin-left:2px"><i data-lucide="x" style="width:12px;height:12px"></i></button>`:''}
+          </div>`;
+        }).join('');
+      }
+      const btn = document.getElementById('btn-add-dep');
+      if (btn) btn.style.display = isEditModeActive ? 'block' : 'none';
+      lucide.createIcons();
+    }
+
+    function showAddDepUI() {
+      // Populate select with all tasks except current and already linked
+      const existing = new Set(TASK_DEPENDENCIES.map(d => d.depends_on_id));
+      const sel = document.getElementById('dep-task-select');
+      if (sel) {
+        sel.innerHTML = '<option value="">— Selecciona una tarea —</option>'
+          + TASKS
+            .filter(t => t.id !== editId && !existing.has(t.id))
+            .sort((a,b) => a.proj.localeCompare(b.proj) || a.task.localeCompare(b.task))
+            .map(t => `<option value="${t.id}">[${esc(t.proj)}] ${esc(t.task)}</option>`)
+            .join('');
+      }
+      document.getElementById('add-dep-ui').style.display = 'block';
+      document.getElementById('btn-add-dep').style.display = 'none';
+    }
+
+    function hideAddDepUI() {
+      document.getElementById('add-dep-ui').style.display = 'none';
+      document.getElementById('btn-add-dep').style.display = isEditModeActive ? 'block' : 'none';
+      const sel = document.getElementById('dep-task-select');
+      if (sel) sel.value = '';
+    }
+
+    async function confirmAddDependency() {
+      const sel = document.getElementById('dep-task-select');
+      const dependsOnId = parseInt(sel?.value);
+      if (!dependsOnId) { showToast('Selecciona una tarea', 'error'); return; }
+      await addDependency(dependsOnId);
+    }
+
+    // Keep filterDepTasks as no-op for compatibility
+    function filterDepTasks() {}
+
+    async function addDependency(dependsOnId) {
+      const type = document.getElementById('dep-type').value;
+      try {
+        const { error } = await supabaseClient.from('task_dependencies')
+          .insert([{ task_id: parseInt(editId), depends_on_id: parseInt(dependsOnId), type }]);
+        if (error) throw error;
+        hideAddDepUI();
+        await loadDependencies(editId);
+        showToast('Dependencia añadida', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
+
+    async function removeDependency(depId) {
+      try {
+        const { error } = await supabaseClient.from('task_dependencies').delete().eq('id', depId);
+        if (error) throw error;
+        await loadDependencies(editId);
+        showToast('Dependencia eliminada', 'success');
+      } catch(e) { showToast('Error: ' + e.message, 'error'); }
+    }
 
         // ── ATAJO DE TECLADO ─────────────────────────────────────
     document.addEventListener('keydown', function(e) {
@@ -3710,6 +4262,8 @@
             document.getElementById('current-user').textContent = resolvedName;
           }
         } catch(ex) { console.warn('init sidebar sync error:', ex); }
+        // Open home dashboard by default
+        switchView('home');
       } else {
         document.getElementById('gatekeeper-screen').classList.remove('hidden');
         document.getElementById('gatekeeper-email').focus();
