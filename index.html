@@ -630,10 +630,15 @@
                 <div id="gantt-weeks-row"  style="display:flex;height:24px;border-bottom:1px solid var(--border-color)"></div>
                 <div id="gantt-days-row"   style="display:flex;height:24px"></div>
               </div>
-              <!-- Scrollable canvas area -->
+              <!-- Scrollable bars area -->
               <div id="gantt-right-scroll" onscroll="ganttSyncScroll(this)" style="flex:1;overflow:auto" class="no-scrollbar">
-                <div id="gantt-right-inner" style="position:relative">
-                  <canvas id="gantt-canvas" style="display:block;cursor:pointer"></canvas>
+                <div id="gantt-right-inner" style="position:relative;overflow:hidden">
+                  <!-- Grid rows (background) -->
+                  <div id="gantt-grid" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                  <!-- Task bars -->
+                  <div id="gantt-bars" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                  <!-- Today line -->
+                  <div id="gantt-today-line" style="position:absolute;top:0;width:2px;background:rgba(59,130,246,.5);pointer-events:none"></div>
                 </div>
               </div>
             </div>
@@ -2083,9 +2088,8 @@
       CAL = buildCalendar();
       const projs    = buildProjects(filteredTasks);
       const ganttRows = document.getElementById('gantt-rows');
-      const canvas    = document.getElementById('gantt-canvas');
       const rightScroll = document.getElementById('gantt-right-scroll');
-      if (!ganttRows || !canvas || !rightScroll) return;
+      if (!ganttRows || !rightScroll) return;
 
       const totalW  = CAL.days.length * DAY_W;
       const isDark  = document.documentElement.classList.contains('dark');
@@ -2192,108 +2196,84 @@
         });
       }
 
-      // ── Canvas ───────────────────────────────────────────────
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width  = totalW * dpr;
-      canvas.height = totalH * dpr;
-      canvas.style.width  = totalW + 'px';
-      canvas.style.height = totalH + 'px';
-
-      const ctx = canvas.getContext('2d');
-      ctx.scale(dpr, dpr);
-      ctx.clearRect(0, 0, totalW, totalH);
-
-      // Grid background
+      // ── DIV-based rendering (replaces canvas for reliability) ──
       const borderCol = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.06)';
       const wkndCol   = isDark ? 'rgba(0,0,0,.25)' : 'rgba(0,0,0,.025)';
 
-      rows.forEach((row, ri) => {
-        const y = ri * ROW_H;
-        // Row background + border
-        ctx.strokeStyle = borderCol;
-        ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(0, y + ROW_H - 0.5); ctx.lineTo(totalW, y + ROW_H - 0.5); ctx.stroke();
-
-        CAL.days.forEach((d, di) => {
-          const x = di * DAY_W;
-          const isWE = d.getDay()===0||d.getDay()===6;
-          const isTd = d.toDateString()===TODAY.toDateString();
-          if (isWE) { ctx.fillStyle = wkndCol; ctx.fillRect(x, y, DAY_W, ROW_H); }
-          if (isTd) { ctx.fillStyle = 'rgba(59,130,246,.06)'; ctx.fillRect(x, y, DAY_W, ROW_H); }
-          // vertical grid line
-          ctx.strokeStyle = borderCol;
-          ctx.lineWidth = 0.5;
-          ctx.beginPath(); ctx.moveTo(x + DAY_W - 0.5, y); ctx.lineTo(x + DAY_W - 0.5, y + ROW_H); ctx.stroke();
-        });
-      });
-
-      // Today vertical line
-      const todayOff = dayOffset(TODAY);
-      if (todayOff !== null && todayOff < CAL.days.length) {
-        ctx.strokeStyle = 'rgba(59,130,246,.5)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(todayOff * DAY_W + DAY_W/2, 0);
-        ctx.lineTo(todayOff * DAY_W + DAY_W/2, totalH);
-        ctx.stroke();
-      }
-
-      // Bars
-      _canvasBars = [];
-      rows.forEach((row, ri) => {
-        if (row.type !== 'task') return;
-        const task = row.data;
-        if (!task.start || !task.end) return;
-        const s = dayOffset(task.start), e = dayOffset(task.end);
-        if (s === null || e === null || s >= CAL.days.length || e < 0) return;
-        const cs = Math.max(0, s), ce = Math.min(CAL.days.length - 1, e);
-        const bx = cs * DAY_W + 2;
-        const bw = (ce - cs + 1) * DAY_W - 4;
-        const by = ri * ROW_H + BAR_Y;
-        const isOv = task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
-        const barColor = isOv ? '#ef4444' : (STATUS_COLOR[task.status] || '#4573d2');
-
-        // Bar fill with rounded corners
-        const r2 = 3;
-        ctx.fillStyle = barColor;
-        ctx.beginPath();
-        ctx.moveTo(bx + r2, by);
-        ctx.lineTo(bx + bw - r2, by);
-        ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + r2);
-        ctx.lineTo(bx + bw, by + BAR_H - r2);
-        ctx.quadraticCurveTo(bx + bw, by + BAR_H, bx + bw - r2, by + BAR_H);
-        ctx.lineTo(bx + r2, by + BAR_H);
-        ctx.quadraticCurveTo(bx, by + BAR_H, bx, by + BAR_H - r2);
-        ctx.lineTo(bx, by + r2);
-        ctx.quadraticCurveTo(bx, by, bx + r2, by);
-        ctx.closePath();
-        ctx.fill();
-
-        // Subtle overlay for depth
-        ctx.fillStyle = 'rgba(255,255,255,.15)';
-        ctx.fillRect(bx + r2, by, bw - r2*2, BAR_H / 2);
-
-        // Label
-        if (bw > 20) {
-          ctx.fillStyle = '#fff';
-          ctx.font = `bold ${Math.min(10,bw/8+7)}px system-ui,sans-serif`;
-          ctx.textBaseline = 'middle';
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(bx + 4, by, bw - 8, BAR_H);
-          ctx.clip();
-          ctx.fillText(task.task, bx + 5, by + BAR_H / 2);
-          ctx.restore();
-        }
-
-        _canvasBars.push({ x: bx, y: by, w: bw, h: BAR_H, taskId: task.id });
-      });
-
-      // Right inner: set exact dimensions for scroll
+      // Set container dimensions first
       const rightInner = document.getElementById('gantt-right-inner');
       if (rightInner) {
         rightInner.style.width  = totalW + 'px';
         rightInner.style.height = totalH + 'px';
+      }
+
+      // ── Grid: one div per row (row lines + weekend/today bg) ──
+      const gridEl = document.getElementById('gantt-grid');
+      if (gridEl) {
+        gridEl.style.width  = totalW + 'px';
+        gridEl.style.height = totalH + 'px';
+        let gridHTML = '';
+        rows.forEach((row, ri) => {
+          const y = ri * ROW_H;
+          // Row border
+          gridHTML += `<div style="position:absolute;left:0;top:${y + ROW_H - 1}px;width:${totalW}px;height:1px;background:${borderCol}"></div>`;
+        });
+        // Weekend + today column backgrounds
+        CAL.days.forEach((d, di) => {
+          const x = di * DAY_W;
+          const isWE = d.getDay()===0||d.getDay()===6;
+          const isTd = d.toDateString()===TODAY.toDateString();
+          if (isWE) gridHTML += `<div style="position:absolute;left:${x}px;top:0;width:${DAY_W}px;height:${totalH}px;background:${wkndCol}"></div>`;
+          if (isTd) gridHTML += `<div style="position:absolute;left:${x}px;top:0;width:${DAY_W}px;height:${totalH}px;background:rgba(59,130,246,.06)"></div>`;
+          // Vertical line
+          gridHTML += `<div style="position:absolute;left:${x+DAY_W-1}px;top:0;width:1px;height:${totalH}px;background:${borderCol}"></div>`;
+        });
+        gridEl.innerHTML = gridHTML;
+      }
+
+      // ── Today line ────────────────────────────────────────────
+      const todayLine = document.getElementById('gantt-today-line');
+      const todayOff  = dayOffset(TODAY);
+      if (todayLine) {
+        if (todayOff !== null && todayOff < CAL.days.length) {
+          todayLine.style.left   = (todayOff * DAY_W + DAY_W/2) + 'px';
+          todayLine.style.height = totalH + 'px';
+          todayLine.style.display = 'block';
+        } else {
+          todayLine.style.display = 'none';
+        }
+      }
+
+      // ── Bars ──────────────────────────────────────────────────
+      _canvasBars = [];
+      const barsEl = document.getElementById('gantt-bars');
+      if (barsEl) {
+        barsEl.style.width  = totalW + 'px';
+        barsEl.style.height = totalH + 'px';
+        let barsHTML = '';
+        rows.forEach((row, ri) => {
+          if (row.type !== 'task') return;
+          const task = row.data;
+          if (!task.start || !task.end) return;
+          const s = dayOffset(task.start), e = dayOffset(task.end);
+          if (s === null || e === null || s >= CAL.days.length || e < 0) return;
+          const cs = Math.max(0, s), ce = Math.min(CAL.days.length - 1, e);
+          const bx = cs * DAY_W + 2;
+          const bw = (ce - cs + 1) * DAY_W - 4;
+          const by = ri * ROW_H + BAR_Y;
+          if (bw <= 0) return;
+          const isOv = task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
+          const barColor = isOv ? '#ef4444' : (STATUS_COLOR[task.status] || '#4573d2');
+          const label = bw > 24 ? `<span style="position:absolute;left:5px;right:5px;top:0;bottom:0;display:flex;align-items:center;overflow:hidden;white-space:nowrap;font-size:10px;font-weight:700;color:#fff;font-family:system-ui,sans-serif">${task.task}</span>` : '';
+          barsHTML += `<div data-task-id="${task.id}" style="position:absolute;left:${bx}px;top:${by}px;width:${bw}px;height:${BAR_H}px;background:${barColor};border-radius:3px;cursor:pointer;pointer-events:all">${label}</div>`;
+          _canvasBars.push({ x: bx, y: by, w: bw, h: BAR_H, taskId: task.id });
+        });
+        barsEl.innerHTML = barsHTML;
+        // Click handler on bars container
+        barsEl.onclick = (e) => {
+          const bar = e.target.closest('[data-task-id]');
+          if (bar) openEdit(parseInt(bar.dataset.taskId));
+        };
       }
 
       // Sync sort icons
@@ -2302,38 +2282,11 @@
       if (ss) ss.textContent = getSortIcon('start');
       if (se) se.textContent = getSortIcon('end');
 
-      // Attach canvas event listeners (once)
-      attachCanvasListeners();
-
-      // Auto-scroll to today if scroll is at origin (first render or after data reload)
-      // Scroll to today AFTER browser has applied layout changes
+      // Scroll to today on first render
       setTimeout(() => { if (rightScroll && rightScroll.scrollLeft === 0) goToday(); }, 0);
     }
 
     // Canvas click/hover — attached once after first render
-    let _canvasListenersAttached = false;
-    function attachCanvasListeners() {
-      if (_canvasListenersAttached) return;
-      const canvas = document.getElementById('gantt-canvas');
-      if (!canvas) return;
-      _canvasListenersAttached = true;
-      canvas.addEventListener('click', e => {
-        const rect = canvas.getBoundingClientRect();
-        const scr  = document.getElementById('gantt-right-scroll');
-        const mx = e.clientX - rect.left + (scr ? scr.scrollLeft : 0);
-        const my = e.clientY - rect.top  + (scr ? scr.scrollTop  : 0);
-        const hit = _canvasBars.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
-        if (hit) openEdit(hit.taskId);
-      });
-      canvas.addEventListener('mousemove', e => {
-        const rect = canvas.getBoundingClientRect();
-        const scr  = document.getElementById('gantt-right-scroll');
-        const mx = e.clientX - rect.left + (scr ? scr.scrollLeft : 0);
-        const my = e.clientY - rect.top  + (scr ? scr.scrollTop  : 0);
-        const hit = _canvasBars.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
-        canvas.style.cursor = hit ? 'pointer' : 'default';
-      });
-    }
 
     // ── KANBAN ─────────────────────────────────────────────────
     const KANBAN_STATUS_ORDER = [
