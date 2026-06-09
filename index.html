@@ -583,10 +583,10 @@
       <div class="theme-panel rounded-xl border overflow-hidden relative">
 
         <!-- ── VISTA GANTT ── -->
-        <div id="view-gantt-container" class="hidden" style="flex-direction:column;height:100%;overflow:hidden">
+        <div id="view-gantt-container" class="hidden" style="flex-direction:column;overflow:hidden">
 
           <!-- Gantt wrapper: left panel + right panel side by side -->
-          <div id="gantt-wrapper" style="display:flex;flex:1;overflow:hidden;position:relative">
+          <div id="gantt-wrapper" style="display:flex;overflow:hidden;position:relative;height:600px">
 
             <!-- LEFT PANEL: sticky headers + scrollable task rows -->
             <div id="gantt-left" style="width:620px;flex-shrink:0;display:flex;flex-direction:column;z-index:10;background:var(--bg-main);border-right:1px solid var(--border-color)">
@@ -622,18 +622,19 @@
               <div id="gantt-rows" style="flex:1;overflow-y:auto;overflow-x:hidden" class="no-scrollbar"></div>
             </div>
 
-            <!-- RIGHT PANEL: calendar headers + canvas bars, single unified scroll -->
-            <div id="gantt-right-scroll" onscroll="ganttSyncScroll(this)" style="flex:1;overflow:auto;position:relative" class="no-scrollbar">
-              <!-- This inner div sets the total dimensions -->
-              <div id="gantt-right-inner" style="position:relative">
-                <!-- Sticky calendar headers -->
-                <div id="gantt-cal-header" style="position:sticky;top:0;z-index:10;background:var(--bg-header)">
-                  <div id="gantt-months-row" style="display:flex;height:32px;border-bottom:1px solid var(--border-color)"></div>
-                  <div id="gantt-weeks-row"  style="display:flex;height:24px;border-bottom:1px solid var(--border-color)"></div>
-                  <div id="gantt-days-row"   style="display:flex;height:24px;border-bottom:1px solid var(--border-color)"></div>
+            <!-- RIGHT PANEL: fixed calendar header + scrollable canvas -->
+            <div id="gantt-right" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0">
+              <!-- Fixed calendar header (outside scroll) -->
+              <div id="gantt-cal-header" style="flex-shrink:0;background:var(--bg-header);border-bottom:1px solid var(--border-color);overflow-x:hidden;overflow-y:hidden">
+                <div id="gantt-months-row" style="display:flex;height:32px;border-bottom:1px solid var(--border-color)"></div>
+                <div id="gantt-weeks-row"  style="display:flex;height:24px;border-bottom:1px solid var(--border-color)"></div>
+                <div id="gantt-days-row"   style="display:flex;height:24px"></div>
+              </div>
+              <!-- Scrollable canvas area -->
+              <div id="gantt-right-scroll" onscroll="ganttSyncScroll(this)" style="flex:1;overflow:auto" class="no-scrollbar">
+                <div id="gantt-right-inner" style="position:relative">
+                  <canvas id="gantt-canvas" style="display:block;cursor:pointer"></canvas>
                 </div>
-                <!-- Canvas for bars + grid lines -->
-                <canvas id="gantt-canvas" style="display:block;cursor:pointer"></canvas>
               </div>
             </div>
 
@@ -1964,8 +1965,7 @@
         if (!el) return;
         if (v === viewName) {
           el.classList.remove('hidden');
-          // Gantt needs display:flex not display:block
-          if (v === 'gantt') el.style.display = 'flex';
+          if (v === 'gantt') { el.style.display = 'flex'; setTimeout(applyGanttHeight, 0); }
         } else {
           el.classList.add('hidden');
           if (v === 'gantt') el.style.display = '';
@@ -2027,10 +2027,13 @@
 
     // ── GANTT SYNC SCROLL ──────────────────────────────────────
     function ganttSyncScroll(el) {
+      // Sync vertical scroll: left rows follow right canvas
       const rows = document.getElementById('gantt-rows');
       if (rows) rows.scrollTop = el.scrollTop;
+      // Sync horizontal scroll: calendar header follows canvas
+      const hdr = document.getElementById('gantt-cal-header');
+      if (hdr) hdr.scrollLeft = el.scrollLeft;
     }
-    // Keep old syncScroll for compatibility
     function syncScroll(el) { ganttSyncScroll(el); }
 
     let allExpanded = true;
@@ -2280,9 +2283,12 @@
         _canvasBars.push({ x: bx, y: by, w: bw, h: BAR_H, taskId: task.id });
       });
 
-      // Right scroll container dimensions
-      document.getElementById('gantt-right-inner').style.height = (totalH + 80) + 'px';
-      document.getElementById('gantt-right-inner').style.width  = totalW + 'px';
+      // Right inner: set exact dimensions for scroll
+      const rightInner = document.getElementById('gantt-right-inner');
+      if (rightInner) {
+        rightInner.style.width  = totalW + 'px';
+        rightInner.style.height = totalH + 'px';
+      }
 
       // Sync sort icons
       const ss = document.getElementById('sort-start');
@@ -2525,13 +2531,17 @@
 
     // ── GANTT RESIZE ───────────────────────────────────────────
     function applyGanttHeight() {
-      const wrapper  = document.getElementById('gantt-wrapper');
-      const hdr      = document.getElementById('desktop-header');
-      if (!wrapper) return;
-      const hdrH  = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 96;
-      const availH = Math.max(400, window.innerHeight - hdrH - 32);
+      const hdr = document.getElementById('desktop-header');
+      const hdrH = hdr ? Math.ceil(hdr.getBoundingClientRect().height) : 96;
+      const filterBar = document.getElementById('filter-bar');
+      const filterH = filterBar ? Math.ceil(filterBar.getBoundingClientRect().height) : 40;
+      const availH = Math.max(400, window.innerHeight - hdrH - filterH - 24);
       const h = Math.min(ganttHeight, availH);
-      wrapper.style.height = h + 'px';
+      // Set height on both the wrapper and the container
+      const wrapper = document.getElementById('gantt-wrapper');
+      const container = document.getElementById('view-gantt-container');
+      if (wrapper) wrapper.style.height = h + 'px';
+      if (container) container.style.height = h + 'px';
     }
 
     function initResizeHandle() {
