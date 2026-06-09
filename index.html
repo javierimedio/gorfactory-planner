@@ -545,35 +545,52 @@
 
       <!-- Filter chips -->
       <div style="display:flex;align-items:center;gap:5px;padding:7px 0;flex-shrink:0">
-        <div class="filter-chip"><i data-lucide="tag" style="width:11px;height:11px"></i>
-          <select id="filter-cat" onchange="queueFilters()">
-            <option value="">Categoría</option>
-            <option>Catálogos</option><option>Ferias</option><option>Web/Digital</option>
-            <option>Shootings</option><option>Eventos</option><option>Branding</option>
-            <option>Marketing Digital</option><option>Comunicación</option>
-          </select>
+
+        <div class="filter-chip">
+          <i data-lucide="tag" style="width:11px;height:11px"></i>
+          <button id="filter-cat-btn" onclick="toggleFilterDropdown(event,'cat')"
+            style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--text-muted);padding:0;font-family:inherit;display:flex;align-items:center;gap:3px">
+            <span id="filter-cat-label">Categoría</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:.6"></i>
+          </button>
         </div>
-        <div class="filter-chip"><i data-lucide="circle-dot" style="width:11px;height:11px"></i>
-          <select id="filter-status" onchange="queueFilters()">
-            <option value="">Estado</option>
-            <option>Sin comenzar</option><option>En planificación</option><option>En curso</option>
-            <option>Pendiente revisión</option><option>Bloqueado</option><option>Completado</option><option>Cancelado</option>
-          </select>
+
+        <div class="filter-chip">
+          <i data-lucide="circle-dot" style="width:11px;height:11px"></i>
+          <button id="filter-status-btn" onclick="toggleFilterDropdown(event,'status')"
+            style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--text-muted);padding:0;font-family:inherit;display:flex;align-items:center;gap:3px">
+            <span id="filter-status-label">Estado</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:.6"></i>
+          </button>
         </div>
-        <div class="filter-chip"><i data-lucide="folder" style="width:11px;height:11px"></i>
-          <select id="filter-proj" onchange="queueFilters()"><option value="">Proyecto</option></select>
+
+        <div class="filter-chip">
+          <i data-lucide="folder" style="width:11px;height:11px"></i>
+          <button id="filter-proj-btn" onclick="toggleFilterDropdown(event,'proj')"
+            style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--text-muted);padding:0;font-family:inherit;display:flex;align-items:center;gap:3px">
+            <span id="filter-proj-label">Proyecto</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:.6"></i>
+          </button>
         </div>
-        <div class="filter-chip" style="position:relative">
+
+        <div class="filter-chip">
           <i data-lucide="user" style="width:11px;height:11px"></i>
-          <button id="filter-resp-btn" onclick="toggleRespDropdown(event)"
+          <button id="filter-resp-btn" onclick="toggleFilterDropdown(event,'resp')"
             style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--text-muted);padding:0;font-family:inherit;display:flex;align-items:center;gap:3px">
             <span id="filter-resp-label">Responsable</span>
             <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:.6"></i>
           </button>
         </div>
-        <div class="filter-chip"><i data-lucide="list" style="width:11px;height:11px"></i>
-          <select id="filter-task" onchange="queueFilters()"><option value="">Tarea</option></select>
+
+        <div class="filter-chip">
+          <i data-lucide="list" style="width:11px;height:11px"></i>
+          <button id="filter-task-btn" onclick="toggleFilterDropdown(event,'task')"
+            style="background:none;border:none;cursor:pointer;font-size:11.5px;color:var(--text-muted);padding:0;font-family:inherit;display:flex;align-items:center;gap:3px">
+            <span id="filter-task-label">Tarea</span>
+            <i data-lucide="chevron-down" style="width:10px;height:10px;opacity:.6"></i>
+          </button>
         </div>
+
         <button onclick="clearFilters()" style="display:flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;border:1px solid var(--border-color);background:none;font-size:11.5px;color:var(--text-muted);cursor:pointer">
           <i data-lucide="x" style="width:11px;height:11px"></i> Limpiar
         </button>
@@ -1523,108 +1540,131 @@
     }
 
     function populateDynamicFilters() {
-      const projs = [...new Set(TASKS.map(t => t.proj))].sort((a,b) => a.localeCompare(b));
-      const selProj = document.getElementById('filter-proj');
-      const currentProj = selProj.value;
-      selProj.innerHTML = '<option value="">Todos los proyectos</option>';
-      projs.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p; opt.textContent = p;
-        if (p === currentProj) opt.selected = true;
-        selProj.appendChild(opt);
-      });
-
-      populateRespList();
-
-      const taskNames = [...new Set(TASKS.map(t => t.task).filter(Boolean))].sort((a,b) => a.localeCompare(b));
-      const selTask = document.getElementById('filter-task');
-      const currentTask = selTask.value;
-      selTask.innerHTML = '<option value="">Todas las tareas</option>';
-      taskNames.forEach(n => {
-        const opt = document.createElement('option');
-        opt.value = n; opt.textContent = n;
-        if (n === currentTask) opt.selected = true;
-        selTask.appendChild(opt);
-      });
+      // Dynamic filter options are built on-demand when dropdown opens
+      // Just refresh labels in case TASKS changed
+      Object.keys(selectedFilters).forEach(k => updateFilterLabel(k));
     }
 
-    // ── MULTI-SELECT RESPONSABLE FILTER ───────────────────────
-    let selectedResps = new Set();
+    // ── MULTI-SELECT FILTERS ───────────────────────────────────
+    const FILTER_CONFIG = {
+      cat:    { label: 'Categoría',   icon: 'tag',        static: ['Catálogos','Ferias','Web/Digital','Shootings','Eventos','Branding','Marketing Digital','Comunicación'] },
+      status: { label: 'Estado',      icon: 'circle-dot', static: ['Sin comenzar','En planificación','En curso','Pendiente revisión','Bloqueado','Completado','Cancelado'] },
+      proj:   { label: 'Proyecto',    icon: 'folder',     static: null }, // dynamic
+      resp:   { label: 'Responsable', icon: 'user',       static: null }, // dynamic
+      task:   { label: 'Tarea',       icon: 'list',       static: null }  // dynamic
+    };
 
-    function toggleRespDropdown(e) {
+    // Selected values per filter
+    const selectedFilters = { cat: new Set(), status: new Set(), proj: new Set(), resp: new Set(), task: new Set() };
+
+    let _activeFilterKey = null;
+
+    function toggleFilterDropdown(e, key) {
       e.stopPropagation();
-      const dd  = document.getElementById('filter-resp-dropdown');
-      const btn = document.getElementById('filter-resp-btn');
-      if (!dd || !btn) return;
-      const isOpen = dd.style.display !== 'none';
-      if (isOpen) { dd.style.display = 'none'; return; }
-      // Position below the button
-      const rect = btn.getBoundingClientRect();
-      dd.style.top  = (rect.bottom + 6) + 'px';
-      dd.style.left = rect.left + 'px';
-      dd.style.display = 'block';
-      populateRespList();
+      const panel = document.getElementById('filter-dropdown-panel');
+      if (!panel) return;
+
+      // Close if same filter clicked again
+      if (_activeFilterKey === key && panel.style.display !== 'none') {
+        panel.style.display = 'none';
+        _activeFilterKey = null;
+        return;
+      }
+
+      _activeFilterKey = key;
+      const cfg = FILTER_CONFIG[key];
+
+      // Title
+      const title = document.getElementById('filter-dropdown-title');
+      if (title) title.textContent = cfg.label;
+
+      // Build options
+      const list = document.getElementById('filter-dropdown-list');
+      const options = cfg.static || [...new Set(TASKS.map(t => t[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+      list.innerHTML = options.map(v => `
+        <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text-main);transition:background .1s"
+          onmouseover="this.style.background='rgba(69,115,210,.07)'" onmouseout="this.style.background='transparent'">
+          <input type="checkbox" ${selectedFilters[key].has(v)?'checked':''}
+            onchange="toggleFilterValue('${key}','${v.replace(/'/g,"\\'")}')"
+            style="width:13px;height:13px;accent-color:#4573d2;cursor:pointer;flex-shrink:0">
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</span>
+        </label>`).join('');
+
+      // Position below button, flip left if it would overflow viewport
+      const btn = document.getElementById(`filter-${key}-btn`);
+      if (btn) {
+        const rect      = btn.getBoundingClientRect();
+        const panelW    = 280;
+        const viewportW = window.innerWidth;
+        panel.style.top   = (rect.bottom + 4) + 'px';
+        if (rect.left + panelW > viewportW - 8) {
+          panel.style.left  = '';
+          panel.style.right = (viewportW - rect.right) + 'px';
+        } else {
+          panel.style.left  = rect.left + 'px';
+          panel.style.right = '';
+        }
+      }
+      panel.style.display = 'block';
+
       setTimeout(() => {
-        document.addEventListener('click', closeRespDropdown, { once: true });
+        document.addEventListener('click', closeActiveFilter, { once: true });
       }, 0);
     }
 
-    function closeRespDropdown() {
-      const dd = document.getElementById('filter-resp-dropdown');
-      if (dd) dd.style.display = 'none';
+    function closeActiveFilter() {
+      const panel = document.getElementById('filter-dropdown-panel');
+      if (panel) panel.style.display = 'none';
+      _activeFilterKey = null;
     }
 
-    function toggleRespSelection(resp) {
-      if (selectedResps.has(resp)) selectedResps.delete(resp);
-      else selectedResps.add(resp);
-      updateRespLabel();
+    function toggleFilterValue(key, value) {
+      if (selectedFilters[key].has(value)) selectedFilters[key].delete(value);
+      else selectedFilters[key].add(value);
+      updateFilterLabel(key);
       applyFilters();
     }
 
-    function clearRespFilter() {
-      selectedResps.clear();
-      updateRespLabel();
-      // Uncheck all checkboxes
-      document.querySelectorAll('#filter-resp-list input[type=checkbox]').forEach(cb => cb.checked = false);
+    function clearActiveFilter() {
+      if (!_activeFilterKey) return;
+      selectedFilters[_activeFilterKey].clear();
+      updateFilterLabel(_activeFilterKey);
+      // Uncheck all in current dropdown
+      document.querySelectorAll('#filter-dropdown-list input[type=checkbox]').forEach(cb => cb.checked = false);
       applyFilters();
     }
 
-    function updateRespLabel() {
-      const label = document.getElementById('filter-resp-label');
+    function updateFilterLabel(key) {
+      const label = document.getElementById(`filter-${key}-label`);
       if (!label) return;
-      if (selectedResps.size === 0) {
-        label.textContent = 'Responsable';
+      const sel = selectedFilters[key];
+      const cfg = FILTER_CONFIG[key];
+      if (sel.size === 0) {
+        label.textContent = cfg.label;
         label.style.color = 'var(--text-muted)';
-      } else if (selectedResps.size === 1) {
-        label.textContent = [...selectedResps][0].split(' ')[0]; // First name only
+      } else if (sel.size === 1) {
+        const v = [...sel][0];
+        label.textContent = v.length > 14 ? v.slice(0,13)+'…' : v;
         label.style.color = '#4573d2';
       } else {
-        label.textContent = selectedResps.size + ' seleccionados';
+        label.textContent = sel.size + ' selec.';
         label.style.color = '#4573d2';
       }
     }
 
-    function populateRespList() {
-      const list = document.getElementById('filter-resp-list');
-      if (!list) return;
-      const resps = [...new Set(TASKS.map(t => t.resp).filter(r => r && r !== '—'))].sort((a,b) => a.localeCompare(b));
-      list.innerHTML = resps.map(r => `
-        <label style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;font-size:12px;color:var(--text-main);transition:background .1s"
-          onmouseover="this.style.background='rgba(69,115,210,.07)'" onmouseout="this.style.background='transparent'">
-          <input type="checkbox" ${selectedResps.has(r)?'checked':''} onchange="toggleRespSelection('${esc(r)}')"
-            style="width:13px;height:13px;accent-color:#4573d2;cursor:pointer;flex-shrink:0">
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r)}</span>
-        </label>`).join('');
-    }
+    // Keep backward compat for old resp functions
+    function toggleRespDropdown(e) { toggleFilterDropdown(e, 'resp'); }
+    function clearRespFilter() { selectedFilters.resp.clear(); updateFilterLabel('resp'); applyFilters(); }
+    function populateRespList() {} // no-op now
     function queueFilters() { applyFilters(); }
 
     function clearFilters() {
-      document.getElementById('filter-cat').value    = '';
-      document.getElementById('filter-status').value = '';
-      document.getElementById('filter-proj').value   = '';
-      clearRespFilter();
-      document.getElementById('filter-task').value   = '';
+      Object.keys(selectedFilters).forEach(k => {
+        selectedFilters[k].clear();
+        updateFilterLabel(k);
+      });
       const fs = document.getElementById('filter-search'); if (fs) fs.value = '';
+      closeActiveFilter();
       showOnlyOverdue = false; showOnlyCompleted = false;
       showAllTasks = false; showOnlyBlocked = false;
       showOnlyCompletedProjects = false;
@@ -1641,18 +1681,14 @@
     }
 
     function applyFilters() {
-      const cat    = document.getElementById('filter-cat').value;
-      const st     = document.getElementById('filter-status').value;
-      const proj   = document.getElementById('filter-proj').value;
-      const task   = document.getElementById('filter-task').value;
       const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
 
       filteredTasks = TASKS.filter(t => {
-        if (cat  && t.cat    !== cat)  return false;
-        if (st   && t.status !== st)   return false;
-        if (proj && t.proj   !== proj) return false;
-        if (selectedResps.size > 0 && !selectedResps.has(t.resp)) return false;
-        if (task && t.task   !== task) return false;
+        if (selectedFilters.cat.size    > 0 && !selectedFilters.cat.has(t.cat))       return false;
+        if (selectedFilters.status.size > 0 && !selectedFilters.status.has(t.status)) return false;
+        if (selectedFilters.proj.size   > 0 && !selectedFilters.proj.has(t.proj))     return false;
+        if (selectedFilters.resp.size   > 0 && !selectedFilters.resp.has(t.resp))     return false;
+        if (selectedFilters.task.size   > 0 && !selectedFilters.task.has(t.task))     return false;
         if (search) {
           const hay = `${t.task} ${t.proj} ${t.resp}`.toLowerCase();
           if (!hay.includes(search)) return false;
@@ -1805,9 +1841,13 @@
     }
 
     function filterByProject(projName) {
-      const sel = document.getElementById('filter-proj');
-      if (!sel) return;
-      sel.value = sel.value === projName ? '' : projName;
+      if (selectedFilters.proj.has(projName)) {
+        selectedFilters.proj.delete(projName);
+      } else {
+        selectedFilters.proj.clear();
+        selectedFilters.proj.add(projName);
+      }
+      updateFilterLabel('proj');
       applyFilters();
     }
 
@@ -3658,11 +3698,10 @@
       if(addBtn)addBtn.style.display=isEditModeActive?'block':'none';
 
       // ── Read active filters ──────────────────────────────────
-      const filterCat    = (document.getElementById('filter-cat')?.value    || '').trim();
-      const filterProj   = (document.getElementById('filter-proj')?.value   || '').trim();
+      const filterCat    = [...selectedFilters.cat];
+      const filterProj   = [...selectedFilters.proj];
       const filterSearch = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
-      // Status filter maps to financial_status in budget context
-      const filterStatus = (document.getElementById('filter-status')?.value || '').trim();
+      const filterStatus = [...selectedFilters.status];
 
       // Show active filter indicator if any filter is set
       const hasFilter = filterCat || filterProj || filterSearch || filterStatus;
@@ -3688,17 +3727,17 @@
       const ps = allProjNames.filter(proj => {
         const tasks = TASKS.filter(t => t.proj === proj);
         const cat = tasks[0]?.cat || '';
-        if(filterCat && cat && cat !== filterCat) return false;
-        if(filterCat && !cat) {
+        if(filterCat.length > 0 && cat && !filterCat.includes(cat)) return false;
+        if(filterCat.length > 0 && !cat) {
           const budNote = (PROJECT_BUDGETS.find(b=>b.proj===proj)?.notes||'').toLowerCase();
-          if(!budNote.includes(filterCat.toLowerCase()) && !proj.toLowerCase().includes(filterCat.toLowerCase())) return false;
+          if(!filterCat.some(fc => budNote.includes(fc.toLowerCase()) || proj.toLowerCase().includes(fc.toLowerCase()))) return false;
         }
-        if(filterProj && proj !== filterProj) return false;
+        if(filterProj.length > 0 && !filterProj.includes(proj)) return false;
         if(filterSearch && !proj.toLowerCase().includes(filterSearch)) return false;
-        if(filterStatus){
+        if(filterStatus.length > 0){
           const bud = PROJECT_BUDGETS.find(b=>b.proj===proj);
           const budStatus = bud?.financial_status || 'En preparación';
-          if(budStatus !== filterStatus) return false;
+          if(!filterStatus.includes(budStatus)) return false;
         }
         return true;
       });
@@ -4527,13 +4566,13 @@
       </div>
     </div>
   </div>
-  <!-- Responsable filter dropdown (body-level to avoid overflow clipping) -->
-  <div id="filter-resp-dropdown" style="display:none;position:fixed;z-index:9999;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-width:200px;max-height:280px;overflow-y:auto;padding:6px 0" class="no-scrollbar">
+  <!-- Multi-select filter dropdowns (body-level) -->
+  <div id="filter-dropdown-panel" style="display:none;position:fixed;z-index:9999;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-width:200px;max-width:280px;max-height:300px;overflow-y:auto;padding:6px 0" class="no-scrollbar">
     <div style="padding:4px 10px 6px;border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg-panel);z-index:1">
-      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">Responsables</span>
-      <button onclick="clearRespFilter()" style="font-size:10px;color:#4573d2;background:none;border:none;cursor:pointer;font-family:inherit">Limpiar</button>
+      <span id="filter-dropdown-title" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)"></span>
+      <button onclick="clearActiveFilter()" style="font-size:10px;color:#4573d2;background:none;border:none;cursor:pointer;font-family:inherit">Limpiar</button>
     </div>
-    <div id="filter-resp-list" style="padding:4px 0"></div>
+    <div id="filter-dropdown-list" style="padding:4px 0"></div>
   </div>
 
 </body>
