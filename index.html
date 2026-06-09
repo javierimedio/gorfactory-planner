@@ -619,7 +619,7 @@
               <!-- Header row 3: spacer to align with calendar header (24px) -->
               <div style="height:24px;flex-shrink:0;border-bottom:1px solid var(--border-color);background:var(--bg-header)"></div>
               <!-- Scrollable task list -->
-              <div id="gantt-rows" style="flex:1;overflow-y:auto;overflow-x:hidden" class="no-scrollbar"></div>
+              <div id="gantt-rows" style="flex:1;overflow-y:auto;overflow-x:hidden" class="no-scrollbar" onscroll="ganttSyncScroll(this)"></div>
             </div>
 
             <!-- RIGHT PANEL: fixed calendar header + scrollable canvas -->
@@ -1213,7 +1213,7 @@
     let calendarMonth = new Date().getMonth();
 
     function fmtDate(d) { return d ? d.toISOString().slice(0,10) : ''; }
-    function parseIso(s) { if(!s) return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+    function parseIso(s) { if(!s) return null; const p = s.slice(0,10).split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
     const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
     const STATUS_COLOR = {
@@ -1603,7 +1603,7 @@
       renderSidebarCategories();
       renderSidebarProjects();
       renderSidebarUpcoming();
-      if      (currentActiveView === 'gantt')     setTimeout(render, 0);
+      if      (currentActiveView === 'gantt')     requestAnimationFrame(() => { applyGanttHeight(); requestAnimationFrame(() => render()); });
       else if (currentActiveView === 'kanban')    renderKanban();
       else if (currentActiveView === 'calendar')  renderCalendar();
       else if (currentActiveView === 'budget')    renderBudget();
@@ -1966,10 +1966,10 @@
         if (!el) return;
         if (v === viewName) {
           el.classList.remove('hidden');
-          if (v === 'gantt') { el.style.display = 'flex'; setTimeout(applyGanttHeight, 0); }
+          if (v === 'gantt') el.style.display = 'flex';
         } else {
           el.classList.add('hidden');
-          if (v === 'gantt') el.style.display = '';
+          if (v === 'gantt') el.style.display = 'none';
         }
       });
 
@@ -1981,7 +1981,7 @@
 
       // Render AFTER container is visible (important for canvas)
       if      (viewName === 'home')     renderHome();
-      else if (viewName === 'gantt')    { setTimeout(() => { render(); setTimeout(goToday, 50); }, 0); }
+      else if (viewName === 'gantt')    { requestAnimationFrame(() => { applyGanttHeight(); requestAnimationFrame(() => { render(); setTimeout(goToday, 50); }); }); }
       else if (viewName === 'kanban')   renderKanban();
       else if (viewName === 'calendar') renderCalendar();
       else if (viewName === 'dashboard') renderDashboard();
@@ -2029,10 +2029,15 @@
     function ganttSyncScroll(el) {
       // Sync vertical scroll: left rows follow right canvas
       const rows = document.getElementById('gantt-rows');
-      if (rows) rows.scrollTop = el.scrollTop;
+      const rightScroll = document.getElementById('gantt-right-scroll');
+      if (el === rightScroll) {
+        if (rows) rows.scrollTop = el.scrollTop;
+      } else {
+        if (rightScroll) rightScroll.scrollTop = el.scrollTop;
+      }
       // Sync horizontal scroll: calendar header follows canvas
       const hdr = document.getElementById('gantt-cal-header');
-      if (hdr) hdr.scrollLeft = el.scrollLeft;
+      if (hdr) hdr.scrollLeft = (rightScroll ? rightScroll.scrollLeft : el.scrollLeft);
     }
     function syncScroll(el) { ganttSyncScroll(el); }
 
@@ -2105,7 +2110,7 @@
           const proj   = row.data;
           const isOpen = expanded[proj.name] !== false;
           const cc     = CAT_COLOR[proj.cat] || CAT_COLOR.default;
-          el.style.cssText = 'display:flex;align-items:center;padding:0 16px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--text-main);background:var(--bg-main);gap:6px;flex-shrink:0';
+          el.style.cssText = 'display:flex;align-items:center;padding:0 16px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--text-main);background:var(--bg-main);gap:6px;flex-shrink:0;position:sticky;top:0;z-index:2';
           el.innerHTML = `<i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-muted);transition:transform .15s;transform:rotate(${isOpen?90:0}deg);flex-shrink:0"></i>
             <span style="width:8px;height:8px;border-radius:50%;background:${cc};flex-shrink:0"></span>
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(proj.name)}</span>
@@ -2124,7 +2129,7 @@
           const pc   = PRIO_COLOR[task.prio]     || '#64748b';
           const isOv = task.end && task.end < TODAY && task.status !== 'Completado' && task.status !== 'Cancelado';
           const fmt  = d => d ? d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0') : '—';
-          el.style.cssText = 'display:flex;align-items:center;padding-left:32px;padding-right:8px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;color:var(--text-muted);background:transparent;transition:background .1s;flex-shrink:0';
+          el.style.cssText = 'display:flex;align-items:center;padding-left:32px;padding-right:8px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;color:var(--text-muted);background:var(--bg-panel);transition:background .1s;flex-shrink:0';
           el.innerHTML = `
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;color:var(--text-main)" title="${esc(task.task)}">${esc(task.task)}</span>
             <span style="width:90px;flex-shrink:0;text-align:center;font-size:9px;opacity:.8;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px">${esc(task.resp)}</span>
@@ -2137,8 +2142,8 @@
             <span style="width:72px;flex-shrink:0;text-align:center;font-size:9px;font-family:monospace;color:${isOv?'#ef4444':'var(--text-muted)'}">${fmt(task.start)}</span>
             <span style="width:72px;flex-shrink:0;text-align:center;font-size:9px;font-family:monospace;font-weight:${isOv?700:400};color:${isOv?'#ef4444':'var(--text-muted)'}">${fmt(task.end)}</span>
             <span style="width:28px;flex-shrink:0"></span>`;
-          el.onmouseover = () => el.style.background = isDark ? 'rgba(255,255,255,.04)' : 'rgba(0,0,0,.025)';
-          el.onmouseout  = () => el.style.background = 'transparent';
+          el.onmouseover = () => el.style.background = isDark ? 'rgba(255,255,255,.05)' : '#f0f2f5';
+          el.onmouseout  = () => el.style.background = 'var(--bg-panel)';
           el.onclick = () => openEdit(task.id);
         }
         ganttRows.appendChild(el);
@@ -2311,7 +2316,7 @@
         const rect = canvas.getBoundingClientRect();
         const scr  = document.getElementById('gantt-right-scroll');
         const mx = e.clientX - rect.left + (scr ? scr.scrollLeft : 0);
-        const my = e.clientY - rect.top  + (scr ? scr.scrollTop - 80 : 0);
+        const my = e.clientY - rect.top  + (scr ? scr.scrollTop  : 0);
         const hit = _canvasBars.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
         if (hit) openEdit(hit.taskId);
       });
@@ -2319,7 +2324,7 @@
         const rect = canvas.getBoundingClientRect();
         const scr  = document.getElementById('gantt-right-scroll');
         const mx = e.clientX - rect.left + (scr ? scr.scrollLeft : 0);
-        const my = e.clientY - rect.top  + (scr ? scr.scrollTop - 80 : 0);
+        const my = e.clientY - rect.top  + (scr ? scr.scrollTop  : 0);
         const hit = _canvasBars.find(b => mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h);
         canvas.style.cursor = hit ? 'pointer' : 'default';
       });
