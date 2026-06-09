@@ -637,6 +637,17 @@
                   <div id="gantt-grid" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
                   <!-- Task bars -->
                   <div id="gantt-bars" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                  <!-- Dependency arrows -->
+                  <svg id="gantt-arrows" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible" width="0" height="0">
+                    <defs>
+                      <marker id="arr-blocks" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                        <path d="M0,0 L8,4 L0,8 Z" fill="#ef4444"/>
+                      </marker>
+                      <marker id="arr-related" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                        <path d="M0,0 L8,4 L0,8 Z" fill="#f59e0b"/>
+                      </marker>
+                    </defs>
+                  </svg>
                   <!-- Today line -->
                   <div id="gantt-today-line" style="position:absolute;top:0;width:2px;background:rgba(59,130,246,.5);pointer-events:none"></div>
                 </div>
@@ -2281,6 +2292,9 @@
       const se = document.getElementById('sort-end');
       if (ss) ss.textContent = getSortIcon('start');
       if (se) se.textContent = getSortIcon('end');
+
+      // Draw dependency arrows
+      drawDependencyArrows();
 
       // Scroll to today on first render
       setTimeout(() => { if (rightScroll && rightScroll.scrollLeft === 0) goToday(); }, 0);
@@ -3967,12 +3981,13 @@
     unlockDashboard = async function(){
       await _origUnlockBudget();
 
-      // Parallelize budget load + user role check
+      // Parallelize budget + user role + all dependencies
       const cy = populateYearSelects();
       const [,{ data: { user } }] = await Promise.all([
         loadBudgetData(cy),
         supabaseClient.auth.getUser()
       ]);
+      loadAllDependencies(); // load in background — arrows appear when ready
 
       const isJavier = user?.email === 'javierimedio@gorfactory.es';
       const annualBtn = document.getElementById('sb-nav-annual');
@@ -4101,6 +4116,68 @@
     // ══════════════════════════════════════════════════════════
     let TASK_DEPENDENCIES = [];
 
+    // ── DEPENDENCY ARROWS (global) ────────────────────────────
+    let ALL_DEPENDENCIES = [];
+
+    async function loadAllDependencies() {
+      try {
+        const { data } = await supabaseClient.from('task_dependencies').select('*');
+        ALL_DEPENDENCIES = data || [];
+      } catch(e) { console.warn('loadAllDependencies:', e); }
+    }
+
+    function drawDependencyArrows() {
+      const svg = document.getElementById('gantt-arrows');
+      if (!svg || !ALL_DEPENDENCIES.length) { if(svg) { svg.setAttribute('width','0'); svg.setAttribute('height','0'); } return; }
+
+      const rightInner = document.getElementById('gantt-right-inner');
+      const totalW = parseInt(rightInner?.style.width) || 0;
+      const totalH = parseInt(rightInner?.style.height) || 0;
+      if (!totalW || !totalH) return;
+
+      svg.setAttribute('width',  totalW);
+      svg.setAttribute('height', totalH);
+
+      // Remove old paths (keep defs)
+      [...svg.querySelectorAll('path.dep-arrow,line.dep-arrow')].forEach(el => el.remove());
+
+      // Build map taskId → bar position from _canvasBars
+      const barMap = {};
+      _canvasBars.forEach(b => { barMap[b.taskId] = b; });
+
+      ALL_DEPENDENCIES.forEach(dep => {
+        const fromBar = barMap[dep.task_id];       // dependent task bar
+        const toBar   = barMap[dep.depends_on_id]; // predecessor bar
+        if (!fromBar || !toBar) return;
+
+        const isBlocks = dep.type === 'blocks';
+        const color    = isBlocks ? '#ef4444' : '#f59e0b';
+        const opacity  = isBlocks ? '0.75' : '0.6';
+
+        // Start: right edge of predecessor bar, middle Y
+        const x1 = toBar.x + toBar.w;
+        const y1 = toBar.y + BAR_H / 2;
+
+        // End: left edge of dependent bar, middle Y
+        const x2 = fromBar.x;
+        const y2 = fromBar.y + BAR_H / 2;
+
+        // Elbow path: right → down/up → left with 12px elbow
+        const ex = x1 + 12;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'dep-arrow');
+        path.setAttribute('d', `M${x1},${y1} L${ex},${y1} L${ex},${y2} L${x2},${y2}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', color);
+        path.setAttribute('stroke-width', '1.5');
+        path.setAttribute('stroke-opacity', opacity);
+        path.setAttribute('stroke-linejoin', 'round');
+        if (!isBlocks) path.setAttribute('stroke-dasharray', '5 3');
+        path.setAttribute('marker-end', `url(#arr-${isBlocks ? 'blocks' : 'related'})`);
+        svg.appendChild(path);
+      });
+    }
+
     async function loadDependencies(taskId) {
       TASK_DEPENDENCIES = [];
       renderDependencies();
@@ -4187,6 +4264,8 @@
         if (error) throw error;
         hideAddDepUI();
         await loadDependencies(editId);
+        await loadAllDependencies();
+        drawDependencyArrows();
         showToast('Dependencia añadida', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
@@ -4196,6 +4275,8 @@
         const { error } = await supabaseClient.from('task_dependencies').delete().eq('id', depId);
         if (error) throw error;
         await loadDependencies(editId);
+        await loadAllDependencies();
+        drawDependencyArrows();
         showToast('Dependencia eliminada', 'success');
       } catch(e) { showToast('Error: ' + e.message, 'error'); }
     }
