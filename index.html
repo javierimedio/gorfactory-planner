@@ -2102,23 +2102,6 @@
       });
       const totalH = rows.length * ROW_H;
 
-      // ── DEBUG ──────────────────────────────────────────────
-      const taskRows = rows.filter(r => r.type === 'task');
-      const withDates = taskRows.filter(r => r.data.start && r.data.end);
-      console.log('[GANTT RENDER]', {
-        TASKS: TASKS.length,
-        filteredTasks: filteredTasks.length,
-        rows: rows.length,
-        taskRows: taskRows.length,
-        withDates: withDates.length,
-        calDays: CAL.days.length,
-        calStart: CAL.start?.toISOString?.(),
-        totalW, totalH,
-        canvasW: canvas.width, canvasH: canvas.height,
-        scrollLeft: rightScroll.scrollLeft,
-        sampleDates: withDates.slice(0,3).map(r => ({ task: r.data.task, start: r.data.start?.toISOString?.(), end: r.data.end?.toISOString?.(), s: dayOffset(r.data.start), e: dayOffset(r.data.end) }))
-      });
-      // ── END DEBUG ─────────────────────────────────────────
 
       // ── Left panel: task list ──────────────────────────────
       ganttRows.innerHTML = '';
@@ -2323,9 +2306,8 @@
       attachCanvasListeners();
 
       // Auto-scroll to today if scroll is at origin (first render or after data reload)
-      console.log('[GANTT] barsDrawn:', _canvasBars.length, '| scrollLeft before goToday:', rightScroll.scrollLeft);
-      if (rightScroll && rightScroll.scrollLeft === 0) goToday();
-      console.log('[GANTT] scrollLeft after goToday:', rightScroll.scrollLeft);
+      // Scroll to today AFTER browser has applied layout changes
+      setTimeout(() => { if (rightScroll && rightScroll.scrollLeft === 0) goToday(); }, 0);
     }
 
     // Canvas click/hover — attached once after first render
