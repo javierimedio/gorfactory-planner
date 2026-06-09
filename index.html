@@ -1315,6 +1315,7 @@
       setupRealtime();
       applyGanttHeight();
       initResizeHandle();
+      switchView('home');
       // goToday called by switchView('gantt') when user navigates there
     }
 
@@ -1377,8 +1378,8 @@
         return data.map(t => ({
           id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
           proj_resp: t.proj_resp || '',
-          start: t.start_date ? new Date(t.start_date) : null,
-          end:   t.end_date   ? new Date(t.end_date)   : null,
+          start: parseIso(t.start_date),
+          end:   parseIso(t.end_date),
           status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
           cat: t.cat || 'Catálogos', notes: t.notes || '',
           updated_at: t.updated_at || null,
@@ -1417,8 +1418,8 @@
           TASKS = data.map(t => ({
             id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
             proj_resp: t.proj_resp || '',
-            start: t.start_date ? new Date(t.start_date) : null,
-            end:   t.end_date   ? new Date(t.end_date)   : null,
+            start: parseIso(t.start_date),
+            end:   parseIso(t.end_date),
             status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
             cat: t.cat || 'Catálogos', notes: t.notes || '',
             updated_at: t.updated_at || null,
@@ -1447,8 +1448,8 @@
           const fresh = data.map(t => ({
             id: t.id, proj: t.proj, task: t.task, resp: t.resp || '—',
             proj_resp: t.proj_resp || '',
-            start: t.start_date ? new Date(t.start_date) : null,
-            end:   t.end_date   ? new Date(t.end_date)   : null,
+            start: parseIso(t.start_date),
+            end:   parseIso(t.end_date),
             status: t.status || 'Sin comenzar', prio: t.prio || 'Media',
             cat: t.cat || 'Catálogos', notes: t.notes || '',
             updated_at: t.updated_at || null,
@@ -1602,7 +1603,7 @@
       renderSidebarCategories();
       renderSidebarProjects();
       renderSidebarUpcoming();
-      if      (currentActiveView === 'gantt')     render();
+      if      (currentActiveView === 'gantt')     setTimeout(render, 0);
       else if (currentActiveView === 'kanban')    renderKanban();
       else if (currentActiveView === 'calendar')  renderCalendar();
       else if (currentActiveView === 'budget')    renderBudget();
@@ -1978,15 +1979,15 @@
         if (el) el.classList.toggle('active', id === `sb-nav-${viewName}`);
       });
 
-      // Render the right content
+      // Render AFTER container is visible (important for canvas)
       if      (viewName === 'home')     renderHome();
-      else if (viewName === 'gantt')     { render(); setTimeout(goToday, 100); }
-      else if (viewName === 'kanban')    renderKanban();
-      else if (viewName === 'calendar')  renderCalendar();
+      else if (viewName === 'gantt')    { setTimeout(() => { render(); setTimeout(goToday, 50); }, 0); }
+      else if (viewName === 'kanban')   renderKanban();
+      else if (viewName === 'calendar') renderCalendar();
       else if (viewName === 'dashboard') renderDashboard();
-      else if (viewName === 'budget')    { populateYearSelects(); renderBudget(); }
-      else if (viewName === 'annual')    { populateYearSelects(); renderAnnual(); }
-      else if (viewName === 'exec')      { populateYearSelects(); renderExec(); }
+      else if (viewName === 'budget')   { populateYearSelects(); renderBudget(); }
+      else if (viewName === 'annual')   { populateYearSelects(); renderAnnual(); }
+      else if (viewName === 'exec')     { populateYearSelects(); renderExec(); }
       lucide.createIcons();
     }
 
@@ -2014,8 +2015,7 @@
 
     function dayOffset(d) {
       if (!d) return null;
-      const diff = Math.round((d - CAL.start) / (1000*60*60*24));
-      return diff >= 0 ? diff : null;
+      return Math.round((d - CAL.start) / (1000*60*60*24));
     }
 
     function getISOWeek(d) {
@@ -4164,7 +4164,7 @@
           const t = d.dep_task; if (!t) return '';
           const isBlocks = d.type==='blocks';
           const isDone   = t.status==='Completado';
-          const endDate  = t.end_date ? new Date(t.end_date) : null;
+          const endDate  = parseIso(t.end_date);
           const isLate   = endDate && endDate < today && !isDone;
           const typeIcon = isBlocks ? '🔒' : '🔗';
           const typeLabel = isBlocks ? 'Bloqueante' : 'Relacionada';
