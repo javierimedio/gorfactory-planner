@@ -1655,8 +1655,19 @@
       if (hasSearch && searchInput) setTimeout(() => searchInput.focus(), 50);
 
       setTimeout(() => {
-        document.addEventListener('click', closeActiveFilter, { once: true });
+        document.addEventListener('click', _filterOutsideClick);
       }, 0);
+    }
+
+    function _filterOutsideClick(e) {
+      const panel = document.getElementById('filter-dropdown-panel');
+      if (!panel) { document.removeEventListener('click', _filterOutsideClick); return; }
+      // If click is inside the panel or on any filter button, keep open
+      if (panel.contains(e.target)) return;
+      if (e.target.closest('[id^="filter-"][id$="-btn"]')) return;
+      // Click outside — close
+      document.removeEventListener('click', _filterOutsideClick);
+      closeActiveFilter();
     }
 
     function filterDropdownSearch(q) {
@@ -1797,6 +1808,7 @@
       const panel = document.getElementById('filter-dropdown-panel');
       if (panel) panel.style.display = 'none';
       _activeFilterKey = null;
+      document.removeEventListener('click', _filterOutsideClick);
     }
 
     function toggleFilterValue(key, value) {
