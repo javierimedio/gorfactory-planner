@@ -425,6 +425,10 @@
         <i data-lucide="download" class="sb-icon" style="color:#34d399"></i>
         <span class="sb-lbl">Exportar CSV</span>
       </button>
+      <button id="archived-toggle-btn" class="sb-nav-btn" onclick="toggleArchivedProjects()" title="Proyectos archivados (completados/cancelados)">
+        <i data-lucide="archive" class="sb-icon" style="color:#a78bfa"></i>
+        <span class="sb-lbl" id="archived-toggle-lbl">Ver archivados <span id="archived-count-badge" style="display:none;background:rgba(167,139,250,.25);color:#a78bfa;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:4px"></span></span>
+      </button>
       <button class="sb-nav-btn" onclick="logout()" style="color:rgba(239,68,68,0.8)">
         <i data-lucide="log-out" class="sb-icon" style="color:rgba(239,68,68,0.7)"></i>
         <span class="sb-lbl">Cerrar sesión</span>
@@ -1522,6 +1526,10 @@
     }
 
     // ── HELPERS ────────────────────────────────────────────────
+    function isProjectArchived(projTasks) {
+      return projTasks.length > 0 && projTasks.every(t => t.status === 'Completado' || t.status === 'Cancelado');
+    }
+
     function buildProjects(tasks) {
       const pm = {};
       tasks.forEach(t => {
@@ -1530,6 +1538,15 @@
         pm[t.proj].tasks.push(t);
       });
       return Object.values(pm);
+    }
+
+    function getArchivedCount() {
+      const pm = {};
+      TASKS.forEach(t => {
+        if (!pm[t.proj]) pm[t.proj] = [];
+        pm[t.proj].push(t);
+      });
+      return Object.values(pm).filter(tasks => isProjectArchived(tasks)).length;
     }
 
     function refreshProjectList() {
@@ -1558,6 +1575,7 @@
     const selectedFilters = { cat: new Set(), status: new Set(), proj: new Set(), resp: new Set(), task: new Set() };
 
     let _activeFilterKey = null;
+    let showArchivedProjects = false;
 
     function toggleFilterDropdown(e, key) {
       e.stopPropagation();
@@ -1587,7 +1605,22 @@
 
       // Build options
       const list = document.getElementById('filter-dropdown-list');
-      const _allOpts = cfg.static || [...new Set(TASKS.map(t => t[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+      // For proj filter: exclude archived projects
+      let _allOpts;
+      if (cfg.static) {
+        _allOpts = cfg.static;
+      } else if (key === 'proj') {
+        const archivedProjs = new Set(
+          Object.entries(
+            TASKS.reduce((acc, t) => { (acc[t.proj] = acc[t.proj]||[]).push(t); return acc; }, {})
+          ).filter(([,tasks]) => isProjectArchived(tasks)).map(([name]) => name)
+        );
+        _allOpts = [...new Set(TASKS.map(t => t.proj).filter(Boolean))]
+          .filter(p => !archivedProjs.has(p))
+          .sort((a,b) => a.localeCompare(b));
+      } else {
+        _allOpts = [...new Set(TASKS.map(t => t[key]).filter(Boolean))].sort((a,b) => a.localeCompare(b));
+      }
       panel._allOptions = _allOpts;
       panel._activeKey  = key;
 
@@ -1641,6 +1674,123 @@
             style="width:13px;height:13px;accent-color:#4573d2;cursor:pointer;flex-shrink:0">
           <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v)}</span>
         </label>`).join('');
+    }
+
+
+    // ── ARCHIVED PROJECTS ────────────────────────────────────────
+
+    function toggleArchivedProjects() {
+      showArchivedProjects = !showArchivedProjects;
+      const lbl = document.getElementById('archived-toggle-lbl');
+      const btn = document.getElementById('archived-toggle-btn');
+      const icon = btn?.querySelector('[data-lucide="archive"]') || btn?.querySelector('i');
+      if (lbl) lbl.innerHTML = showArchivedProjects
+        ? '← Volver a activos'
+        : 'Ver archivados <span id="archived-count-badge" style="background:rgba(167,139,250,.25);color:#a78bfa;border-radius:10px;padding:1px 6px;font-size:9px;font-weight:700;margin-left:4px">' + getArchivedCount() + '</span>';
+      if (btn) {
+        btn.style.opacity = '1';
+        btn.style.background = showArchivedProjects ? 'rgba(167,139,250,.15)' : '';
+        btn.style.borderRadius = showArchivedProjects ? '8px' : '';
+      }
+      // Clear proj filter when switching modes to avoid confusion
+      selectedFilters.proj.clear();
+      updateFilterLabel('proj');
+      applyFilters();
+    }
+
+    function updateArchivedBadge() {
+      const count = getArchivedCount();
+      const badge = document.getElementById('archived-count-badge');
+      if (badge) { badge.textContent = count; badge.style.display = count > 0 ? 'inline' : 'none'; }
+    }
+
+    // ── PROJECT CONTEXT MENU ─────────────────────────────────────
+
+    let _ctxProjName = null;
+
+    function openCancelProjectMenu(e, projName) {
+      _ctxProjName = projName;
+      const menu = document.getElementById('proj-ctx-menu');
+      if (!menu) return;
+      const nameEl = document.getElementById('proj-ctx-name');
+      if (nameEl) nameEl.textContent = projName;
+      // Position near click
+      const x = e.clientX, y = e.clientY;
+      const menuW = 220, menuH = 90;
+      menu.style.left = (x + menuW > window.innerWidth - 8 ? x - menuW : x) + 'px';
+      menu.style.top  = (y + menuH > window.innerHeight - 8 ? y - menuH : y + 4) + 'px';
+      menu.style.display = 'block';
+      setTimeout(() => document.addEventListener('click', closeCtxMenu, { once: true }), 0);
+    }
+
+    function closeCtxMenu() {
+      const menu = document.getElementById('proj-ctx-menu');
+      if (menu) menu.style.display = 'none';
+    }
+
+    function cancelProjectConfirm() {
+      closeCtxMenu();
+      if (!_ctxProjName) return;
+      const pending = TASKS.filter(t => t.proj === _ctxProjName && t.status !== 'Completado' && t.status !== 'Cancelado');
+      const modal = document.getElementById('cancel-proj-modal');
+      const nameEl = document.getElementById('cancel-proj-modal-name');
+      const countEl = document.getElementById('cancel-proj-task-count');
+      if (nameEl) nameEl.textContent = _ctxProjName;
+      if (countEl) {
+        if (pending.length === 0) {
+          countEl.textContent = 'Todas las tareas ya están completadas o canceladas.';
+          countEl.style.color = '#10b981';
+          countEl.style.borderColor = 'rgba(16,185,129,.18)';
+          countEl.style.background = 'rgba(16,185,129,.07)';
+        } else {
+          countEl.textContent = `${pending.length} tarea${pending.length > 1 ? 's' : ''} pendiente${pending.length > 1 ? 's' : ''} se marcarán como Cancelado.`;
+          countEl.style.color = '#ef4444';
+          countEl.style.borderColor = 'rgba(239,68,68,.18)';
+          countEl.style.background = 'rgba(239,68,68,.07)';
+        }
+      }
+      if (modal) { modal.style.display = 'flex'; }
+    }
+
+    function closeCancelProjectModal() {
+      const modal = document.getElementById('cancel-proj-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function executeCancelProject() {
+      if (!_ctxProjName) return;
+      const pending = TASKS.filter(t => t.proj === _ctxProjName && t.status !== 'Completado' && t.status !== 'Cancelado');
+      closeCancelProjectModal();
+      if (pending.length === 0) { applyFilters(); return; }
+
+      showToast('Cancelando proyecto...', 'info');
+      try {
+        const now      = new Date().toISOString();
+        const userName = document.getElementById('current-user')?.textContent || '';
+        const ids      = pending.map(t => t.id);
+
+        const { error } = await supabaseClient
+          .from('tareas')
+          .update({ status: 'Cancelado', updated_at: now, updated_by: userName })
+          .in('id', ids);
+
+        if (error) throw error;
+
+        // Update local TASKS array immediately
+        TASKS.forEach(t => {
+          if (ids.includes(t.id)) { t.status = 'Cancelado'; t.updated_at = now; }
+        });
+
+        // Invalidate cache
+        try { sessionStorage.removeItem('gf_tasks_cache'); } catch(e) {}
+
+        showToast(`Proyecto cancelado · ${pending.length} tarea${pending.length>1?'s':''} actualizada${pending.length>1?'s':''}`, 'success');
+        updateArchivedBadge();
+        applyFilters();
+      } catch(err) {
+        console.error(err);
+        showToast('Error al cancelar el proyecto', 'error');
+      }
     }
 
     function closeActiveFilter() {
@@ -1712,9 +1862,20 @@
     }
 
     function applyFilters() {
+      updateArchivedBadge();
       const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
 
+      // Build set of archived project names once
+      const _projTaskMap = TASKS.reduce((acc, t) => { (acc[t.proj] = acc[t.proj]||[]).push(t); return acc; }, {});
+      const _archivedProjNames = new Set(Object.entries(_projTaskMap).filter(([,tasks]) => isProjectArchived(tasks)).map(([name]) => name));
+
       filteredTasks = TASKS.filter(t => {
+        // Archived mode: show only archived projects; normal mode: hide archived projects
+        if (showArchivedProjects) {
+          if (!_archivedProjNames.has(t.proj)) return false;
+        } else {
+          if (_archivedProjNames.has(t.proj)) return false;
+        }
         if (selectedFilters.cat.size    > 0 && !selectedFilters.cat.has(t.cat))       return false;
         if (selectedFilters.status.size > 0 && !selectedFilters.status.has(t.status)) return false;
         if (selectedFilters.proj.size   > 0 && !selectedFilters.proj.has(t.proj))     return false;
@@ -1729,8 +1890,8 @@
         }
         if (showOnlyCompleted) {
           if (t.status !== 'Completado' && t.status !== 'Cancelado') return false;
-        } else if (showAllTasks) {
-          // mostrar todo
+        } else if (showAllTasks || showArchivedProjects) {
+          // mostrar todo (también en modo archivados)
         } else {
           if (t.status === 'Completado' || t.status === 'Cancelado') return false;
         }
@@ -2269,7 +2430,9 @@
           const proj   = row.data;
           const isOpen = expanded[proj.name] !== false;
           const cc     = CAT_COLOR[proj.cat] || CAT_COLOR.default;
-          el.style.cssText = 'display:flex;align-items:center;padding:0 16px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--text-main);background:var(--bg-main);gap:6px;flex-shrink:0;position:sticky;top:0;z-index:2';
+          const isArchived = isProjectArchived(proj.tasks);
+          el.style.cssText = `display:flex;align-items:center;padding:0 16px;height:44px;cursor:pointer;border-bottom:1px solid var(--border-color);font-size:12px;font-weight:600;color:var(--text-main);background:var(--bg-main);gap:6px;flex-shrink:0;position:sticky;top:0;z-index:2;${isArchived?'opacity:.45;':''}`;
+          const pendingTasks = proj.tasks.filter(t => t.status !== 'Completado' && t.status !== 'Cancelado');
           el.innerHTML = `<i data-lucide="chevron-right" style="width:14px;height:14px;color:var(--text-muted);transition:transform .15s;transform:rotate(${isOpen?90:0}deg);flex-shrink:0"></i>
             <span style="width:8px;height:8px;border-radius:50%;background:${cc};flex-shrink:0"></span>
             <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(proj.name)}</span>
@@ -2279,7 +2442,11 @@
             <span style="width:70px;flex-shrink:0"></span>
             <span style="width:72px;flex-shrink:0"></span>
             <span style="width:72px;flex-shrink:0"></span>
-            <span style="width:28px;flex-shrink:0"></span>`;
+            <button onclick="event.stopPropagation();openCancelProjectMenu(event,'${esc(proj.name).replace(/'/g,"\'")}')" title="Opciones del proyecto"
+              style="width:22px;height:22px;flex-shrink:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;color:var(--text-muted);opacity:.5;transition:opacity .15s"
+              onmouseover="this.style.opacity='1';this.style.background='rgba(0,0,0,.07)'" onmouseout="this.style.opacity='.5';this.style.background='none'">
+              <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="2.5" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="8" cy="13.5" r="1.5"/></svg>
+            </button>`;
           el.onclick = () => { expanded[proj.name] = !isOpen; render(); };
         } else {
           const task = row.data;
@@ -4598,7 +4765,7 @@
     </div>
   </div>
   <!-- Multi-select filter dropdowns (body-level) -->
-  <div id="filter-dropdown-panel" style="display:none;position:fixed;z-index:9999;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-width:200px;max-width:280px;max-height:360px;overflow:hidden;display:flex;flex-direction:column;padding:0">
+  <div id="filter-dropdown-panel" style="display:none;position:fixed;z-index:9999;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.15);min-width:200px;max-width:280px;max-height:360px;overflow:hidden;flex-direction:column;padding:0">
     <div style="padding:8px 10px 6px;border-bottom:1px solid var(--border-color);background:var(--bg-panel);flex-shrink:0">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0" id="filter-dropdown-header-row">
         <span id="filter-dropdown-title" style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)"></span>
@@ -4611,6 +4778,42 @@
       </div>
     </div>
     <div id="filter-dropdown-list" style="padding:4px 0;overflow-y:auto;flex:1" class="no-scrollbar"></div>
+  </div>
+
+
+  <!-- Project context menu -->
+  <div id="proj-ctx-menu" style="display:none;position:fixed;z-index:10000;background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);min-width:210px;padding:5px 0;font-size:13px">
+    <div id="proj-ctx-name" style="padding:8px 14px 6px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);border-bottom:1px solid var(--border-color);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px"></div>
+    <button onclick="cancelProjectConfirm()" id="proj-ctx-cancel-btn"
+      style="display:flex;align-items:center;gap:9px;width:100%;padding:8px 14px;background:none;border:none;cursor:pointer;color:var(--text-main);font-size:12px;font-family:inherit;text-align:left;transition:background .1s"
+      onmouseover="this.style.background='rgba(239,68,68,.08)';this.style.color='#ef4444'"
+      onmouseout="this.style.background='none';this.style.color='var(--text-main)'">
+      <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="flex-shrink:0"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+      Cancelar proyecto
+    </button>
+  </div>
+
+  <!-- Cancel project confirm modal -->
+  <div id="cancel-proj-modal" style="display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center">
+    <div style="background:var(--bg-panel);border-radius:14px;padding:28px 28px 22px;max-width:400px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:36px;height:36px;border-radius:50%;background:rgba(239,68,68,.12);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="18" height="18" viewBox="0 0 16 16" fill="#ef4444"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--text-main)">Cancelar proyecto</div>
+          <div id="cancel-proj-modal-name" style="font-size:12px;color:var(--text-muted);margin-top:2px"></div>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--text-muted);line-height:1.6;margin-bottom:8px">
+        Se marcarán como <strong style="color:#ef4444">Cancelado</strong> todas las tareas pendientes de este proyecto.
+      </p>
+      <div id="cancel-proj-task-count" style="font-size:12px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-radius:8px;padding:8px 12px;color:#ef4444;margin-bottom:18px"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="closeCancelProjectModal()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-main);color:var(--text-main);font-size:13px;cursor:pointer;font-family:inherit">Volver</button>
+        <button onclick="executeCancelProject()" style="padding:8px 18px;border-radius:8px;border:none;background:#ef4444;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">Confirmar cancelación</button>
+      </div>
+    </div>
   </div>
 
 </body>
