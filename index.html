@@ -1128,6 +1128,11 @@
             onmouseover="this.style.borderColor='#4573d2';this.style.color='#4573d2'" onmouseout="this.style.borderColor='var(--border-color)';this.style.color='var(--text-main)'">
             Cerrar
           </button>
+          <button id="btn-save-new" onclick="saveModal()"
+            style="display:none;padding:6px 18px;border-radius:7px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s"
+            onmouseover="this.style.background='#3560c0'" onmouseout="this.style.background='#4573d2'">
+            Guardar tarea
+          </button>
         </div>
       </div>
 
@@ -2904,6 +2909,7 @@
       document.getElementById('m-notes').value  = '';
       document.getElementById('btn-delete').style.display = 'none';
       document.getElementById('autosave-status').style.opacity = '0';
+      document.getElementById('btn-save-new').style.display = 'inline-flex';
       const badge = document.getElementById('modal-last-modified');
       if (badge) badge.style.display = 'none';
       document.getElementById('task-files').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin adjuntos todavía</div>';
@@ -2932,6 +2938,7 @@
       document.getElementById('m-cat').value    = t.cat;
       document.getElementById('m-notes').value  = t.notes || '';
 
+      document.getElementById('btn-save-new').style.display = 'none';
       if (isEditModeActive) {
         document.getElementById('modal-title').textContent = 'Modificar Planificación';
         document.getElementById('btn-delete').style.display = 'block';
@@ -3046,9 +3053,16 @@
         const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
         if (error) throw error;
         showAutosaveStatus('saved');
-        invalidateTasksCache(); // force fresh load next time
-        // Refresh visual sin cerrar modal
-        await loadTasksFromCloud();
+        // Update local TASKS array immediately — no full reload needed
+        const idx = TASKS.findIndex(x => x.id === editId);
+        if (idx !== -1) {
+          TASKS[idx] = { ...TASKS[idx], ...payload,
+            start: parseIso(payload.start_date),
+            end:   parseIso(payload.end_date)
+          };
+        }
+        invalidateTasksCache();
+        applyFilters();
         refreshProjectList();
       } catch(e) {
         showAutosaveStatus('error');
