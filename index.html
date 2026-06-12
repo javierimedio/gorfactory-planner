@@ -1112,13 +1112,26 @@
             <div id="checklist-progress-fill" style="height:100%;background:#10b981;border-radius:999px;transition:width .3s"></div>
           </div>
           <div id="checklist-items" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
-          <div id="checklist-add-row" style="display:none;display:flex;gap:6px;align-items:center">
-            <input id="checklist-new-input" type="text" placeholder="Añadir elemento..."
-              onkeydown="if(event.key==='Enter')addChecklistItem();if(event.key==='Escape')hideChecklistInput();"
-              style="flex:1;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit"
+          <div id="checklist-add-row" style="display:none;flex-direction:column;gap:6px">
+            <input id="checklist-new-input" type="text" placeholder="Descripción del elemento..."
+              onkeydown="if(event.key==='Escape')hideChecklistInput();"
+              style="width:100%;box-sizing:border-box;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit"
               onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
-            <button onclick="addChecklistItem()" style="padding:6px 10px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;cursor:pointer">Añadir</button>
-            <button onclick="hideChecklistInput()" style="padding:6px 8px;border-radius:6px;background:var(--bg-main);color:var(--text-muted);border:1px solid var(--border-color);font-size:12px;cursor:pointer">✕</button>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <datalist id="checklist-assignee-list"></datalist>
+              <input id="checklist-new-assignee" list="checklist-assignee-list"
+                placeholder="Asignar a..." autocomplete="off"
+                style="flex:1;min-width:120px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--text-main);outline:none;font-family:inherit"
+                onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
+              <input id="checklist-new-due" type="date"
+                onchange="validateChecklistDueDate(this)"
+                style="background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:11px;color:var(--text-main);outline:none;font-family:inherit">
+              <button onclick="addChecklistItem()" style="padding:5px 12px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;font-weight:600;cursor:pointer">Añadir</button>
+              <button onclick="hideChecklistInput()" style="padding:5px 8px;border-radius:6px;background:var(--bg-main);color:var(--text-muted);border:1px solid var(--border-color);font-size:12px;cursor:pointer">✕</button>
+            </div>
+            <div id="checklist-due-warning" style="display:none;font-size:11px;color:#ef4444;display:flex;align-items:center;gap:4px">
+              ⚠️ La fecha supera la fecha de fin de la tarea (<span id="checklist-due-warning-date"></span>)
+            </div>
           </div>
           <button id="btn-show-checklist-input" onclick="showChecklistInput()"
             style="display:none;font-size:11px;color:#4573d2;background:rgba(69,115,210,0.06);border:1px dashed rgba(69,115,210,0.3);border-radius:6px;padding:5px 12px;cursor:pointer;width:100%;text-align:center">
@@ -4780,29 +4793,81 @@
         label.textContent = '';
       }
 
-      if (!total) {
-        container.innerHTML = '';
-        return;
-      }
+      if (!total) { container.innerHTML = ''; return; }
 
-      container.innerHTML = _checklistItems.map(item => `
-        <div style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;transition:background .1s"
-          onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+      const todayStr = new Date().toISOString().slice(0,10);
+      const colors   = ['#f06a6a','#60a5fa','#34d399','#fbbf24','#a78bfa','#f97316'];
+
+      container.innerHTML = _checklistItems.map(item => {
+        const isOverdue = item.due_date && item.due_date < todayStr && !item.done;
+        const isDueToday = item.due_date && item.due_date === todayStr && !item.done;
+        const dueColor  = isOverdue ? '#ef4444' : isDueToday ? '#f97316' : 'var(--text-muted)';
+        const dueLabel  = item.due_date
+          ? new Date(item.due_date + 'T00:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'})
+          : '';
+        const assigneeInit = item.assignee
+          ? item.assignee.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()
+          : '';
+        const assigneeColor = item.assignee ? colors[item.assignee.charCodeAt(0)%colors.length] : '#9ca3af';
+
+        return `<div class="cl-item" style="display:flex;align-items:flex-start;gap:8px;padding:7px 8px;border-radius:7px;border:1px solid transparent;transition:all .1s;background:transparent"
+            onmouseover="this.style.background='var(--bg-main)';this.style.borderColor='var(--border-color)';this.querySelector('.cl-del').style.opacity='1'"
+            onmouseout="this.style.background='transparent';this.style.borderColor='transparent';this.querySelector('.cl-del').style.opacity='0'">
           <input type="checkbox" ${item.done?'checked':''} ${isEditModeActive?'':'disabled'}
             onchange="toggleChecklistItem(${item.id}, this.checked)"
-            style="width:14px;height:14px;accent-color:#4573d2;cursor:${isEditModeActive?'pointer':'default'};flex-shrink:0">
-          <span style="flex:1;font-size:12.5px;color:var(--text-main);${item.done?'text-decoration:line-through;opacity:.5':''}">${esc(item.text)}</span>
-          ${isEditModeActive ? `<button onclick="deleteChecklistItem(${item.id})"
-            style="opacity:0;width:18px;height:18px;background:none;border:none;cursor:pointer;color:#ef4444;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:14px;transition:opacity .15s"
-            onmouseover="this.parentElement.onmouseover=null;this.style.opacity='1'" 
-            onmouseout="this.style.opacity='0'">×</button>` : ''}
-        </div>`).join('');
+            style="width:14px;height:14px;accent-color:#4573d2;cursor:${isEditModeActive?'pointer':'default'};flex-shrink:0;margin-top:2px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12.5px;color:var(--text-main);${item.done?'text-decoration:line-through;opacity:.45':''};line-height:1.4;word-break:break-word">${esc(item.text)}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px;flex-wrap:wrap">
+              ${item.assignee ? `<div style="display:flex;align-items:center;gap:4px">
+                <div style="width:16px;height:16px;border-radius:50%;background:${assigneeColor};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;flex-shrink:0">${assigneeInit}</div>
+                <span style="font-size:10.5px;color:var(--text-muted)">${esc(item.assignee)}</span>
+              </div>` : ''}
+              ${item.due_date ? `<div style="display:flex;align-items:center;gap:3px;font-size:10.5px;color:${dueColor};font-weight:${isOverdue||isDueToday?600:400}">
+                <svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor"><path d="M5 0a1 1 0 0 1 1 1v1h4V1a1 1 0 1 1 2 0v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h1V1a1 1 0 0 1 1-1zm0 3a1 1 0 0 0 0 2h6a1 1 0 1 0 0-2H5z"/></svg>
+                ${isOverdue ? 'Vencido · ' : isDueToday ? 'Hoy · ' : ''}${dueLabel}
+              </div>` : ''}
+            </div>
+          </div>
+          ${isEditModeActive ? `<button class="cl-del" onclick="deleteChecklistItem(${item.id})"
+            title="Eliminar"
+            style="opacity:0;width:20px;height:20px;background:none;border:none;cursor:pointer;color:#ef4444;display:flex;align-items:center;justify-content:center;border-radius:4px;font-size:15px;flex-shrink:0;transition:opacity .15s">×</button>` : '<div class="cl-del" style="opacity:0;width:20px"></div>'}
+        </div>`;
+      }).join('');
     }
 
     function showChecklistInput() {
+      // Populate datalist with known team members (but input accepts any text)
+      const dl = document.getElementById('checklist-assignee-list');
+      if (dl) {
+        dl.innerHTML = getKnownUsers().map(u => `<option value="${esc(u)}">`).join('');
+      }
+      // Reset warning
+      const warn = document.getElementById('checklist-due-warning');
+      if (warn) warn.style.display = 'none';
+      const dueInput = document.getElementById('checklist-new-due');
+      if (dueInput) dueInput.style.borderColor = 'var(--border-color)';
+
       document.getElementById('checklist-add-row').style.display = 'flex';
       document.getElementById('btn-show-checklist-input').style.display = 'none';
       setTimeout(() => document.getElementById('checklist-new-input').focus(), 50);
+    }
+
+    function validateChecklistDueDate(input) {
+      const taskEnd   = document.getElementById('m-end')?.value;
+      const warn      = document.getElementById('checklist-due-warning');
+      const warnDate  = document.getElementById('checklist-due-warning-date');
+      if (!warn) return;
+      if (taskEnd && input.value && input.value > taskEnd) {
+        const d = new Date(taskEnd + 'T00:00:00');
+        const label = d.toLocaleDateString('es-ES', { day:'2-digit', month:'short', year:'numeric' });
+        if (warnDate) warnDate.textContent = label;
+        warn.style.display = 'flex';
+        input.style.borderColor = '#ef4444';
+      } else {
+        warn.style.display = 'none';
+        input.style.borderColor = 'var(--border-color)';
+      }
     }
 
     function hideChecklistInput() {
@@ -4812,18 +4877,30 @@
     }
 
     async function addChecklistItem() {
-      const input = document.getElementById('checklist-new-input');
-      const text  = input.value.trim();
+      const input    = document.getElementById('checklist-new-input');
+      const text     = input.value.trim();
       if (!text || !editId) return;
+      const assignee = document.getElementById('checklist-new-assignee')?.value?.trim() || null;
+      const due_date = document.getElementById('checklist-new-due')?.value || null;
+      // Validate due date against task end date
+      const taskEnd  = document.getElementById('m-end')?.value;
+      if (due_date && taskEnd && due_date > taskEnd) {
+        const d = new Date(taskEnd + 'T00:00:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+        showToast(`La fecha límite supera la fecha de fin de la tarea (${d})`, 'error');
+        return;
+      }
       const position = _checklistItems.length;
       const { data, error } = await supabaseClient
-        .from('task_checklists').insert([{ task_id: editId, text, done: false, position }])
+        .from('task_checklists').insert([{ task_id: editId, text, done: false, position,
+          assignee: assignee || null, due_date: due_date || null }])
         .select().single();
       if (error) { showToast('Error al añadir', 'error'); return; }
       _checklistItems.push(data);
       input.value = '';
+      if (document.getElementById('checklist-new-assignee')) document.getElementById('checklist-new-assignee').value = '';
+      if (document.getElementById('checklist-new-due'))      document.getElementById('checklist-new-due').value = '';
       renderChecklistItems();
-      logActivity('checklist', editId, `Añadió checklist: "${text}"`);
+      logActivity('checklist', editId, `Añadió checklist: "${text}"${assignee?' → '+assignee:''}${due_date?' · vence '+due_date:''}`);
     }
 
     async function toggleChecklistItem(id, done) {
