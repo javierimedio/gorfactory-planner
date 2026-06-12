@@ -933,6 +933,23 @@
 
             </div>
 
+            <!-- Microtareas del equipo -->
+            <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
+              <div style="padding:14px 16px;border-bottom:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <h3 style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted);margin:0">☑️ Microtareas del equipo</h3>
+                  <span id="home-checklist-badge" style="display:none;background:rgba(239,68,68,.12);color:#ef4444;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:700"></span>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center">
+                  <select id="home-checklist-filter" onchange="renderHomeChecklists()" style="font-size:11px;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:3px 7px;color:var(--text-muted);outline:none;font-family:inherit">
+                    <option value="all">Todo el equipo</option>
+                    <option value="me">Solo las mías</option>
+                  </select>
+                </div>
+              </div>
+              <div id="home-checklists" style="max-height:320px;overflow-y:auto" class="no-scrollbar"></div>
+            </div>
+
             <!-- Estado general de proyectos -->
             <div style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:10px;overflow:hidden">
               <div style="padding:14px 16px;border-bottom:1px solid var(--border-color)">
@@ -4437,6 +4454,8 @@
     // ══════════════════════════════════════════════════════════
     // DASHBOARD DE INICIO
     // ══════════════════════════════════════════════════════════
+    let _homeChecklists = []; // cache for filter toggle
+
     async function renderHome() {
       const me = _currentDisplayName || '';
       const now = new Date();
@@ -4482,24 +4501,6 @@
         }
       }
 
-      const upcomingEl = document.getElementById('home-upcoming');
-      if (upcomingEl) {
-        const upAll = TASKS.filter(t => t.end && t.end >= today && t.end <= weekEnd && t.status !== 'Completado' && t.status !== 'Cancelado').sort((a,b)=>a.end-b.end).slice(0,20);
-        if (!upAll.length) { upcomingEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin vencimientos próximos</div>'; }
-        else {
-          upcomingEl.innerHTML = upAll.map(t => {
-            const daysLeft = Math.ceil((t.end-today)/86400000);
-            const dLabel = daysLeft===0?'Hoy':daysLeft===1?'Mañana':'En '+daysLeft+' días';
-            const dColor = daysLeft<=1?'#ef4444':daysLeft<=3?'#f59e0b':'var(--text-muted)';
-            const catC = CAT_COLOR[t.cat]||CAT_COLOR.default;
-            return `<div onclick="openEdit(${t.id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
-              <span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span>
-              <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(t.resp)} · ${esc(t.proj)}</div></div>
-              <div style="font-size:11px;font-weight:600;color:${dColor};flex-shrink:0">${dLabel}</div>
-            </div>`;
-          }).join('');
-        }
-      }
 
       const projsEl = document.getElementById('home-projects');
       if (projsEl) {
@@ -4536,7 +4537,144 @@
           </div>`;
         }).filter(Boolean).join('');
       }
+      // Fetch checklists for home view
+      try {
+        const { data: clData } = await supabaseClient
+          .from('task_checklists').select('*')
+          .eq('done', false)
+          .order('due_date', { ascending: true, nullsFirst: false });
+        _homeChecklists = (clData || []).map(cl => {
+          const parentTask = TASKS.find(t => t.id === cl.task_id);
+          return { ...cl, _task: parentTask };
+        }).filter(cl => cl._task); // only items whose task exists
+      } catch(e) { _homeChecklists = []; }
+
+      renderHomeChecklists();
+      renderHomeUpcoming(_homeChecklists);
+
       lucide.createIcons();
+    }
+
+    function renderHomeUpcoming(checklists) {
+      const upcomingEl = document.getElementById('home-upcoming');
+      if (!upcomingEl) return;
+      const today   = new Date(); today.setHours(0,0,0,0);
+      const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
+
+      // Tasks upcoming
+      const upTasks = TASKS.filter(t => t.end && t.end >= today && t.end <= weekEnd
+        && t.status !== 'Completado' && t.status !== 'Cancelado').sort((a,b)=>a.end-b.end).slice(0,15);
+
+      // Checklist items with due_date upcoming
+      const upCL = checklists.filter(cl => {
+        if (!cl.due_date) return false;
+        const d = new Date(cl.due_date + 'T00:00:00');
+        return d >= today && d <= weekEnd;
+      }).sort((a,b) => a.due_date.localeCompare(b.due_date)).slice(0,10);
+
+      if (!upTasks.length && !upCL.length) {
+        upcomingEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin vencimientos próximos</div>';
+        return;
+      }
+
+      // Merge and sort by date
+      const items = [
+        ...upTasks.map(t => ({ type:'task', t, dateStr: t.end.toISOString().slice(0,10) })),
+        ...upCL.map(cl => ({ type:'cl', cl, dateStr: cl.due_date }))
+      ].sort((a,b) => a.dateStr.localeCompare(b.dateStr));
+
+      upcomingEl.innerHTML = items.map(item => {
+        const today2 = new Date(); today2.setHours(0,0,0,0);
+        if (item.type === 'task') {
+          const t = item.t;
+          const daysLeft = Math.ceil((t.end - today2) / 86400000);
+          const dLabel = daysLeft===0?'Hoy':daysLeft===1?'Mañana':'En '+daysLeft+'d';
+          const dColor = daysLeft<=1?'#ef4444':daysLeft<=3?'#f59e0b':'var(--text-muted)';
+          const catC = CAT_COLOR[t.cat]||CAT_COLOR.default;
+          return `<div onclick="openEdit(${t.id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+            <span style="width:7px;height:7px;border-radius:50%;background:${catC};flex-shrink:0"></span>
+            <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(t.task)}</div><div style="font-size:11px;color:var(--text-muted)">${esc(t.resp)} · ${esc(t.proj)}</div></div>
+            <div style="font-size:11px;font-weight:600;color:${dColor};flex-shrink:0">${dLabel}</div>
+          </div>`;
+        } else {
+          const cl = item.cl;
+          const d = new Date(cl.due_date + 'T00:00:00');
+          const daysLeft = Math.ceil((d - today2) / 86400000);
+          const dLabel = daysLeft===0?'Hoy':daysLeft===1?'Mañana':'En '+daysLeft+'d';
+          const dColor = daysLeft<=1?'#ef4444':daysLeft<=3?'#f59e0b':'var(--text-muted)';
+          const catC = CAT_COLOR[cl._task?.cat]||CAT_COLOR.default;
+          return `<div onclick="openEdit(${cl.task_id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+            <span style="font-size:13px;flex-shrink:0;line-height:1">☑️</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cl.text)}</div>
+              <div style="font-size:11px;color:var(--text-muted)">${cl.assignee?esc(cl.assignee)+' · ':''}${esc(cl._task?.task||'')} · ${esc(cl._task?.proj||'')}</div>
+            </div>
+            <div style="font-size:11px;font-weight:600;color:${dColor};flex-shrink:0">${dLabel}</div>
+          </div>`;
+        }
+      }).join('');
+    }
+
+    function renderHomeChecklists() {
+      const container = document.getElementById('home-checklists');
+      const badge     = document.getElementById('home-checklist-badge');
+      if (!container) return;
+      const me     = _currentDisplayName || '';
+      const filter = document.getElementById('home-checklist-filter')?.value || 'all';
+      const today  = new Date(); today.setHours(0,0,0,0);
+
+      let items = _homeChecklists;
+      if (filter === 'me') {
+        items = items.filter(cl => cl.assignee && cl.assignee.toLowerCase().includes(me.toLowerCase()));
+      }
+
+      // Sort: overdue first, then by due_date, then no date
+      items = [...items].sort((a,b) => {
+        const da = a.due_date ? new Date(a.due_date+'T00:00:00') : null;
+        const db = b.due_date ? new Date(b.due_date+'T00:00:00') : null;
+        if (!da && !db) return 0;
+        if (!da) return 1;
+        if (!db) return -1;
+        return da - db;
+      });
+
+      // Badge: overdue count
+      const overdueCount = items.filter(cl => cl.due_date && new Date(cl.due_date+'T00:00:00') < today).length;
+      if (badge) {
+        badge.textContent = overdueCount > 0 ? overdueCount + ' vencida' + (overdueCount>1?'s':'') : '';
+        badge.style.display = overdueCount > 0 ? 'inline' : 'none';
+      }
+
+      if (!items.length) {
+        container.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:var(--text-muted)">Sin microtareas pendientes ✓</div>';
+        return;
+      }
+
+      const colors = ['#f06a6a','#60a5fa','#34d399','#fbbf24','#a78bfa','#f97316'];
+
+      container.innerHTML = items.map(cl => {
+        const d = cl.due_date ? new Date(cl.due_date+'T00:00:00') : null;
+        const isOverdue  = d && d < today;
+        const isDueToday = d && d.toDateString() === today.toDateString();
+        const daysLeft   = d ? Math.ceil((d-today)/86400000) : null;
+        const dLabel = d ? (isOverdue ? 'Vencida hace '+(Math.abs(daysLeft))+'d' : isDueToday ? 'Hoy' : daysLeft===1?'Mañana':'En '+daysLeft+'d') : '';
+        const dColor = isOverdue?'#ef4444':isDueToday?'#f97316':daysLeft<=3?'#f59e0b':'var(--text-muted)';
+        const assigneeInit = cl.assignee ? cl.assignee.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase() : '';
+        const assigneeColor = cl.assignee ? colors[cl.assignee.charCodeAt(0)%colors.length] : '#9ca3af';
+
+        return `<div onclick="openEdit(${cl.task_id})" style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border-color);cursor:pointer;transition:background .1s${isOverdue?';background:rgba(239,68,68,.03)':''}" onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='${isOverdue?'rgba(239,68,68,.03)':'transparent'}'">
+          <span style="font-size:14px;flex-shrink:0">☑️</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12.5px;font-weight:500;color:var(--text-main);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cl.text)}</div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(cl._task?.task||'')} · ${esc(cl._task?.proj||'')}</div>
+          </div>
+          ${cl.assignee ? `<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+            <div style="width:18px;height:18px;border-radius:50%;background:${assigneeColor};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff">${assigneeInit}</div>
+            <span style="font-size:10.5px;color:var(--text-muted);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(cl.assignee)}</span>
+          </div>` : '<div style="width:4px"></div>'}
+          ${d ? `<div style="font-size:11px;font-weight:600;color:${dColor};flex-shrink:0;text-align:right">${dLabel}</div>` : ''}
+        </div>`;
+      }).join('');
     }
 
     // ══════════════════════════════════════════════════════════
