@@ -348,6 +348,9 @@
         <button id="sb-nav-dashboard" class="sb-nav-btn" onclick="switchView('dashboard')">
           <i data-lucide="layout-dashboard" class="sb-icon" style="color:#a78bfa"></i><span class="sb-lbl">Métricas &amp; Alertas</span>
         </button>
+        <button id="sb-nav-activity" class="sb-nav-btn" onclick="switchView('activity')">
+          <i data-lucide="activity" class="sb-icon" style="color:#f97316"></i><span class="sb-lbl">Actividad</span>
+        </button>
         <button id="sb-nav-budget" class="sb-nav-btn" onclick="switchView('budget')">
           <i data-lucide="circle-dollar-sign" class="sb-icon" style="color:#34d399"></i><span class="sb-lbl">Presupuesto</span>
         </button>
@@ -664,7 +667,7 @@
                   <!-- Grid rows (background) -->
                   <div id="gantt-grid" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
                   <!-- Task bars -->
-                  <div id="gantt-bars" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none"></div>
+                  <div id="gantt-bars" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>
                   <!-- Dependency arrows -->
                   <svg id="gantt-arrows" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible" width="0" height="0">
                     <defs>
@@ -843,6 +846,40 @@
           </div>
         </div>
 
+
+
+        <!-- ── VISTA ACTIVIDAD ── -->
+        <div id="view-activity-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:20px" class="no-scrollbar">
+          <div style="max-width:860px;margin:0 auto">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+              <div>
+                <h2 style="font-size:16px;font-weight:600;color:var(--text-main);margin:0 0 3px">Actividad del equipo</h2>
+                <p style="font-size:12px;color:var(--text-muted);margin:0">Registro de todos los cambios del planificador</p>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <select id="activity-filter-user" onchange="renderActivityView()"
+                  style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit">
+                  <option value="">Todos los usuarios</option>
+                </select>
+                <select id="activity-filter-type" onchange="renderActivityView()"
+                  style="background:var(--bg-panel);border:1px solid var(--border-color);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit">
+                  <option value="">Todos los tipos</option>
+                  <option value="create">Creación</option>
+                  <option value="update">Modificación</option>
+                  <option value="comment">Comentario</option>
+                  <option value="checklist">Checklist</option>
+                  <option value="delete">Eliminación</option>
+                </select>
+              </div>
+            </div>
+            <div id="activity-feed" style="display:flex;flex-direction:column;gap:2px"></div>
+            <div id="activity-load-more" style="display:none;text-align:center;padding:16px">
+              <button onclick="loadMoreActivity()" style="padding:7px 20px;border-radius:8px;background:var(--bg-panel);border:1px solid var(--border-color);color:var(--text-muted);font-size:12px;cursor:pointer">
+                Cargar más
+              </button>
+            </div>
+          </div>
+        </div>
 
         <!-- ── VISTA INICIO ── -->
         <div id="view-home-container" class="hidden" style="height:100%;overflow-y:auto;background:var(--bg-main);padding:24px">
@@ -1061,6 +1098,32 @@
               <button onclick="hideAddDepUI()" style="padding:6px 12px;border-radius:6px;background:var(--bg-panel);color:var(--text-muted);border:1px solid var(--border-color);font-size:12px;cursor:pointer">Cancelar</button>
             </div>
           </div>
+        </div>
+
+        <!-- Checklists -->
+        <div id="checklist-section" style="padding-top:12px;border-top:1px solid var(--border-color)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-muted)">
+              <i data-lucide="check-square" style="width:13px;height:13px"></i> Checklist
+              <span id="checklist-progress-label" style="font-weight:400;font-size:10px"></span>
+            </label>
+          </div>
+          <div id="checklist-progress-bar" style="display:none;height:5px;background:var(--border-color);border-radius:999px;overflow:hidden;margin-bottom:10px">
+            <div id="checklist-progress-fill" style="height:100%;background:#10b981;border-radius:999px;transition:width .3s"></div>
+          </div>
+          <div id="checklist-items" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+          <div id="checklist-add-row" style="display:none;display:flex;gap:6px;align-items:center">
+            <input id="checklist-new-input" type="text" placeholder="Añadir elemento..."
+              onkeydown="if(event.key==='Enter')addChecklistItem();if(event.key==='Escape')hideChecklistInput();"
+              style="flex:1;background:var(--bg-main);border:1px solid var(--border-color);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text-main);outline:none;font-family:inherit"
+              onfocus="this.style.borderColor='#4573d2'" onblur="this.style.borderColor='var(--border-color)'">
+            <button onclick="addChecklistItem()" style="padding:6px 10px;border-radius:6px;background:#4573d2;color:white;border:none;font-size:12px;cursor:pointer">Añadir</button>
+            <button onclick="hideChecklistInput()" style="padding:6px 8px;border-radius:6px;background:var(--bg-main);color:var(--text-muted);border:1px solid var(--border-color);font-size:12px;cursor:pointer">✕</button>
+          </div>
+          <button id="btn-show-checklist-input" onclick="showChecklistInput()"
+            style="display:none;font-size:11px;color:#4573d2;background:rgba(69,115,210,0.06);border:1px dashed rgba(69,115,210,0.3);border-radius:6px;padding:5px 12px;cursor:pointer;width:100%;text-align:center">
+            + Añadir elemento
+          </button>
         </div>
 
         <!-- Adjuntos -->
@@ -2285,9 +2348,10 @@
         dashboard: 'view-dashboard-container',
         budget:    'view-budget-container',
         annual:    'view-annual-container',
-        exec:      'view-exec-container'
+        exec:      'view-exec-container',
+        activity:  'view-activity-container'
       };
-      const sbNavs = ['sb-nav-home','sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
+      const sbNavs = ['sb-nav-home','sb-nav-gantt','sb-nav-kanban','sb-nav-calendar','sb-nav-dashboard','sb-nav-activity','sb-nav-budget','sb-nav-annual','sb-nav-exec'];
 
       // Show active, hide all others
       Object.entries(allViews).forEach(([v, id]) => {
@@ -2317,6 +2381,7 @@
       else if (viewName === 'budget')   { populateYearSelects(); renderBudget(); }
       else if (viewName === 'annual')   { populateYearSelects(); renderAnnual(); }
       else if (viewName === 'exec')     { populateYearSelects(); renderExec(); }
+      else if (viewName === 'activity') renderActivityView();
       lucide.createIcons();
     }
 
@@ -2912,6 +2977,10 @@
       document.getElementById('btn-delete').style.display = 'none';
       document.getElementById('autosave-status').style.opacity = '0';
       document.getElementById('btn-save-new').style.display = 'inline-flex';
+      document.getElementById('checklist-items').innerHTML = '';
+      document.getElementById('checklist-progress-bar').style.display = 'none';
+      document.getElementById('btn-show-checklist-input').style.display = 'none';
+      document.getElementById('checklist-add-row').style.display = 'none';
       const badge = document.getElementById('modal-last-modified');
       if (badge) badge.style.display = 'none';
       document.getElementById('task-files').innerHTML = '<div style="font-size:12px;color:var(--text-muted);font-style:italic">Sin adjuntos todavía</div>';
@@ -2926,6 +2995,7 @@
       editId = id;
       loadComments(id);
       loadFiles(id);
+      loadChecklists(id);
       TASK_DEPENDENCIES = [];
       renderDependencies(); // show empty immediately while loading
       hideAddDepUI();
@@ -3055,6 +3125,7 @@
         const { error } = await supabaseClient.from('tareas').update(payload).eq('id', editId);
         if (error) throw error;
         showAutosaveStatus('saved');
+        logActivity('update', editId, `Modificó: ${Object.keys(payload).filter(k=>k!=='updated_at'&&k!=='updated_by').join(', ')}`);
         // Update local TASKS array immediately — no full reload needed
         const idx = TASKS.findIndex(x => x.id === editId);
         if (idx !== -1) {
@@ -3108,8 +3179,9 @@
         alert('La fecha de inicio no puede ser posterior a la fecha de fin.'); return;
       }
       try {
-        const { error } = await supabaseClient.from('tareas').insert([payload]);
+        const { data: newTask, error } = await supabaseClient.from('tareas').insert([payload]).select().single();
         if (error) throw error;
+        logActivity('create', newTask?.id, `Nueva tarea en ${payload.proj}`);
       } catch(e) {
         alert('Error al guardar. Comprueba tu conexión e inténtalo de nuevo.'); return;
       }
@@ -3122,8 +3194,11 @@
       if (!isEditModeActive || !editId) return;
       if (confirm('¿Seguro que deseas eliminar esta tarea de la base de datos?')) {
         try {
+          const taskName = TASKS.find(t=>t.id===editId)?.task || '';
+          const projName = TASKS.find(t=>t.id===editId)?.proj || '';
           const { error } = await supabaseClient.from('tareas').delete().eq('id', editId);
           if (error) throw error;
+          logActivity('delete', editId, `Eliminó "${taskName}" de ${projName}`);
         } catch(e) {
           alert('Error al eliminar la tarea. Comprueba tu conexión e inténtalo de nuevo.');
           return;
@@ -3197,6 +3272,7 @@
 
       const authorName = await getCurrentDisplayName();
       const { error }  = await supabaseClient.from('task_comments').insert([{ task_id: editId, author: authorName, comment: text }]);
+      if (!error) logActivity('comment', editId, text.slice(0,80) + (text.length>80?'…':''));
       if (error) { alert('Error al publicar comentario'); console.error(error); return; }
       textarea.value = '';
       loadComments(editId);
@@ -4662,6 +4738,207 @@
         document.getElementById('gatekeeper-email').focus();
       }
     })();
+
+    // ══════════════════════════════════════════════════════════════
+    //  CHECKLISTS
+    // ══════════════════════════════════════════════════════════════
+    let _checklistItems = [];
+
+    async function loadChecklists(taskId) {
+      const container = document.getElementById('checklist-items');
+      const bar       = document.getElementById('checklist-progress-bar');
+      const btn       = document.getElementById('btn-show-checklist-input');
+      if (!container) return;
+      container.innerHTML = '<div style="font-size:11px;color:var(--text-muted);font-style:italic">Cargando...</div>';
+      const { data, error } = await supabaseClient
+        .from('task_checklists').select('*')
+        .eq('task_id', taskId).order('position', { ascending: true });
+      if (error) { container.innerHTML = ''; return; }
+      _checklistItems = data || [];
+      renderChecklistItems();
+      if (btn && isEditModeActive) btn.style.display = 'block';
+    }
+
+    function renderChecklistItems() {
+      const container = document.getElementById('checklist-items');
+      const bar       = document.getElementById('checklist-progress-bar');
+      const fill      = document.getElementById('checklist-progress-fill');
+      const label     = document.getElementById('checklist-progress-label');
+      if (!container) return;
+
+      const total = _checklistItems.length;
+      const done  = _checklistItems.filter(i => i.done).length;
+
+      if (total > 0) {
+        bar.style.display = 'block';
+        const pct = Math.round((done/total)*100);
+        fill.style.width = pct + '%';
+        fill.style.background = pct === 100 ? '#10b981' : '#4573d2';
+        label.textContent = `${done}/${total}`;
+      } else {
+        bar.style.display = 'none';
+        label.textContent = '';
+      }
+
+      if (!total) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = _checklistItems.map(item => `
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;transition:background .1s"
+          onmouseover="this.style.background='var(--bg-main)'" onmouseout="this.style.background='transparent'">
+          <input type="checkbox" ${item.done?'checked':''} ${isEditModeActive?'':'disabled'}
+            onchange="toggleChecklistItem(${item.id}, this.checked)"
+            style="width:14px;height:14px;accent-color:#4573d2;cursor:${isEditModeActive?'pointer':'default'};flex-shrink:0">
+          <span style="flex:1;font-size:12.5px;color:var(--text-main);${item.done?'text-decoration:line-through;opacity:.5':''}">${esc(item.text)}</span>
+          ${isEditModeActive ? `<button onclick="deleteChecklistItem(${item.id})"
+            style="opacity:0;width:18px;height:18px;background:none;border:none;cursor:pointer;color:#ef4444;display:flex;align-items:center;justify-content:center;border-radius:3px;font-size:14px;transition:opacity .15s"
+            onmouseover="this.parentElement.onmouseover=null;this.style.opacity='1'" 
+            onmouseout="this.style.opacity='0'">×</button>` : ''}
+        </div>`).join('');
+    }
+
+    function showChecklistInput() {
+      document.getElementById('checklist-add-row').style.display = 'flex';
+      document.getElementById('btn-show-checklist-input').style.display = 'none';
+      setTimeout(() => document.getElementById('checklist-new-input').focus(), 50);
+    }
+
+    function hideChecklistInput() {
+      document.getElementById('checklist-add-row').style.display = 'none';
+      document.getElementById('btn-show-checklist-input').style.display = 'block';
+      document.getElementById('checklist-new-input').value = '';
+    }
+
+    async function addChecklistItem() {
+      const input = document.getElementById('checklist-new-input');
+      const text  = input.value.trim();
+      if (!text || !editId) return;
+      const position = _checklistItems.length;
+      const { data, error } = await supabaseClient
+        .from('task_checklists').insert([{ task_id: editId, text, done: false, position }])
+        .select().single();
+      if (error) { showToast('Error al añadir', 'error'); return; }
+      _checklistItems.push(data);
+      input.value = '';
+      renderChecklistItems();
+      logActivity('checklist', editId, `Añadió checklist: "${text}"`);
+    }
+
+    async function toggleChecklistItem(id, done) {
+      const { error } = await supabaseClient.from('task_checklists').update({ done }).eq('id', id);
+      if (error) { showToast('Error', 'error'); return; }
+      const item = _checklistItems.find(i => i.id === id);
+      if (item) item.done = done;
+      renderChecklistItems();
+      if (done) logActivity('checklist', editId, `Completó: "${item?.text}"`);
+    }
+
+    async function deleteChecklistItem(id) {
+      const item = _checklistItems.find(i => i.id === id);
+      const { error } = await supabaseClient.from('task_checklists').delete().eq('id', id);
+      if (error) { showToast('Error', 'error'); return; }
+      _checklistItems = _checklistItems.filter(i => i.id !== id);
+      renderChecklistItems();
+      if (_checklistItems.length === 0) {
+        document.getElementById('btn-show-checklist-input').style.display = isEditModeActive ? 'block' : 'none';
+      }
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    //  ACTIVITY LOG
+    // ══════════════════════════════════════════════════════════════
+    let _activityOffset = 0;
+    const ACTIVITY_PAGE = 40;
+
+    async function logActivity(action, taskId, detail) {
+      try {
+        const task = TASKS.find(t => t.id === taskId);
+        await supabaseClient.from('activity_log').insert([{
+          task_id:   taskId,
+          task_name: task?.task || '',
+          proj:      task?.proj || '',
+          user:      _currentDisplayName || 'Sistema',
+          action,
+          detail,
+          created_at: new Date().toISOString()
+        }]);
+      } catch(e) { /* non-blocking */ }
+    }
+
+    async function renderActivityView() {
+      _activityOffset = 0;
+      const feed = document.getElementById('activity-feed');
+      if (!feed) return;
+      feed.innerHTML = '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:24px">Cargando actividad...</div>';
+
+      // Populate user filter
+      const userSel = document.getElementById('activity-filter-user');
+      const { data: users } = await supabaseClient.from('activity_log').select('user').order('user');
+      if (users && userSel) {
+        const unique = [...new Set(users.map(u => u.user))].sort();
+        const current = userSel.value;
+        userSel.innerHTML = '<option value="">Todos los usuarios</option>' +
+          unique.map(u => `<option value="${esc(u)}" ${u===current?'selected':''}>${esc(u)}</option>`).join('');
+      }
+
+      await loadActivityPage(true);
+    }
+
+    async function loadActivityPage(reset) {
+      if (reset) _activityOffset = 0;
+      const feed     = document.getElementById('activity-feed');
+      const more     = document.getElementById('activity-load-more');
+      const userVal  = document.getElementById('activity-filter-user')?.value || '';
+      const typeVal  = document.getElementById('activity-filter-type')?.value || '';
+
+      let q = supabaseClient.from('activity_log').select('*').order('created_at', { ascending: false })
+        .range(_activityOffset, _activityOffset + ACTIVITY_PAGE - 1);
+      if (userVal) q = q.eq('user', userVal);
+      if (typeVal) q = q.eq('action', typeVal);
+
+      const { data, error } = await q;
+      if (error) { if (feed) feed.innerHTML = '<div style="color:#ef4444;font-size:12px;padding:12px">Error al cargar actividad.<br>Crea la tabla <code>activity_log</code> en Supabase.</div>'; return; }
+
+      const ACTION_ICON = { create:'✨', update:'✏️', comment:'💬', checklist:'☑️', delete:'🗑️' };
+      const ACTION_LABEL = { create:'Creó tarea', update:'Modificó tarea', comment:'Comentó en', checklist:'Checklist en', delete:'Eliminó tarea' };
+      const colors = ['#f06a6a','#60a5fa','#34d399','#fbbf24','#a78bfa','#f97316','#ec4899'];
+
+      const html = (data||[]).map(ev => {
+        const d    = new Date(ev.created_at);
+        const date = d.toLocaleDateString('es-ES',{day:'2-digit',month:'short'}) + ' · ' + d.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+        const init = (ev.user||'?').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+        const col  = colors[(ev.user||'').charCodeAt(0)%colors.length];
+        const icon = ACTION_ICON[ev.action] || '•';
+        const lbl  = ACTION_LABEL[ev.action] || ev.action;
+        return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;transition:background .1s"
+            onmouseover="this.style.background='var(--bg-panel)'" onmouseout="this.style.background='transparent'">
+          <div style="width:30px;height:30px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px">${init}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
+              <span style="font-size:12px;font-weight:600;color:var(--text-main)">${esc(ev.user||'')}</span>
+              <span style="font-size:11px;color:var(--text-muted)">${icon} ${lbl}</span>
+              ${ev.task_name ? `<span style="font-size:11px;font-weight:500;color:#4573d2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px" title="${esc(ev.task_name)}">${esc(ev.task_name)}</span>` : ''}
+            </div>
+            ${ev.detail ? `<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:2px">${esc(ev.detail)}</div>` : ''}
+            ${ev.proj ? `<div style="font-size:10px;color:var(--text-muted);opacity:.7">${esc(ev.proj)}</div>` : ''}
+          </div>
+          <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;white-space:nowrap">${date}</span>
+        </div>`;
+      }).join('');
+
+      if (reset) {
+        feed.innerHTML = html || '<div style="font-size:12px;color:var(--text-muted);text-align:center;padding:40px">Sin actividad registrada todavía.<br><span style="font-size:11px;opacity:.7">Se registrará al crear, modificar o comentar tareas.</span></div>';
+      } else {
+        feed.insertAdjacentHTML('beforeend', html);
+      }
+      _activityOffset += ACTIVITY_PAGE;
+      if (more) more.style.display = (data||[]).length === ACTIVITY_PAGE ? 'block' : 'none';
+    }
+
+    function loadMoreActivity() { loadActivityPage(false); }
+
 
   </script>
 
