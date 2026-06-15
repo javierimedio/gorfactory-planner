@@ -1357,7 +1357,7 @@
     let calendarYear = new Date().getFullYear();
     let calendarMonth = new Date().getMonth();
 
-    function fmtDate(d) { return d ? d.toISOString().slice(0,10) : ''; }
+    function fmtDate(d) { if (!d) return ''; const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
     function parseIso(s) { if(!s) return null; const p = s.slice(0,10).split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
     const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
@@ -5209,7 +5209,7 @@
       </div>
     </div>
   </div>
-  <div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;z-index:299;background:transparent"></div>
+  <div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;top:0;left:0;right:340px;bottom:0;z-index:299;background:transparent"></div>
 
 
   <!-- ══ MODAL PRESUPUESTO ══ -->
