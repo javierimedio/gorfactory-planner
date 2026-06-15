@@ -3789,18 +3789,26 @@
     }
 
     function openNotif(notifId, taskId) {
-      // Mark this notification as read
+      // Mark as read
       _markRead([notifId]);
-      // Refresh badge
       const readIds = _getReadIds();
       const unreadCount = NOTIFICATIONS.filter(n => !readIds.has(n.id)).length;
       const badge = document.getElementById('notif-badge');
       if (badge) badge.style.display = unreadCount > 0 ? 'block' : 'none';
       const countEl = document.getElementById('notif-unread-count');
       if (countEl) countEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
-      // Open task and close panel
-      openEdit(taskId);
+      // Close panel — wait for CSS transition (220ms) before opening task modal
       closeNotifPanel();
+      if (taskId) setTimeout(() => {
+        // Try to find in TASKS (active); if archived, show all then open
+        const found = TASKS.find(t => t.id === Number(taskId));
+        if (!found && showArchivedProjects === false) {
+          // Temporarily show all tasks to open the archived one
+          showArchivedProjects = true;
+          applyFilters();
+        }
+        openEdit(Number(taskId));
+      }, 250);
     }
 
     function markAllNotifsRead() {
@@ -5127,17 +5135,24 @@
         const col  = colors[(ev.user||'').charCodeAt(0)%colors.length];
         const icon = ACTION_ICON[ev.action] || '•';
         const lbl  = ACTION_LABEL[ev.action] || ev.action;
-        return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;transition:background .1s"
+        // Only clickable if task still exists (not deleted)
+        const hasTask = ev.task_id && ev.action !== 'delete' && TASKS.find(t => t.id === ev.task_id);
+        const clickHandler = hasTask ? `onclick="openEdit(${ev.task_id})"` : '';
+        const cursorStyle  = hasTask ? 'cursor:pointer;' : '';
+        return `<div ${clickHandler} style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;transition:background .1s;${cursorStyle}"
             onmouseover="this.style.background='var(--bg-panel)'" onmouseout="this.style.background='transparent'">
           <div style="width:30px;height:30px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px">${init}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
               <span style="font-size:12px;font-weight:600;color:var(--text-main)">${esc(ev.user||'')}</span>
               <span style="font-size:11px;color:var(--text-muted)">${icon} ${lbl}</span>
-              ${ev.task_name ? `<span style="font-size:11px;font-weight:500;color:#4573d2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px" title="${esc(ev.task_name)}">${esc(ev.task_name)}</span>` : ''}
+              ${ev.task_name ? `<span style="font-size:11px;font-weight:500;color:${hasTask?'#4573d2':'var(--text-muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px" title="${esc(ev.task_name)}">${esc(ev.task_name)}</span>` : ''}
             </div>
             ${ev.detail ? `<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:2px">${esc(ev.detail)}</div>` : ''}
-            ${ev.proj ? `<div style="font-size:10px;color:var(--text-muted);opacity:.7">${esc(ev.proj)}</div>` : ''}
+            <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+              ${ev.proj ? `<div style="font-size:10px;color:var(--text-muted);opacity:.7">${esc(ev.proj)}</div>` : ''}
+              ${hasTask ? `<div style="font-size:10px;color:#4573d2;opacity:.7">↗ Abrir tarea</div>` : (ev.action==='delete' ? `<div style="font-size:10px;color:var(--text-muted);opacity:.5;font-style:italic">tarea eliminada</div>` : '')}
+            </div>
           </div>
           <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;white-space:nowrap">${date}</span>
         </div>`;
