@@ -305,7 +305,10 @@
 
     <!-- Logo + collapse -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
-      <div style="display:flex;align-items:center;gap:9px;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:9px;overflow:hidden;cursor:pointer;border-radius:7px;transition:opacity .15s"
+           onclick="switchView('home');setTimeout(()=>renderHome(),50)"
+           title="Ir al inicio · Actualizar"
+           onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
         <div style="background:white;border-radius:5px;padding:3px 5px;flex-shrink:0">
           <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="GF" style="height:19px;object-fit:contain;mix-blend-mode:multiply;display:block">
         </div>
