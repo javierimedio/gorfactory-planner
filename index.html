@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Planificador de tareas | Gor Factory</title>
   <meta name="description" content="Panel corporativo de planificación y diagrama de Gantt para el departamento de marketing de Gor Factory — ROLY · ROLY WRK · STAMINA">
-  <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAgACADASIAAhEBAxEB/8QAGAAAAwEBAAAAAAAAAAAAAAAAAAQFAwb/xAAjEAACAQMEAwADAAAAAAAAAAABAgMABBESEyExBRRBIlFx/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AOzopS7u5I5ore2jEk8gLfk2FVRjJJ/pHFJt5W5gmmjurZVEMasSjk7hYkKF4+kY5oK9FTfdvIZI1u7eFBMdEbJIWCvjIDcfcditPF3lxfQmWWBIkyVGH1FiCQT11xQZ+VV45YLmHcWRMqXSPcAU44ZRyRkDrqlbWzkv5byS6eUxyxoivo2zlSTlVPIAJGM9nNXKKCd6F1K8bXV2kmydUYWLSNWMBm55xnoYrbxtpJZWuzJMJcMSGCaezn9n6TTdFB//2Q==">
+  <link rel="icon" href="https://gorfactory.com/wp-content/uploads/2015/06/iconRoly.ico" type="image/x-icon">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -305,10 +305,7 @@
 
     <!-- Logo + collapse -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0">
-      <div style="display:flex;align-items:center;gap:9px;overflow:hidden;cursor:pointer;border-radius:7px;transition:opacity .15s"
-           onclick="switchView('home');setTimeout(()=>renderHome(),50)"
-           title="Ir al inicio · Actualizar"
-           onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+      <div style="display:flex;align-items:center;gap:9px;overflow:hidden">
         <div style="background:white;border-radius:5px;padding:3px 5px;flex-shrink:0">
           <img src="https://gorfactory.com/wp-content/uploads/2018/11/Logo_Gorfactory-1.jpg" alt="GF" style="height:19px;object-fit:contain;mix-blend-mode:multiply;display:block">
         </div>
@@ -518,9 +515,9 @@
         Hoy
       </button>
 
-      <!-- Edit mode -->
+      <!-- Edit mode (hidden — always active) -->
       <button id="btn-toggle-mode" onclick="toggleEditMode()"
-        style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:6px;border:1px solid #fde68a;background:#fffbeb;font-size:12px;font-weight:600;color:#b45309;cursor:pointer;flex-shrink:0">
+        style="display:none">
         <i data-lucide="lock" id="icon-mode" style="width:13px;height:13px"></i>
         <span id="text-mode">Visualización</span>
       </button>
@@ -1357,7 +1354,7 @@
     let calendarYear = new Date().getFullYear();
     let calendarMonth = new Date().getMonth();
 
-    function fmtDate(d) { if (!d) return ''; const y = d.getFullYear(); const m = String(d.getMonth()+1).padStart(2,'0'); const day = String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+    function fmtDate(d) { return d ? d.toISOString().slice(0,10) : ''; }
     function parseIso(s) { if(!s) return null; const p = s.slice(0,10).split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
     const TODAY = new Date(); TODAY.setHours(0,0,0,0);
 
@@ -1460,6 +1457,8 @@
       setupRealtime();
       applyGanttHeight();
       initResizeHandle();
+      // Auto-activate edit mode (button hidden, always on)
+      if (!isEditModeActive) toggleEditMode();
       switchView('home');
       // goToday called by switchView('gantt') when user navigates there
     }
@@ -3792,26 +3791,18 @@
     }
 
     function openNotif(notifId, taskId) {
-      // Mark as read
+      // Mark this notification as read
       _markRead([notifId]);
+      // Refresh badge
       const readIds = _getReadIds();
       const unreadCount = NOTIFICATIONS.filter(n => !readIds.has(n.id)).length;
       const badge = document.getElementById('notif-badge');
       if (badge) badge.style.display = unreadCount > 0 ? 'block' : 'none';
       const countEl = document.getElementById('notif-unread-count');
       if (countEl) countEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
-      // Close panel — wait for CSS transition (220ms) before opening task modal
+      // Open task and close panel
+      openEdit(taskId);
       closeNotifPanel();
-      if (taskId) setTimeout(() => {
-        // Try to find in TASKS (active); if archived, show all then open
-        const found = TASKS.find(t => t.id === Number(taskId));
-        if (!found && showArchivedProjects === false) {
-          // Temporarily show all tasks to open the archived one
-          showArchivedProjects = true;
-          applyFilters();
-        }
-        openEdit(Number(taskId));
-      }, 250);
     }
 
     function markAllNotifsRead() {
@@ -5138,24 +5129,17 @@
         const col  = colors[(ev.user||'').charCodeAt(0)%colors.length];
         const icon = ACTION_ICON[ev.action] || '•';
         const lbl  = ACTION_LABEL[ev.action] || ev.action;
-        // Only clickable if task still exists (not deleted)
-        const hasTask = ev.task_id && ev.action !== 'delete' && TASKS.find(t => t.id === ev.task_id);
-        const clickHandler = hasTask ? `onclick="openEdit(${ev.task_id})"` : '';
-        const cursorStyle  = hasTask ? 'cursor:pointer;' : '';
-        return `<div ${clickHandler} style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;transition:background .1s;${cursorStyle}"
+        return `<div style="display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:8px;transition:background .1s"
             onmouseover="this.style.background='var(--bg-panel)'" onmouseout="this.style.background='transparent'">
           <div style="width:30px;height:30px;border-radius:50%;background:${col};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;margin-top:1px">${init}</div>
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
               <span style="font-size:12px;font-weight:600;color:var(--text-main)">${esc(ev.user||'')}</span>
               <span style="font-size:11px;color:var(--text-muted)">${icon} ${lbl}</span>
-              ${ev.task_name ? `<span style="font-size:11px;font-weight:500;color:${hasTask?'#4573d2':'var(--text-muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px" title="${esc(ev.task_name)}">${esc(ev.task_name)}</span>` : ''}
+              ${ev.task_name ? `<span style="font-size:11px;font-weight:500;color:#4573d2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px" title="${esc(ev.task_name)}">${esc(ev.task_name)}</span>` : ''}
             </div>
             ${ev.detail ? `<div style="font-size:11.5px;color:var(--text-muted);margin-bottom:2px">${esc(ev.detail)}</div>` : ''}
-            <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
-              ${ev.proj ? `<div style="font-size:10px;color:var(--text-muted);opacity:.7">${esc(ev.proj)}</div>` : ''}
-              ${hasTask ? `<div style="font-size:10px;color:#4573d2;opacity:.7">↗ Abrir tarea</div>` : (ev.action==='delete' ? `<div style="font-size:10px;color:var(--text-muted);opacity:.5;font-style:italic">tarea eliminada</div>` : '')}
-            </div>
+            ${ev.proj ? `<div style="font-size:10px;color:var(--text-muted);opacity:.7">${esc(ev.proj)}</div>` : ''}
           </div>
           <span style="font-size:10px;color:var(--text-muted);flex-shrink:0;white-space:nowrap">${date}</span>
         </div>`;
@@ -5209,7 +5193,7 @@
       </div>
     </div>
   </div>
-  <div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;top:0;left:0;right:340px;bottom:0;z-index:299;background:transparent"></div>
+  <div id="notif-backdrop" onclick="closeNotifPanel()" style="display:none;position:fixed;inset:0;z-index:299;background:transparent"></div>
 
 
   <!-- ══ MODAL PRESUPUESTO ══ -->
