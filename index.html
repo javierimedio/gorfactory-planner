@@ -7,8 +7,9 @@
   <meta name="description" content="Panel corporativo de planificación y diagrama de Gantt para el departamento de marketing de Gor Factory — ROLY · ROLY WRK · STAMINA">
   <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAgACADASIAAhEBAxEB/8QAGAAAAwEBAAAAAAAAAAAAAAAAAAQFAwb/xAAjEAACAQMEAwADAAAAAAAAAAABAgMABBESEyExBRRBIlFx/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AOzopS7u5I5ore2jEk8gLfk2FVRjJJ/pHFJt5W5gmmjurZVEMasSjk7hYkKF4+kY5oK9FTfdvIZI1u7eFBMdEbJIWCvjIDcfcditPF3lxfQmWWBIkyVGH1FiCQT11xQZ+VV45YLmHcWRMqXSPcAU44ZRyRkDrqlbWzkv5byS6eUxyxoivo2zlSTlVPIAJGM9nNXKKCd6F1K8bXV2kmydUYWLSNWMBm55xnoYrbxtpJZWuzJMJcMSGCaezn9n6TTdFB//2Q==">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Librerías servidas desde el propio repo: unpkg.com no responde desde la red corporativa -->
+  <script src="vendor/lucide-1.54.0.min.js"></script>
+  <script src="vendor/supabase-js-2.117.3.js"></script>
   
   <script>
     tailwind.config = {
@@ -1299,6 +1300,14 @@
     // ── CONEXIÓN SUPABASE ──────────────────────────────────────
     const SUPABASE_URL     = "https://dogdbpeiufecjbsdualr.supabase.co";
     const SUPABASE_ANON_KEY= "sb_publishable_LClIA7ftAtkNv8cUuXI0GQ_gjKPb4F8";
+    if (typeof supabase === 'undefined') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const err = document.getElementById('gatekeeper-error');
+        err.textContent = 'No se pudo cargar la librería de conexión. Recarga la página o contacta con soporte.';
+        err.classList.remove('hidden');
+        document.getElementById('gatekeeper-btn').disabled = true;
+      });
+    }
     const supabaseClient   = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ── SANITIZADOR XSS ───────────────────────────────────────
