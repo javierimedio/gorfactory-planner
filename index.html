@@ -7,8 +7,9 @@
   <meta name="description" content="Panel corporativo de planificación y diagrama de Gantt para el departamento de marketing de Gor Factory — ROLY · ROLY WRK · STAMINA">
   <link rel="icon" type="image/jpeg" href="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDABQODxIPDRQSEBIXFRQYHjIhHhwcHj0sLiQySUBMS0dARkVQWnNiUFVtVkVGZIhlbXd7gYKBTmCNl4x9lnN+gXz/2wBDARUXFx4aHjshITt8U0ZTfHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHz/wAARCAAgACADASIAAhEBAxEB/8QAGAAAAwEBAAAAAAAAAAAAAAAAAAQFAwb/xAAjEAACAQMEAwADAAAAAAAAAAABAgMABBESEyExBRRBIlFx/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AOzopS7u5I5ore2jEk8gLfk2FVRjJJ/pHFJt5W5gmmjurZVEMasSjk7hYkKF4+kY5oK9FTfdvIZI1u7eFBMdEbJIWCvjIDcfcditPF3lxfQmWWBIkyVGH1FiCQT11xQZ+VV45YLmHcWRMqXSPcAU44ZRyRkDrqlbWzkv5byS6eUxyxoivo2zlSTlVPIAJGM9nNXKKCd6F1K8bXV2kmydUYWLSNWMBm55xnoYrbxtpJZWuzJMJcMSGCaezn9n6TTdFB//2Q==">
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Librerías servidas desde el propio repo: unpkg.com no responde desde la red corporativa -->
+  <script src="vendor/lucide-1.54.0.min.js"></script>
+  <script src="vendor/supabase-js-2.117.3.js"></script>
   
   <script>
     tailwind.config = {
@@ -1297,8 +1298,19 @@
   ══════════════════════════════════════════════ -->
   <script>
     // ── CONEXIÓN SUPABASE ──────────────────────────────────────
-    const SUPABASE_URL     = "https://dogdbpeiufecjbsdualr.supabase.co";
+    // Los operadores bloquean *.supabase.co, así que en el despliegue las peticiones
+    // pasan por el rewrite /sb de vercel.json. En local se conecta directamente.
+    const USE_PROXY        = location.protocol.startsWith('http') && !['localhost','127.0.0.1'].includes(location.hostname);
+    const SUPABASE_URL     = USE_PROXY ? location.origin + '/sb' : "https://dogdbpeiufecjbsdualr.supabase.co";
     const SUPABASE_ANON_KEY= "sb_publishable_LClIA7ftAtkNv8cUuXI0GQ_gjKPb4F8";
+    if (typeof supabase === 'undefined') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const err = document.getElementById('gatekeeper-error');
+        err.textContent = 'No se pudo cargar la librería de conexión. Recarga la página o contacta con soporte.';
+        err.classList.remove('hidden');
+        document.getElementById('gatekeeper-btn').disabled = true;
+      });
+    }
     const supabaseClient   = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // ── SANITIZADOR XSS ───────────────────────────────────────
@@ -1413,7 +1425,14 @@
       try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error || !data.session) {
-          errorMsg.textContent = 'Credenciales incorrectas. Inténtalo de nuevo.';
+          const AUTH_ERRORS = {
+            invalid_credentials:     'Credenciales incorrectas. Inténtalo de nuevo.',
+            email_not_confirmed:     'Tu email no está confirmado. Pide al administrador que lo confirme.',
+            user_banned:             'Tu usuario está bloqueado. Contacta con el administrador.',
+            over_request_rate_limit: 'Demasiados intentos. Espera unos minutos.'
+          };
+          console.warn('Login rechazado:', error?.status, error?.code, error?.message);
+          errorMsg.textContent = AUTH_ERRORS[error?.code] || `No se pudo iniciar sesión: ${error?.message || 'sin sesión'} (${error?.code || error?.status || '?'})`;
           errorMsg.classList.remove('hidden');
           document.getElementById('gatekeeper-input').value = '';
         } else {
@@ -1619,6 +1638,7 @@
 
     let _realtimeChannel = null;
     function setupRealtime() {
+      if (USE_PROXY) return; // Vercel no reenvía WebSockets
       try {
         _realtimeChannel = supabaseClient.channel('realtime-tasks')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'tareas' }, () => {
@@ -3861,6 +3881,7 @@
     function setupNotifRealtime() {
       // Solicitar permiso push al arrancar (con delay para no ser intrusivo)
       setTimeout(requestPushPermission, 3000);
+      if (USE_PROXY) return; // Vercel no reenvía WebSockets
 
       try {
         supabaseClient.channel('notif-ch')
