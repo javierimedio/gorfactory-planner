@@ -1298,7 +1298,10 @@
   ══════════════════════════════════════════════ -->
   <script>
     // ── CONEXIÓN SUPABASE ──────────────────────────────────────
-    const SUPABASE_URL     = "https://dogdbpeiufecjbsdualr.supabase.co";
+    // Los operadores bloquean *.supabase.co, así que en el despliegue las peticiones
+    // pasan por el rewrite /sb de vercel.json. En local se conecta directamente.
+    const USE_PROXY        = location.protocol.startsWith('http') && !['localhost','127.0.0.1'].includes(location.hostname);
+    const SUPABASE_URL     = USE_PROXY ? location.origin + '/sb' : "https://dogdbpeiufecjbsdualr.supabase.co";
     const SUPABASE_ANON_KEY= "sb_publishable_LClIA7ftAtkNv8cUuXI0GQ_gjKPb4F8";
     if (typeof supabase === 'undefined') {
       document.addEventListener('DOMContentLoaded', () => {
@@ -1628,6 +1631,7 @@
 
     let _realtimeChannel = null;
     function setupRealtime() {
+      if (USE_PROXY) return; // Vercel no reenvía WebSockets
       try {
         _realtimeChannel = supabaseClient.channel('realtime-tasks')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'tareas' }, () => {
@@ -3870,6 +3874,7 @@
     function setupNotifRealtime() {
       // Solicitar permiso push al arrancar (con delay para no ser intrusivo)
       setTimeout(requestPushPermission, 3000);
+      if (USE_PROXY) return; // Vercel no reenvía WebSockets
 
       try {
         supabaseClient.channel('notif-ch')
