@@ -1425,7 +1425,14 @@
       try {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error || !data.session) {
-          errorMsg.textContent = 'Credenciales incorrectas. Inténtalo de nuevo.';
+          const AUTH_ERRORS = {
+            invalid_credentials:     'Credenciales incorrectas. Inténtalo de nuevo.',
+            email_not_confirmed:     'Tu email no está confirmado. Pide al administrador que lo confirme.',
+            user_banned:             'Tu usuario está bloqueado. Contacta con el administrador.',
+            over_request_rate_limit: 'Demasiados intentos. Espera unos minutos.'
+          };
+          console.warn('Login rechazado:', error?.status, error?.code, error?.message);
+          errorMsg.textContent = AUTH_ERRORS[error?.code] || `No se pudo iniciar sesión: ${error?.message || 'sin sesión'} (${error?.code || error?.status || '?'})`;
           errorMsg.classList.remove('hidden');
           document.getElementById('gatekeeper-input').value = '';
         } else {
